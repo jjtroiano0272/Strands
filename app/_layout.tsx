@@ -1,9 +1,22 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
+// Import the functions you need from the SDKs you need
+import { initializeApp } from 'firebase/app';
+import { getAnalytics } from 'firebase/analytics';
+import { firebaseConfig } from '../firebaseConfig';
+import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -35,15 +48,45 @@ export default function RootLayout() {
   );
 }
 
+// function AuthorizedStack() {
+//   return (
+//     <Stack>
+//       <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
+//       <Stack.Screen name='modal' options={{ presentation: 'card' }} />
+//     </Stack>
+//   );
+// }
+
+// function UnauthorizedStack() {
+//   return (
+//     <Stack>
+//       <Stack.Screen name='register' />
+//     </Stack>
+//   );
+// }
+
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   return (
     <>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        <Stack
+          screenOptions={{
+            headerRight: () => (
+              // <MaterialCommunityIcons
+              //   name='airballoon'
+              //   size={24}
+              //   color='white'
+              // />
+              <AntDesign name='infocirlceo' size={24} color='white' />
+            ),
+          }}
+        >
+          {/* This displays whatever files are in the (tabs) dir as tabs itself */}
+          <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
+          <Stack.Screen name='modal' options={{ presentation: 'card' }} />
         </Stack>
       </ThemeProvider>
     </>
