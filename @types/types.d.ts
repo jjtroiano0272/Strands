@@ -21,3 +21,8 @@ export interface IAPIData {
     bs: string;
   };
 }
+
+export type UserContextType = {
+  isLoggedIn: boolean;
+  setIsLoggedIn: (arg: boolean) => void;
+};

@@ -24,21 +24,25 @@ export default function ClientProfile() {
   const { data, error, loading } = useFetch(
     'https://jsonplaceholder.typicode.com/users'
   );
-  const {
-    id,
-    name,
-    company,
-    username,
-  }: { id: string; name: string; company: string; username: string } =
-    useSearchParams();
+
+  // TODO Offload to types file
+  type NewType = {
+    id?: string;
+    name?: string;
+    company?: string;
+    username?: string;
+  };
+
+  const { id, name, company, username }: NewType = useSearchParams();
 
   useEffect(() => {
     // console.log(`uri used: https://picsum.photos/id/${id + 64}/700/700`);
+    console.log(`username: ${username}`);
   }, []);
 
   return (
     <ScrollView style={styles.getStartedContainer}>
-      <Stack.Screen options={{ title: username }} />
+      <Stack.Screen options={{ title: `@${username}` }} />
 
       {/* TODO Offload to custom component with only the needed text, standardized format */}
       <Card
@@ -53,17 +57,17 @@ export default function ClientProfile() {
             fontSize: 42,
             paddingTop: 30,
           }}
-          subtitle={`@${username}`}
+          subtitle={`${company}`}
           subtitleStyle={{
             color: theme.colors.text,
             fontSize: 14,
-            paddingVertical: 20,
+            paddingVertical: 14,
           }}
         />
         <Card.Content>
           <Card.Cover
             source={{
-              uri: `https://picsum.photos/id/${parseInt(id)}/700/700`,
+              uri: `https://picsum.photos/id/${id}/700/700`,
             }}
           />
           <Paragraph style={{ color: theme.colors.text }}>

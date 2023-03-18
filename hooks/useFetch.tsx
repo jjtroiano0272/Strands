@@ -24,10 +24,15 @@ function useFetch(url: string) {
         //checking for multiple responses for more flexibility
         //with the url we send in.
         // TODO This is NOT generalizable, and would need to be tailored to the return data struture for the specific endpoint
-        res.data.content && setData(res.data.content);
-        res.content && setData(res.content);
-        res.data && setData(res.data);
-        // console.log(`res.data: ${JSON.stringify(res.data)}`);
+
+        // res.data.content && setData(res.data.content);
+        // res.content && setData(res.content);
+        // res.data && setData(res.data);
+
+        // res.data is where it starts to become the reddit.json response we see in Insomnia
+        console.log(`in useFetch keys: ${Object.keys(res.data.data.children)}`);
+        console.log(`data => ${res.data.data.children}`);
+        setData(res.data.data.children);
       })
       .catch((err: any) => {
         setLoading(false);

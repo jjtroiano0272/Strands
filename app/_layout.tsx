@@ -5,14 +5,15 @@ import {
   ThemeProvider,
 } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { SplashScreen, Stack } from 'expo-router';
+import { Redirect, SplashScreen, Stack, Tabs, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { useColorScheme } from 'react-native';
+import { Alert, useColorScheme } from 'react-native';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
 import { firebaseConfig } from '../firebaseConfig';
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
+import { UserProvider } from '../context/UserContext';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -25,7 +26,7 @@ export {
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
+  initialRouteName: 'index',
 };
 
 export default function RootLayout() {
@@ -48,30 +49,14 @@ export default function RootLayout() {
   );
 }
 
-// function AuthorizedStack() {
-//   return (
-//     <Stack>
-//       <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
-//       <Stack.Screen name='modal' options={{ presentation: 'card' }} />
-//     </Stack>
-//   );
-// }
-
-// function UnauthorizedStack() {
-//   return (
-//     <Stack>
-//       <Stack.Screen name='register' />
-//     </Stack>
-//   );
-// }
-
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
 
   return (
-    <>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <UserProvider>
         <Stack
           screenOptions={{
             headerRight: () => (
@@ -80,15 +65,26 @@ function RootLayoutNav() {
               //   size={24}
               //   color='white'
               // />
-              <AntDesign name='infocirlceo' size={24} color='white' />
+              <AntDesign
+                name='infocirlceo'
+                size={24}
+                color={colorScheme === 'dark' ? 'white' : 'black'}
+                onPress={() => router.push('/modal')}
+              />
             ),
           }}
         >
           {/* This displays whatever files are in the (tabs) dir as tabs itself */}
-          <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
-          <Stack.Screen name='modal' options={{ presentation: 'card' }} />
+          {/* <Stack.Screen name='(tabs)' options={{ headerShown: false }} /> */}
+          {/* <Stack.Screen
+            name='index'
+            options={{ headerShown: true, title: 'Home' }}
+          /> */}
+
+          <Stack.Screen name='modal' options={{ presentation: 'modal' }} />
+          <Stack.Screen name='home' options={{ headerShown: true }} />
         </Stack>
-      </ThemeProvider>
-    </>
+      </UserProvider>
+    </ThemeProvider>
   );
 }
