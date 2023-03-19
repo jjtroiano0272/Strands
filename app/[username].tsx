@@ -31,9 +31,10 @@ export default function ClientProfile() {
     name?: string;
     company?: string;
     username?: string;
+    imgSrc?: string;
   };
 
-  const { id, name, company, username }: NewType = useSearchParams();
+  const { id, name, company, username, imgSrc }: NewType = useSearchParams();
 
   useEffect(() => {
     // console.log(`uri used: https://picsum.photos/id/${id + 64}/700/700`);
@@ -67,15 +68,19 @@ export default function ClientProfile() {
         <Card.Content>
           <Card.Cover
             source={{
-              uri: `https://picsum.photos/id/${id}/700/700`,
+              uri: imgSrc,
             }}
           />
+          {/* TWO COLUMNS of list items */}
+          {/* Recent reviews, listed in order of submission and saying who wrote what, and their own rating */}
+
           <Paragraph style={{ color: theme.colors.text }}>
             Code in an ideal world, for deep dive we have to leverage up the
             messaging it just needs more cowbell, but deliverables, yet this
             proposal is a win-win situation which will cause a stellar paradigm
             shift, and produce a multi-fold increase in deliverables. Clear blue
             water (let's not try to) boil the ocean (here/there/everywhere).
+            {imgSrc}
           </Paragraph>
         </Card.Content>
       </Card>

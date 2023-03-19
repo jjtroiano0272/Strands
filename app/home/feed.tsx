@@ -13,6 +13,10 @@ import useFetch from '../../hooks/useFetch';
 import { ExternalLink } from '../../components/ExternalLink';
 import { MonoText } from '../../components/StyledText';
 import GridItem from '../../components/GridItem';
+import { Stack } from 'expo-router';
+import { Connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
+import { fetchUser } from '../../redux/actions';
 
 const Feed = () => {
   const theme = useTheme();
@@ -32,64 +36,70 @@ const Feed = () => {
    *  }
    * }
    */
-  const { data, error, loading } = useFetch(
-    'https://www.reddit.com/r/FancyFollicles.json'
-  );
-
-  console.log(
-    `redditData: ${data}, redditError: ${error}, redditLoading: ${loading}`
-  );
+  const {
+    data,
+    error,
+    loading,
+  }: {
+    data: [
+      {
+        data: {
+          title: string;
+          thumbnail: string | 'self';
+          url_overridden_by_dest: string;
+          author: string;
+        };
+      }
+    ];
+    error: any;
+    loading: any;
+  } = useFetch('https://www.reddit.com/r/FancyFollicles.json');
 
   return (
+    // TODO Pull down to refresh (run API call again, but only dispatch to anything that has CHANGED)
     <ScrollView style={styles.getStartedContainer}>
+      <Stack.Screen options={{ headerShown: false }} />
+
       {/* TODO Add a filter button for like 'Show me people of x hair type within x miles of me, etc. */}
       <View style={styles.container}>
         {/* TODO Offload to custom component with only the needed text, standardized format */}
         <View style={styles.cardsContainer}>
-          {/* {!loading &&
-            data &&
-            data.map((user: IAPIData, index: number) => (
-              <GridItem key={index} index={index} user={user} sourceImg={} />
-            ))} */}
           {!loading &&
             !error &&
             data &&
-            data.map((child: any, index: number) => (
-              //  thumbnail: string,
-              //  url_overridden_by_dest: string,
-              //  author: string,
-              // <Text>{child.data.author}</Text>
-              <GridItem
-                key={index}
-                imgSrc={
-                  child.data.thumbnail !== 'self' ? child.data.thumbnail : null
-                }
-                user={{
-                  username: child.author,
-                  id: 3,
-                  name: child.data.author,
-                  address: {
-                    street: 'string',
-                    suite: 'string',
-                    city: 'string',
-                    zipcode: 44444,
-                    geo: {
-                      lat: 50,
-                      lng: -20,
+            data
+              .filter((item: any) => item.data.thumbnail !== 'self')
+              .map((item: any, index: number) => (
+                <GridItem
+                  key={index}
+                  imgSrc={
+                    item.data.thumbnail !== 'self' ? item.data.thumbnail : null
+                  }
+                  user={{
+                    username: item.author,
+                    id: 3,
+                    name: item.data.author,
+                    address: {
+                      street: 'string',
+                      suite: 'string',
+                      city: 'string',
+                      zipcode: 44444,
+                      geo: {
+                        lat: 50,
+                        lng: -20,
+                      },
                     },
-                  },
-                  company: {
-                    bs: 'foooo',
-                    catchPhrase: 'hello',
-                    name: JSON.stringify(child.data.ups),
-                  },
-                  email: 'foo@bar.com',
-                  phone: 911,
-                  website: 'google.com',
-                }}
-              />
-              // <Text style={{ color: theme.colors.text }}>{child.url_overridden_by_dest}</Text>
-            ))}
+                    company: {
+                      bs: 'foooo',
+                      catchPhrase: 'hello',
+                      name: JSON.stringify(item.data.ups),
+                    },
+                    email: 'foo@bar.com',
+                    phone: 911,
+                    website: 'google.com',
+                  }}
+                />
+              ))}
         </View>
       </View>
 

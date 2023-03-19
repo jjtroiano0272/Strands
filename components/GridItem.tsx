@@ -28,15 +28,12 @@ export default function GridItem({
   imgSrc?: string;
 }) {
   const theme = useTheme();
-  // const { data, error, loading } = useFetch(
-  //   'https://jsonplaceholder.typicode.com/users'
-  // );
+  
   return (
     <Link
       href={{
         pathname: `/${user?.username}`,
         params: {
-          // id: index + 64,
           name: user?.name,
           company: user?.company.name,
           username: user?.username,
@@ -61,7 +58,6 @@ export default function GridItem({
 
         <Card.Cover
           source={{
-            // uri: `https://picsum.photos/id/${index + 64}/200/200`,
             uri: imgSrc,
           }}
         />

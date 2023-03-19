@@ -14,6 +14,12 @@ import { getAnalytics } from 'firebase/analytics';
 import { firebaseConfig } from '../firebaseConfig';
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
 import { UserProvider } from '../context/UserContext';
+import { Provider as ReduxProvider } from 'react-redux';
+import { createStoreHook } from 'react-redux';
+import rootReducer from '../redux/reducers';
+// import thunk from 'redux-thunk';
+
+// const store = createStoreHook(rootReducer);
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -26,7 +32,7 @@ export {
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: 'index',
+  initialRouteName: 'home',
 };
 
 export default function RootLayout() {
@@ -54,17 +60,32 @@ function RootLayoutNav() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
 
+  if (false) {
+    return (
+      <Stack
+        screenOptions={{
+          headerRight: () => (
+            <AntDesign
+              name='infocirlceo'
+              size={24}
+              color={colorScheme === 'dark' ? 'white' : 'black'}
+              onPress={() => router.push('/modal')}
+            />
+          ),
+        }}
+      >
+        <Stack.Screen name='login' />
+      </Stack>
+    );
+  }
+
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      {/* <ReduxProvider store={store}> */}
       <UserProvider>
         <Stack
           screenOptions={{
             headerRight: () => (
-              // <MaterialCommunityIcons
-              //   name='airballoon'
-              //   size={24}
-              //   color='white'
-              // />
               <AntDesign
                 name='infocirlceo'
                 size={24}
@@ -74,17 +95,14 @@ function RootLayoutNav() {
             ),
           }}
         >
-          {/* This displays whatever files are in the (tabs) dir as tabs itself */}
-          {/* <Stack.Screen name='(tabs)' options={{ headerShown: false }} /> */}
-          {/* <Stack.Screen
-            name='index'
-            options={{ headerShown: true, title: 'Home' }}
-          /> */}
-
+          <Stack.Screen
+            name='home'
+            options={{ headerShown: true, title: '' }}
+          />
           <Stack.Screen name='modal' options={{ presentation: 'modal' }} />
-          <Stack.Screen name='home' options={{ headerShown: true }} />
         </Stack>
       </UserProvider>
+      {/* </ReduxProvider> */}
     </ThemeProvider>
   );
 }
