@@ -22,8 +22,8 @@ import rootReducer from '../redux/reducers';
 // const store = createStoreHook(rootReducer);
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+export const firebaseApp = initializeApp(firebaseConfig);
+const analytics = getAnalytics(firebaseApp);
 
 export {
   // Catch any errors thrown by the Layout component.
