@@ -77,8 +77,14 @@ const Feed = () => {
                   }
                   user={{
                     username: item.author,
-                    id: 3,
+                    company: {
+                      bs: 'foooo',
+                      catchPhrase: 'hello',
+                      name: JSON.stringify(item.data.ups),
+                    },
                     name: item.data.author,
+                    // Any keys after this aren't consumed by [username]
+                    id: 3,
                     address: {
                       street: 'string',
                       suite: 'string',
@@ -88,11 +94,6 @@ const Feed = () => {
                         lat: 50,
                         lng: -20,
                       },
-                    },
-                    company: {
-                      bs: 'foooo',
-                      catchPhrase: 'hello',
-                      name: JSON.stringify(item.data.ups),
                     },
                     email: 'foo@bar.com',
                     phone: 911,

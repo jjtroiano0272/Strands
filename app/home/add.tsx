@@ -115,14 +115,14 @@ export default function Add() {
     //   console.error('outer error');
     // }
 
-    const imgUrl = image ? encodeURIComponent(image) : null;
+    const imgUri = image ? encodeURIComponent(image) : null;
 
     // VERSION A
-    if (imgUrl) {
+    if (imgUri) {
       router.push({
         pathname: './save',
         params: {
-          imgUrl,
+          imgUri,
         },
       });
     }
@@ -192,7 +192,7 @@ export default function Add() {
 
             <Button
               mode='contained'
-              onPress={() => handleSaveImage(image)}
+              onPress={() => handleSaveImage()}
               loading={fetchingData}
             >
               SAVE

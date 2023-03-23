@@ -28,7 +28,9 @@ export default function GridItem({
   imgSrc?: string;
 }) {
   const theme = useTheme();
-  
+
+  console.log(`in GridIte, reading imgSrc: ${imgSrc}`);
+
   return (
     <Link
       href={{
@@ -37,6 +39,7 @@ export default function GridItem({
           name: user?.name,
           company: user?.company.name,
           username: user?.username,
+          // imgSrc: imgSrc,
         },
       }}
     >

@@ -1,5 +1,6 @@
+import { faker } from '@faker-js/faker';
 import React, { useEffect } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { IAPIData } from '../@types/types';
 import Colors from '../constants/Colors';
 import useFetch from '../hooks/useFetch';
@@ -10,13 +11,16 @@ import {
   Button,
   Card,
   Title,
+  Subheading,
   Paragraph,
   MD3LightTheme,
   MD3DarkTheme,
+  List,
 } from 'react-native-paper';
 import { Text, View } from '../components/Themed';
 import { Link, Stack, useRouter, useSearchParams } from 'expo-router';
 import { useTheme } from '@react-navigation/native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function ClientProfile() {
   const router = useRouter();
@@ -34,16 +38,19 @@ export default function ClientProfile() {
     imgSrc?: string;
   };
 
+  const foo = useSearchParams();
+  console.log(`search params: ${JSON.stringify(foo)}`);
+
   const { id, name, company, username, imgSrc }: NewType = useSearchParams();
 
   useEffect(() => {
     // console.log(`uri used: https://picsum.photos/id/${id + 64}/700/700`);
-    console.log(`username: ${username}`);
+    console.log(`imgSrc is??: ${imgSrc}`);
   }, []);
 
   return (
     <ScrollView style={styles.getStartedContainer}>
-      <Stack.Screen options={{ title: `@${username}` }} />
+      <Stack.Screen options={{ title: `@${name}` }} />
 
       {/* TODO Offload to custom component with only the needed text, standardized format */}
       <Card
@@ -74,6 +81,32 @@ export default function ClientProfile() {
           {/* TWO COLUMNS of list items */}
           {/* Recent reviews, listed in order of submission and saying who wrote what, and their own rating */}
 
+          {/* Phone + prompt to hook into API to call */}
+          <List.Item
+            theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+            title={faker.phone.number('###-###-###').toString()}
+            // description='Item description'
+            left={props => (
+              <MaterialCommunityIcons
+                name='phone'
+                size={24}
+                color={theme.colors.primary}
+              />
+            )}
+            onPress={() => null}
+            style={{ padding: 10, marginVertical: 10, borderRadius: 7 }}
+          />
+
+          {/* Salon */}
+          <Subheading style={[styles.subtitle, { color: theme.colors.text }]}>
+            Salon
+          </Subheading>
+          <Paragraph>Redken</Paragraph>
+
+          {/* Comments */}
+          <Subheading style={[styles.subtitle, { color: theme.colors.text }]}>
+            Comments
+          </Subheading>
           <Paragraph style={{ color: theme.colors.text }}>
             Code in an ideal world, for deep dive we have to leverage up the
             messaging it just needs more cowbell, but deliverables, yet this
@@ -121,5 +154,9 @@ const styles = StyleSheet.create({
   },
   helpLinkText: {
     textAlign: 'center',
+  },
+  subtitle: {
+    fontWeight: 'bold',
+    fontSize: 20,
   },
 });

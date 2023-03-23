@@ -45,9 +45,9 @@ export default function EditScreenInfo({
                 href={{
                   pathname: '/clientProfile',
                   params: {
-                    id: index + 64,
-                    name: user.name,
-                    company: user.company.name,
+                    // id: index + 64,
+                    // name: user.name,
+                    // company: user.company.name,
                   },
                 }}
               >

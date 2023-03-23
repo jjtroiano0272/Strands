@@ -1,5 +1,5 @@
 import * as FileSystem from 'expo-file-system';
-import { View, Image, Text, TouchableOpacity } from 'react-native';
+import { View, Image, Text, TouchableOpacity, Alert } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import {
   useSearchParams,
@@ -9,13 +9,21 @@ import {
 } from 'expo-router';
 import { RouteProp, useRoute, useTheme } from '@react-navigation/native';
 import { Button, TextInput } from 'react-native-paper';
+// Firebase 8 imports
+// import firebase from 'firebase';
+// require('firebase/firestore');
+// require('firebase/firebase-storage');
+// Firebase 9 imports
 import {
   getStorage,
   ref,
   uploadBytesResumable,
   getDownloadURL,
   uploadBytes,
+  UploadTask,
 } from 'firebase/storage';
+import { getAuth } from 'firebase/auth';
+
 import { firebaseApp } from '../_layout';
 import { Dropdown } from 'react-native-material-dropdown';
 import DropDownPicker from 'react-native-dropdown-picker';
@@ -23,107 +31,110 @@ import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 
 export default function save() {
   type RouteParams = {
-    imgUrl: string;
+    imgUri: string;
   };
 
+  // const storage = getStorage(firebaseApp);
   const theme = useTheme();
-  const storage = getStorage(firebaseApp);
-
   const route = useRoute<RouteProp<Record<string, RouteParams>, string>>();
-  const { imgUrl } = route.params;
+  const router = useRouter();
+  const { imgUri } = route.params;
 
   const [comment, setComment] = useState<string>('');
-
   const [defaultRating, setDefaultRating] = useState(2);
   const [maxRating, setMaxRating] = useState([1, 2, 3, 4, 5]);
   const [loading, setLoading] = useState<boolean>(false);
-  const router = useRouter();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownValue, setDropdownValue] = useState<string[] | null>(null);
+  const labels = [
+    '1A',
+    '1B',
+    '1C',
+    '2A',
+    '2B',
+    '2C',
+    '3A',
+    '3B',
+    '3C',
+    '4A',
+    '4B',
+    '4C',
+  ];
+  const labelObjs = labels.map(label => ({ label, value: label }));
+  const [items, setItems] = useState(labelObjs);
 
   const handleImageUpload = async () => {
     setLoading(true);
-    // upload to firestore...
-    // const uri = 'foo/string';
-    // const res = await fetch(uri);
-    // const blob = await res.blob();
-    // const task = ref(storage);
 
-    // TODO Just symbolic file for now
-    const file = { name: 'foo', uri: 'file/path/and/name.exdt' };
-    const storage = getStorage();
-    const storageRef = ref(storage);
+    // Firebase 8 methodology
+    // const response = await fetch(imgUri);
+    // const blob = await response.blob();
+    // const childPath = `post/${
+    //   firebase.auth().currentUser?.uid
+    // }/${Math.random().toString(36)}`;
+    // console.log(`childPath: ${childPath}`);
 
-    const imagesRef = ref(storage, 'images');
+    // const task = firebase.storage().ref().child(childPath).put(blob);
+    // const taskProgress = (snapshot: any) => {
+    //   console.log(`transferred: ${snapshot.bytesTransferred}`);
+    // };
 
-    uploadBytes(imagesRef, imgUrl)
-      .then(res => {
-        console.log(`upload success! res: ${JSON.stringify(res)}`);
-        setLoading(false);
-        router.push('/');
-      })
-      .catch(err => {
-        console.error(`Upload error! ${err}`);
-        setLoading(false);
-      });
+    // const taskCompleted = (snapshot: any) => {
+    //   snapshot.ref
+    //     .getDownloadURL()
+    //     .then((snapshot: any) => console.log(`snapshot: ${snapshot}`));
+    // };
+
+    // const taskError = (snapshot: any) => {
+    //   console.error(`Error uploading! ${snapshot}`);
+    // };
+
+    // task.on('state_changed', taskProgress, taskCompleted, taskError);
+
+    // Firebase 9 methodology
+    // const storage = getStorage();
+    // const foo = Date.now().toString();
+    // const storageRef = ref(storage, `images/some-child-${foo}`);
+
+    // const response = await fetch(imgUri);
+    // const blob = await response.blob();
+
+    // uploadBytes(storageRef, blob)
+    //   .then(snapshot => {
+    //     console.log('Uploaded a blob or file!');
+    //     setLoading(false);
+    //   })
+    //   .catch(err => console.error(`Whoops! ${err}`));
+
+    // Firebase 9 methodology, II
+    const response = await fetch(imgUri);
+    const blob = await response.blob();
+    const childPath = `post/${
+      getAuth().currentUser?.uid
+    }/${Math.random().toString(36)}`;
+    console.log(`childPath: ${childPath}`);
+
+    const storageRef = ref(getStorage());
+    const fileRef = ref(storageRef, childPath);
+    const uploadTask = (fileRef as any).put(blob);
+
+    // const uploadTask: UploadTask = fileRef.put(blob);
+
+    uploadTask.on(
+      'state_changed',
+      (snapshot: any) => {
+        console.log(`transferred: ${snapshot.bytesTransferred}`);
+      },
+      (error: any) => {
+        console.error(`Error uploading! ${error}`);
+      },
+      () => {
+        getDownloadURL(fileRef).then(downloadURL => {
+          console.log(`downloadURL: ${downloadURL}`);
+        });
+      }
+    );
   };
-
-  // console.log(localParams);
-  // console.log(`route in Save: ${route}`);
-  console.log(`route in Save: ${route.params.imgUrl}`);
-
-  // const testArr = Array(4)
-  //   .fill('A')
-  //   .map(x => Array(3).fill(['A', 'B', 'C']));
-
-  // console.log(testArr);
-
-  // const hairTypes = Array.from({ length: 4 }, () =>
-  //   Array.from({ length: 3 }, (_, index) => ({
-  //     value: String.fromCharCode('A'.charCodeAt(0) + index),
-  //   }))
-  // );
-  // console.log(hairTypes);
-
-  const hairTypes = [
-    { value: 'A' },
-    { value: 'B' },
-    { value: 'C' },
-    { value: 'A' },
-    { value: 'B' },
-    { value: 'C' },
-  ];
-
-  let data = [
-    {
-      value: 'Banana',
-    },
-    {
-      value: 'Mango',
-    },
-    {
-      value: 'Pear',
-    },
-  ];
-
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState<string[] | null>(null);
-  const [items, setItems] = useState([
-    { label: '1A', value: '1A' },
-    { label: '1B', value: '1B' },
-    { label: '1C', value: '1C' },
-    { label: '2A', value: '2A' },
-    { label: '2B', value: '2B' },
-    { label: '2C', value: '2C' },
-    { label: '3A', value: '3A' },
-    { label: '3B', value: '3B' },
-    { label: '3C', value: '3C' },
-    { label: '4A', value: '4A' },
-    { label: '4B', value: '4B' },
-    { label: '4C', value: '4C' },
-  ]);
-
-  useEffect(() => {
-    console.log(`loading: ${loading}`);
-  }, [loading]);
 
   return (
     <>
@@ -137,19 +148,15 @@ export default function save() {
         }}
       >
         <Stack.Screen options={{ headerShown: false }} />
-        {route?.params?.imgUrl && (
-          <Image
-            source={{ uri: route.params.imgUrl, height: 300, width: 300 }}
-          />
-        )}
+        {imgUri && <Image source={{ uri: imgUri, height: 300, width: 300 }} />}
         {/* Hair type */}
         <DropDownPicker
           placeholder='Hair type'
-          open={open}
-          value={value}
+          open={dropdownOpen}
+          value={dropdownValue}
           items={items}
-          setOpen={setOpen}
-          setValue={setValue}
+          setOpen={setDropdownOpen}
+          setValue={setDropdownValue}
           setItems={setItems}
           theme={!theme.dark ? 'LIGHT' : 'DARK'}
           multiple={true}
@@ -184,14 +191,6 @@ export default function save() {
                 key={item}
                 onPress={() => setDefaultRating(item)}
               >
-                {/* <Image
-                  style={styles.starImageStyle}
-                  source={
-                    item <= defaultRating
-                      ? { uri: starImageFilled }
-                      : { uri: starImageCorner }
-                  }
-                /> */}
                 <MaterialCommunityIcons
                   name={item <= defaultRating ? 'star' : 'star-outline'}
                   size={36}
@@ -201,6 +200,11 @@ export default function save() {
             );
           })}
         </View>
+
+        {/* Responds well to */}
+        {/* <TextInput /> */}
+        {/* Responds poorly to */}
+        {/* <TextInput /> */}
 
         {/* Comments */}
         <TextInput
