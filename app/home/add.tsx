@@ -55,12 +55,13 @@ export default function Add() {
   };
 
   const handleTakePicture = async () => {
-    // tkaing one
     if (camera) {
       const res = camera._onCameraReady();
-      console.log(`What this is?: ${res}`);
+      // console.log(`What this is?: ${res}`);
 
-      const data = await camera.takePictureAsync();
+      const data = await camera
+        .takePictureAsync()
+        .catch(err => console.error(`Error when taking picture! ${err}`));
       setImage(data.uri);
     }
   };
@@ -74,7 +75,7 @@ export default function Add() {
       quality: 1,
     });
 
-    console.log(result);
+    // console.log(result);
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
@@ -145,11 +146,6 @@ export default function Add() {
       }
     })();
   }, []);
-
-  useEffect(() => {
-    console.log(`image: ${image}`);
-    console.log(`image type: ${typeof image}`);
-  }, [image]);
 
   return (
     <View style={{ flex: 1 }}>

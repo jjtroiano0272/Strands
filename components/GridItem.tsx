@@ -29,8 +29,6 @@ export default function GridItem({
 }) {
   const theme = useTheme();
 
-  console.log(`in GridIte, reading imgSrc: ${imgSrc}`);
-
   return (
     <Link
       href={{

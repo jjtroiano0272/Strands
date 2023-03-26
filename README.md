@@ -4,6 +4,14 @@ readme tracking
 > > [ ] Chromatic aberration effect stuff under the status bars (top and bottom of screen)
 > > [ ] Do NOT show 'save' tab on bottom
 > > [ ] Route user data correctly
+> > 23MAR2023
+> > [ ] Pass user data when clicking through
+> > [ ] Fix error messages
+> > 24MAR2023
+> > [ ] Turn select menu into a grid of selectable elements?
+> > [ ] Navigate back to home when post is successful
+> > [ ] Fix console.warn's
+> > [ ] MUI ripple on TouchableOpacity or just generally buttons
 
 1st page
 user profile/data:

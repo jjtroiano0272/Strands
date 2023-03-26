@@ -1,25 +1,61 @@
-import { View, Text } from 'react-native';
+import { View, Text, Alert, ScrollView, Image } from 'react-native';
 import React from 'react';
 import { DarkTheme, useTheme } from '@react-navigation/native';
 import { Stack } from 'expo-router';
+import { List, MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
+import useFetch from '../../../hooks/useFetch';
 
 const Messages = () => {
   const theme = useTheme();
 
+  const {
+    data,
+    error,
+    loading,
+  }: {
+    data: [
+      {
+        data: {
+          title: string;
+          thumbnail: string | 'self';
+          url_overridden_by_dest: string;
+          author: string;
+        };
+      }
+    ];
+    error: any;
+    loading: any;
+  } = useFetch('https://www.reddit.com/r/FancyFollicles.json');
+
   return (
-    <View>
+    <ScrollView>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <Text style={{ color: theme.colors.text, margin: 20, padding: 10 }}>
-        Messages with Rebecca
-      </Text>
-      <Text style={{ color: theme.colors.text, margin: 20, padding: 10 }}>
-        Messages with Josh
-      </Text>
-      <Text style={{ color: theme.colors.text, margin: 20, padding: 10 }}>
-        Messages with Monica
-      </Text>
-    </View>
+      {data &&
+        data
+          .filter((item: any) => item.data.thumbnail !== 'self')
+          .map((item: any, index: number) => (
+            // item.data.thumbnail !== 'self' ? item.data.thumbnail : null}/>))
+            <List.Item
+              style={{ marginVertical: 20, padding: 10 }}
+              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+              title={item.data.author}
+              description='Most recent message'
+              // left={props => <List.Icon {...props} icon='message' />}
+              left={props => (
+                <Image
+                  source={{ uri: item.data.thumbnail }}
+                  style={{ height: 50, width: 50, borderRadius: 20 }}
+                />
+              )}
+              onPress={() =>
+                Alert.alert(
+                  `This would then navgiate (router.push) to the next screen of message with that user`
+                )
+              }
+            />
+          ))}
+    </ScrollView>
   );
 };
 

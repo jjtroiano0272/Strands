@@ -1,5 +1,14 @@
 import * as FileSystem from 'expo-file-system';
-import { View, Image, Text, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Image,
+  Text,
+  TouchableOpacity,
+  Alert,
+  Keyboard,
+  TouchableWithoutFeedback,
+  FlatList,
+} from 'react-native';
 import React, { useEffect, useState } from 'react';
 import {
   useSearchParams,
@@ -8,7 +17,15 @@ import {
   useRouter,
 } from 'expo-router';
 import { RouteProp, useRoute, useTheme } from '@react-navigation/native';
-import { Button, TextInput } from 'react-native-paper';
+import {
+  Button,
+  MD3DarkTheme,
+  MD3LightTheme,
+  TextInput,
+  Modal,
+  Portal,
+  Provider as ModalProvider,
+} from 'react-native-paper';
 // Firebase 8 imports
 // import firebase from 'firebase';
 // require('firebase/firestore');
@@ -33,6 +50,7 @@ export default function save() {
   type RouteParams = {
     imgUri: string;
   };
+  console.log(`getAuth: ${JSON.stringify(getAuth())}`);
 
   // const storage = getStorage(firebaseApp);
   const theme = useTheme();
@@ -45,11 +63,15 @@ export default function save() {
   const [maxRating, setMaxRating] = useState([1, 2, 3, 4, 5]);
   const [loading, setLoading] = useState<boolean>(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  // const dropdownOpen = false;
+  // const setDropdownOpen = () => {
+  //   showModal();
+  // };
   const [dropdownValue, setDropdownValue] = useState<string[] | null>(null);
   const labels = [
-    '1A',
-    '1B',
-    '1C',
+    // '1A',
+    // '1B',
+    // '1C',
     '2A',
     '2B',
     '2C',
@@ -60,6 +82,46 @@ export default function save() {
     '4B',
     '4C',
   ];
+  const labelsToImages = {
+    // '1A': require('../../assets/images/hairType_1A.png'),
+    // '1B': require('../../assets/images/hairType_1B.png'),
+    // '1C': require('../../assets/images/hairType_1C.png'),
+    '2A': require('../../assets/images/hairType_2A.png'),
+    '2B': require('../../assets/images/hairType_2B.png'),
+    '2C': require('../../assets/images/hairType_2C.png'),
+    '3A': require('../../assets/images/hairType_3A.png'),
+    '3B': require('../../assets/images/hairType_3B.png'),
+    '3C': require('../../assets/images/hairType_3C.png'),
+    '4A': require('../../assets/images/hairType_4A.png'),
+    '4B': require('../../assets/images/hairType_4B.png'),
+    '4C': require('../../assets/images/hairType_4C.png'),
+  };
+  const newOneToUse: any = [
+    require('../../assets/images/hairType_2A.png'),
+    require('../../assets/images/hairType_2B.png'),
+    require('../../assets/images/hairType_2C.png'),
+    require('../../assets/images/hairType_3A.png'),
+    require('../../assets/images/hairType_3B.png'),
+    require('../../assets/images/hairType_3C.png'),
+    require('../../assets/images/hairType_4A.png'),
+    require('../../assets/images/hairType_4B.png'),
+    require('../../assets/images/hairType_4C.png'),
+  ];
+
+  const hairTypeImages = [
+    // { id: '2A', uri: 'https://example.com/image1.jpg' },
+
+    { id: '2A', uri: require('../../assets/images/hairType_2A.png') },
+    { id: '2B', uri: require('../../assets/images/hairType_2B.png') },
+    { id: '2C', uri: require('../../assets/images/hairType_2C.png') },
+    { id: '3A', uri: require('../../assets/images/hairType_3A.png') },
+    { id: '3B', uri: require('../../assets/images/hairType_3B.png') },
+    { id: '3C', uri: require('../../assets/images/hairType_3C.png') },
+    { id: '4A', uri: require('../../assets/images/hairType_4A.png') },
+    { id: '4B', uri: require('../../assets/images/hairType_4B.png') },
+    { id: '4C', uri: require('../../assets/images/hairType_4C.png') },
+  ];
+
   const labelObjs = labels.map(label => ({ label, value: label }));
   const [items, setItems] = useState(labelObjs);
 
@@ -107,37 +169,78 @@ export default function save() {
     //   .catch(err => console.error(`Whoops! ${err}`));
 
     // Firebase 9 methodology, II
+    // const response = await fetch(imgUri);
+    // const blob = await response.blob();
+    // const childPath = `images/${
+    //   getAuth().currentUser?.uid
+    // }/${Math.random().toString(36)}`;
+    // console.log(`childPath: ${childPath}`);
+
+    // const storageRef = ref(getStorage());
+    // const fileRef = ref(storageRef, childPath);
+    // const uploadTask = (fileRef as any).put(blob);
+
+    // // const uploadTask: UploadTask = fileRef.put(blob);
+
+    // uploadTask.on(
+    //   'state_changed',
+    //   (snapshot: any) => {
+    //     console.log(`transferred: ${snapshot.bytesTransferred}`);
+    //   },
+    //   (error: any) => {
+    //     console.error(`Error uploading! ${error}`);
+    //   },
+    //   () => {
+    //     getDownloadURL(fileRef).then(downloadURL => {
+    //       console.log(`downloadURL: ${downloadURL}`);
+    //     });
+    //   }
+    // );
+
+    // Firebase Methodology, Part III
     const response = await fetch(imgUri);
     const blob = await response.blob();
-    const childPath = `post/${
-      getAuth().currentUser?.uid
-    }/${Math.random().toString(36)}`;
+    const storage = getStorage();
+    const auth = getAuth();
+    const childPath = `post/${auth.currentUser?.uid}/${Math.random().toString(
+      36
+    )}`;
     console.log(`childPath: ${childPath}`);
 
-    const storageRef = ref(getStorage());
-    const fileRef = ref(storageRef, childPath);
-    const uploadTask = (fileRef as any).put(blob);
+    const storageRef = ref(storage, childPath);
+    const task = uploadBytes(storageRef, blob);
 
-    // const uploadTask: UploadTask = fileRef.put(blob);
+    const taskProgress = (snapshot: { bytesTransferred: any }) => {
+      console.log(`transferred: ${snapshot.bytesTransferred}`);
+    };
 
-    uploadTask.on(
-      'state_changed',
-      (snapshot: any) => {
-        console.log(`transferred: ${snapshot.bytesTransferred}`);
-      },
-      (error: any) => {
-        console.error(`Error uploading! ${error}`);
-      },
-      () => {
-        getDownloadURL(fileRef).then(downloadURL => {
-          console.log(`downloadURL: ${downloadURL}`);
-        });
-      }
-    );
+    const taskCompleted = async (snapshot: {
+      ref: { getDownloadURL: () => any };
+    }) => {
+      const downloadURL = await snapshot.ref.getDownloadURL();
+      console.log(`snapshot: ${downloadURL}`);
+    };
+
+    const taskError = (error: any) => {
+      console.error(`Error uploading! ${error}`);
+    };
+
+    // task.on('state_changed', taskProgress, taskError, taskCompleted);
+    task.then(snapshot => {
+      console.log('Does this mean it was successful?');
+      console.log(`metadata: ${snapshot.metadata}`);
+    });
+
+    setLoading(false);
   };
 
+  const [modalVisible, setModalVisible] = useState(false);
+  const showModal = () => setModalVisible(true);
+  const hideModal = () => setModalVisible(false);
+  const containerStyle = { backgroundColor: 'white', padding: 20 };
+
   return (
-    <>
+    <ModalProvider>
       <View
         style={{
           flex: 1,
@@ -151,16 +254,17 @@ export default function save() {
         {imgUri && <Image source={{ uri: imgUri, height: 300, width: 300 }} />}
         {/* Hair type */}
         <DropDownPicker
-          placeholder='Hair type'
           open={dropdownOpen}
           value={dropdownValue}
           items={items}
-          setOpen={setDropdownOpen}
+          setOpen={setModalVisible}
           setValue={setDropdownValue}
           setItems={setItems}
           theme={!theme.dark ? 'LIGHT' : 'DARK'}
           multiple={true}
+          max={2}
           mode='BADGE'
+          placeholder='Hair type'
           badgeDotColors={[
             '#e76f51',
             '#00b4d8',
@@ -171,6 +275,58 @@ export default function save() {
             '#e9c46a',
           ]}
         />
+        <Portal>
+          <Modal
+            visible={modalVisible}
+            onDismiss={hideModal}
+            // contentContainerStyle={[
+            //   containerStyle,
+            //   {
+            //     height: 300,
+            //     width: 300,
+            //     justifyContent: 'center',
+            //     alignItems: 'center',
+            //   },
+            // ]}
+          >
+            {/* <View
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                padding: 8,
+              }}
+            > */}
+            <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+              <FlatList
+                data={hairTypeImages}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      dropdownValue === null
+                        ? setDropdownValue([item.id])
+                        : setDropdownValue([...dropdownValue, item.id]);
+                      setModalVisible(false);
+                    }}
+                  >
+                    <Image
+                      style={{ width: 120, height: 120, margin: 10 }}
+                      source={item.uri}
+                    />
+                  </TouchableOpacity>
+                )}
+                keyExtractor={item => item.id}
+                numColumns={3}
+              />
+            </View>
+
+            {/* TODO Requires attribution to use! */}
+            {/* </View> */}
+          </Modal>
+        </Portal>
+
         {/* Hair length? */}
         {/* Color */}
         {/* Treatment done */}
@@ -213,13 +369,28 @@ export default function save() {
           value={comment}
           onChangeText={text => setComment(text)}
           multiline={true}
+          theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         />
       </View>
-      <View style={{ paddingVertical: 30, paddingHorizontal: 10 }}>
-        <Button mode='contained' onPress={handleImageUpload} loading={loading}>
-          {!loading && 'Upload'}
+
+      <View
+        style={{
+          paddingVertical: 30,
+          paddingHorizontal: 10,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <Button
+          mode='contained'
+          onPress={handleImageUpload}
+          loading={loading}
+          style={{ borderRadius: 50, width: 150 }}
+          contentStyle={{ padding: 20 }}
+        >
+          {!loading && 'Post'}
         </Button>
       </View>
-    </>
+    </ModalProvider>
   );
 }
