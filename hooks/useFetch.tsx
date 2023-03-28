@@ -30,8 +30,6 @@ function useFetch(url: string) {
         // res.data && setData(res.data);
 
         // res.data is where it starts to become the reddit.json response we see in Insomnia
-        console.log(`in useFetch keys: ${Object.keys(res.data.data.children)}`);
-        console.log(`data => ${res.data.data.children}`);
         setData(res.data.data.children);
       })
       .catch((err: any) => {

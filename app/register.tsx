@@ -19,7 +19,7 @@ import { UserContext } from '../context/UserContext';
 import { Auth } from '../components/auth/Auth';
 import { Link, Stack } from 'expo-router';
 
-export default function Login() {
+export default function Register() {
   const auth = getAuth();
   const [email, setEmail] = useState<string | null>(null);
   const [password, setPassword] = useState<string | null>(null);
@@ -32,41 +32,6 @@ export default function Login() {
   const onToggleSnackBar = () => setSnackbarVisible(!snackbarVisible);
   const onDismissSnackBar = () => setSnackbarVisible(false);
 
-  const handleLogin = () => {
-    // Login Logic
-    signInWithEmailAndPassword(auth, email!, password!)
-      .then(res => {
-        console.log(`login res: ${JSON.stringify(res)}`);
-        userCtx?.setIsLoggedIn(true);
-        // Alert.alert(`You're in, bbbbbb!`);
-      })
-      // Err code:  ERROR  Sign in error! {
-      //    "code":"auth/user-not-found",
-      //    "customData":{},
-      //    "name":"FirebaseError"
-      // }
-      .catch(err => {
-        console.log(`Sign in error! ${err}`);
-
-        if (err.code === 'auth/user-not-found') {
-          setErrors('No user exists with that name!');
-          setSnackbarVisible(true);
-        } else if (err.code === 'auth/invalid-email') {
-          setErrors('Invalid email!');
-          setSnackbarVisible(true);
-        } else if (err.code === 'auth/invalid-password') {
-          setErrors('Invalid password entered!!');
-          setSnackbarVisible(true);
-        } else if (err.code === 'auth/missing-email') {
-          // Client-side should handle this just in the UI
-          return;
-        } else {
-          setErrors('Unspecified error!');
-          setSnackbarVisible(true);
-        }
-      });
-  };
-
   const handleRegister = () => {
     createUserWithEmailAndPassword(auth, email!, password!)
       .then(userCredential => {
@@ -75,15 +40,21 @@ export default function Login() {
 
         console.log(`Registered successfully!\n${JSON.stringify(user)}`);
 
-        Alert.alert('Registeration success!');
+        setErrors('Registered successfully!');
+        setSnackbarVisible(true);
+
+        // TODO Set Auth to now be verified, which leads to the user being redirected to feed (since they're logged in)
+        user.refreshToken;
+        userCtx?.setIsLoggedIn(true);
       })
-      .catch(error => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
+      .catch(err => {
+        const errorCode = err.code;
+        const errorMessage = err.message;
         // ..
         console.log(`Registration error!: ${errorCode}: ${errorMessage}`);
 
-        Alert.alert('Could not register!', errorMessage);
+        setErrors(`Couldn't register! ${err.message}`);
+        setSnackbarVisible(true);
       });
   };
 
@@ -91,13 +62,6 @@ export default function Login() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* TODO This needs to be only on register screen. Makes no sense to have a name field FOR LOGGING IN */}
-      {/* <TextInput
-        style={{ width: 300 }}
-        placeholder='name'
-        onChangeText={name => setName(name)}
-        theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-      /> */}
       <TextInput
         style={{ width: 300 }}
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
@@ -114,25 +78,31 @@ export default function Login() {
         onChangeText={password => setPassword(password)}
         secureTextEntry={true}
       />
+      <TextInput
+        style={{ width: 300 }}
+        placeholder='name'
+        onChangeText={name => setName(name)}
+        theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+      />
+
       <Button
         style={{ margin: 10, marginTop: 30, width: 300 }}
         mode='contained'
         contentStyle={{ padding: 10 }}
-        onPress={handleLogin}
+        onPress={handleRegister}
       >
-        Login
+        Create account
       </Button>
+      {/* <Button
+        style={{ margin: 10, width: 300 }}
+        contentStyle={{ padding: 20 }}
+        // onPress={handleRegister}
+        // onPress={handleRegister}
+      >
+        Register
+      </Button> */}
 
-      <Link href='register'>
-        <Button
-          style={{ margin: 10, width: 300 }}
-          contentStyle={{ padding: 20 }}
-          // onPress={handleRegister}
-          // onPress={() => console.log('registering....')}
-        >
-          Register
-        </Button>
-      </Link>
+      {/* <Link href='register'>Register me!</Link> */}
 
       <Auth />
 

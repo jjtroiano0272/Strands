@@ -41,7 +41,7 @@ import {
 } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
 
-import { firebaseApp } from '../_layout';
+// import { firebaseApp } from '../_layout';
 import { Dropdown } from 'react-native-material-dropdown';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
@@ -62,6 +62,7 @@ export default function save() {
   const [defaultRating, setDefaultRating] = useState(2);
   const [maxRating, setMaxRating] = useState([1, 2, 3, 4, 5]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [postSuccess, setPostSuccess] = useState<boolean>(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   // const dropdownOpen = false;
   // const setDropdownOpen = () => {
@@ -126,112 +127,126 @@ export default function save() {
   const [items, setItems] = useState(labelObjs);
 
   const handleImageUpload = async () => {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    // Firebase 8 methodology
-    // const response = await fetch(imgUri);
-    // const blob = await response.blob();
-    // const childPath = `post/${
-    //   firebase.auth().currentUser?.uid
-    // }/${Math.random().toString(36)}`;
-    // console.log(`childPath: ${childPath}`);
+      // Firebase 8 methodology
+      // const response = await fetch(imgUri);
+      // const blob = await response.blob();
+      // const childPath = `post/${
+      //   firebase.auth().currentUser?.uid
+      // }/${Math.random().toString(36)}`;
+      // console.log(`childPath: ${childPath}`);
 
-    // const task = firebase.storage().ref().child(childPath).put(blob);
-    // const taskProgress = (snapshot: any) => {
-    //   console.log(`transferred: ${snapshot.bytesTransferred}`);
-    // };
+      // const task = firebase.storage().ref().child(childPath).put(blob);
+      // const taskProgress = (snapshot: any) => {
+      //   console.log(`transferred: ${snapshot.bytesTransferred}`);
+      // };
 
-    // const taskCompleted = (snapshot: any) => {
-    //   snapshot.ref
-    //     .getDownloadURL()
-    //     .then((snapshot: any) => console.log(`snapshot: ${snapshot}`));
-    // };
+      // const taskCompleted = (snapshot: any) => {
+      //   snapshot.ref
+      //     .getDownloadURL()
+      //     .then((snapshot: any) => console.log(`snapshot: ${snapshot}`));
+      // };
 
-    // const taskError = (snapshot: any) => {
-    //   console.error(`Error uploading! ${snapshot}`);
-    // };
+      // const taskError = (snapshot: any) => {
+      //   console.error(`Error uploading! ${snapshot}`);
+      // };
 
-    // task.on('state_changed', taskProgress, taskCompleted, taskError);
+      // task.on('state_changed', taskProgress, taskCompleted, taskError);
 
-    // Firebase 9 methodology
-    // const storage = getStorage();
-    // const foo = Date.now().toString();
-    // const storageRef = ref(storage, `images/some-child-${foo}`);
+      // Firebase 9 methodology
+      // const storage = getStorage();
+      // const foo = Date.now().toString();
+      // const storageRef = ref(storage, `images/some-child-${foo}`);
 
-    // const response = await fetch(imgUri);
-    // const blob = await response.blob();
+      // const response = await fetch(imgUri);
+      // const blob = await response.blob();
 
-    // uploadBytes(storageRef, blob)
-    //   .then(snapshot => {
-    //     console.log('Uploaded a blob or file!');
-    //     setLoading(false);
-    //   })
-    //   .catch(err => console.error(`Whoops! ${err}`));
+      // uploadBytes(storageRef, blob)
+      //   .then(snapshot => {
+      //     console.log('Uploaded a blob or file!');
+      //     setLoading(false);
+      //   })
+      //   .catch(err => console.error(`Whoops! ${err}`));
 
-    // Firebase 9 methodology, II
-    // const response = await fetch(imgUri);
-    // const blob = await response.blob();
-    // const childPath = `images/${
-    //   getAuth().currentUser?.uid
-    // }/${Math.random().toString(36)}`;
-    // console.log(`childPath: ${childPath}`);
+      // Firebase 9 methodology, II
+      // const response = await fetch(imgUri);
+      // const blob = await response.blob();
+      // const childPath = `images/${
+      //   getAuth().currentUser?.uid
+      // }/${Math.random().toString(36)}`;
+      // console.log(`childPath: ${childPath}`);
 
-    // const storageRef = ref(getStorage());
-    // const fileRef = ref(storageRef, childPath);
-    // const uploadTask = (fileRef as any).put(blob);
+      // const storageRef = ref(getStorage());
+      // const fileRef = ref(storageRef, childPath);
+      // const uploadTask = (fileRef as any).put(blob);
 
-    // // const uploadTask: UploadTask = fileRef.put(blob);
+      // // const uploadTask: UploadTask = fileRef.put(blob);
 
-    // uploadTask.on(
-    //   'state_changed',
-    //   (snapshot: any) => {
-    //     console.log(`transferred: ${snapshot.bytesTransferred}`);
-    //   },
-    //   (error: any) => {
-    //     console.error(`Error uploading! ${error}`);
-    //   },
-    //   () => {
-    //     getDownloadURL(fileRef).then(downloadURL => {
-    //       console.log(`downloadURL: ${downloadURL}`);
-    //     });
-    //   }
-    // );
+      // uploadTask.on(
+      //   'state_changed',
+      //   (snapshot: any) => {
+      //     console.log(`transferred: ${snapshot.bytesTransferred}`);
+      //   },
+      //   (error: any) => {
+      //     console.error(`Error uploading! ${error}`);
+      //   },
+      //   () => {
+      //     getDownloadURL(fileRef).then(downloadURL => {
+      //       console.log(`downloadURL: ${downloadURL}`);
+      //     });
+      //   }
+      // );
 
-    // Firebase Methodology, Part III
-    const response = await fetch(imgUri);
-    const blob = await response.blob();
-    const storage = getStorage();
-    const auth = getAuth();
-    const childPath = `post/${auth.currentUser?.uid}/${Math.random().toString(
-      36
-    )}`;
-    console.log(`childPath: ${childPath}`);
+      // Firebase Methodology, Part III
+      const response = await fetch(imgUri);
+      const blob = await response.blob();
+      const storage = getStorage();
+      const auth = getAuth();
+      const childPath = `post/${auth.currentUser?.uid}/${Math.random().toString(
+        36
+      )}`;
+      console.log(`childPath: ${childPath}`);
 
-    const storageRef = ref(storage, childPath);
-    const task = uploadBytes(storageRef, blob);
+      const storageRef = ref(storage, childPath);
+      const task = uploadBytes(storageRef, blob);
 
-    const taskProgress = (snapshot: { bytesTransferred: any }) => {
-      console.log(`transferred: ${snapshot.bytesTransferred}`);
-    };
+      const taskProgress = (snapshot: { bytesTransferred: any }) => {
+        console.log(`transferred: ${snapshot.bytesTransferred}`);
+      };
 
-    const taskCompleted = async (snapshot: {
-      ref: { getDownloadURL: () => any };
-    }) => {
-      const downloadURL = await snapshot.ref.getDownloadURL();
-      console.log(`snapshot: ${downloadURL}`);
-    };
+      try {
+        const taskCompleted = async (snapshot: {
+          ref: { getDownloadURL: () => any };
+        }) => {
+          const downloadURL = await snapshot.ref.getDownloadURL();
+          console.log(`snapshot: ${downloadURL}`);
+        };
+      } catch (err) {
+        console.error(`Error in completed task: ${err}`);
+      }
 
-    const taskError = (error: any) => {
-      console.error(`Error uploading! ${error}`);
-    };
+      const taskError = (error: any) => {
+        console.error(`Error uploading! ${error}`);
+      };
 
-    // task.on('state_changed', taskProgress, taskError, taskCompleted);
-    task.then(snapshot => {
-      console.log('Does this mean it was successful?');
-      console.log(`metadata: ${snapshot.metadata}`);
-    });
+      // task.on('state_changed', taskProgress, taskError, taskCompleted);
+      task.then(snapshot => {
+        console.log('Does this mean it was successful?');
+        console.log(`metadata: ${snapshot.metadata}`);
+        setPostSuccess(true);
+        setLoading(false);
 
-    setLoading(false);
+        // navigate user back to previous page/route
+
+        setTimeout(() => {
+          setPostSuccess(false);
+        }, 2000);
+      });
+    } catch (err) {
+      console.error(`Error in uploading image: ${err}`);
+    }
   };
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -387,8 +402,23 @@ export default function save() {
           loading={loading}
           style={{ borderRadius: 50, width: 150 }}
           contentStyle={{ padding: 20 }}
+          buttonColor={postSuccess ? 'green' : undefined}
         >
-          {!loading && 'Post'}
+          {/* if (loading) {
+            display nothing
+          }
+          if (!loading && !postSuccess) {
+            'Post'
+          }
+          if (!loading && postSuccess) {
+            'Posted successfully!'
+          } */}
+
+          {!loading && !postSuccess
+            ? 'Post'
+            : !loading && postSuccess
+            ? 'Posted successfully!'
+            : null}
         </Button>
       </View>
     </ModalProvider>

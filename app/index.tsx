@@ -23,10 +23,17 @@ import { UserContext } from '../context/UserContext';
 export default function Page() {
   const theme = useTheme();
   const userCtx = useContext(UserContext);
+  const [isAuth, setIsAuth] = useState(false);
 
   if (userCtx?.isLoggedIn) {
     return <Redirect href='login' />;
   }
 
-  return <Redirect href='home' />;
+  return (
+    // Don't do a Redirect, but rather the actual component or whatever structure consumes the Tabs Screens
+    // <Redirect href='feed' />
+    // null
+
+    <Redirect href='home' />
+  );
 }

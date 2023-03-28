@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 
 export default () => {
   const iconSize = 24;
+
   return (
     <Tabs
       screenOptions={{

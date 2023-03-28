@@ -16,7 +16,7 @@ import GridItem from '../../components/GridItem';
 import { Stack } from 'expo-router';
 import { Connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { fetchUser } from '../../redux/actions';
+// import { fetchUser } from '../../redux/actions';
 
 const Feed = () => {
   const theme = useTheme();

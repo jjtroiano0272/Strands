@@ -4,15 +4,47 @@ readme tracking
 > > [ ] Chromatic aberration effect stuff under the status bars (top and bottom of screen)
 > > [ ] Do NOT show 'save' tab on bottom
 > > [ ] Route user data correctly
+> >
 > > 23MAR2023
 > > [ ] Pass user data when clicking through
 > > [ ] Fix error messages
+> >
 > > 24MAR2023
-> > [ ] Turn select menu into a grid of selectable elements?
+> > [x] Turn select menu into a grid of selectable elements?
 > > [ ] Navigate back to home when post is successful
 > > [ ] Fix console.warn's
-> > [ ] MUI ripple on TouchableOpacity or just generally buttons
+> > [?] MUI ripple on TouchableOpacity or just generally buttons
+> >
+> > 25MAR2023
+> > BREAK DAY
+> >
+> > 26MAR2023
+> > [ ] First page to open is /login iff !auth, else /feed
+> > [ ] Resolve Possible unahdneled promise rejection
+> > [ ] CGPT: What IS a promise?
+> > [ ] Firebase tutorial
+> > [ ] Add function to be able to take a new pic at save tab
+> >
+> > 27MAR2023
+> > [ ] Extension to auto-generate a handler if you have something like onPress={handleFooBar}
+> > // TODO setup gets a little funky around 18:00
+> > [x] Register page
+> > [ ] Clean up all those little font-awesome etc. extension suggestions
+> >
+> > 28MAR2023
+[ ] 
 
+Notes:
+
+- app/home/\_layout.tsx holds the 'home' setup where we have the tabs on bottom and all
+  - Each one of those is a Tab.Screen
+- Where the app loads into is (tabs) with a sub header 'Home', with a 'Home' and 'Settings?' Tab
+  - Settings? is located at app/(tabs)/\_layout.tsx
+  - on commenting out that file, now the first thing that loads up is (tabs)/index
+  - The true root is app/ (it's index.ts => app/\_layout.tsx)
+- Remember that what the 'home' route is, is actually called 'feed'!
+
+**_NOTES FROM MONICA_**
 1st page
 user profile/data:
 name

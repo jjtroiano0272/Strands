@@ -5,10 +5,10 @@ import { UserContextType } from '../@types/types';
 export const UserContext = createContext<UserContextType | null>(null);
 
 export const UserProvider = ({ children }: { children: any }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    console.log(`User logged ${isLoggedIn ? 'in!' : 'out!'}`);
+    // console.log(`User logged ${isLoggedIn ? 'in!' : 'out!'}`);
   }, [isLoggedIn]);
 
   return (

@@ -12,11 +12,19 @@ import {
 import React, { useEffect, useState, Suspense } from 'react';
 import { Stack, useNavigation, useRouter } from 'expo-router';
 import { useRoute, useTheme } from '@react-navigation/native';
-import { Button, IconButton } from 'react-native-paper';
+import {
+  Button,
+  IconButton,
+  MD3DarkTheme,
+  MD3LightTheme,
+  TouchableRipple,
+} from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MediaLibraryPermissionResponse } from 'expo-image-picker';
 import { getStorage, ref, uploadBytes } from 'firebase/storage';
 import { uuidv4 } from '@firebase/util';
+import ButtonWithRipple from '../../components/RippleButton';
+import RippleButton from '../../components/RippleButton';
 
 export default function Add() {
   const theme = useTheme();
@@ -35,8 +43,12 @@ export default function Add() {
     ImagePicker.useMediaLibraryPermissions()
   );
 
-  Camera.requestCameraPermissionsAsync();
-  ImagePicker.requestMediaLibraryPermissionsAsync();
+  Camera.requestCameraPermissionsAsync().catch(err =>
+    console.error(`Camera permissions error ${err}`)
+  );
+  ImagePicker.requestMediaLibraryPermissionsAsync().catch(err =>
+    console.error(`Image Picker permissions error ${err}`)
+  );
 
   // if (!hasCameraPermission) {
   //   // console.warn('no permission!');
@@ -59,30 +71,37 @@ export default function Add() {
       const res = camera._onCameraReady();
       // console.log(`What this is?: ${res}`);
 
-      const data = await camera
+      await camera
         .takePictureAsync()
+        .then(res => setImage(res.uri))
         .catch(err => console.error(`Error when taking picture! ${err}`));
-      setImage(data.uri);
     }
   };
 
+  // TODO change to .then.catch methodology
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, // TODO future support for uploading short videos?
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+    try {
+      // No permissions request is necessary for launching the image library
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, // TODO future support for uploading short videos?
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
 
-    // console.log(result);
+      console.log(`Image pick result: ${result}`);
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      if (!result.canceled) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (err) {
+      console.error(`Error picking image: ${err}`);
     }
   };
 
-  const handleSaveImage = async () => {
+  // PREVIOUSLY WAS ASYNC WITH DIFFERENT METHODS
+  // const handleSaveImage = async () => {
+  const handleSaveImage = () => {
     // Timestamp: 02:18
     // const imageBase64 = await FileSystem.readAsStringAsync(imageUrl, {
     //   encoding: FileSystem.EncodingType.Base64,
@@ -134,15 +153,19 @@ export default function Add() {
 
   useEffect(() => {
     (async () => {
-      const cameraStatus = await Camera.requestCameraPermissionsAsync();
-      setHasCameraPermission(cameraStatus.status === 'granted');
+      try {
+        const cameraStatus = await Camera.requestCameraPermissionsAsync();
+        setHasCameraPermission(cameraStatus.status === 'granted');
 
-      const galleryStatus: MediaLibraryPermissionResponse =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      setHasGalleryPermission(galleryStatus.status === 'granted');
+        const galleryStatus: MediaLibraryPermissionResponse =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+        setHasGalleryPermission(galleryStatus.status === 'granted');
 
-      if (!galleryStatus.granted) {
-        Alert.alert('We need permissions in order for this to work!');
+        if (!galleryStatus.granted) {
+          Alert.alert('We need permissions in order for this to work!');
+        }
+      } catch (err) {
+        console.error(`Error setting permissions: ${err}`);
       }
     })();
   }, []);
@@ -182,17 +205,23 @@ export default function Add() {
 
         {image && (
           <View style={{ flex: 0.3, justifyContent: 'flex-end' }}>
-            <Button mode='contained' onPress={() => setImage(null)}>
-              CLOSE
-            </Button>
+            {/* <IconButton
+              icon='cancel'
+              mode='contained'
+              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+              // iconColor={MD3Colors.error50}
+              size={20}
+              onPress={() => setImage(null)}
+            /> */}
 
-            <Button
+            <RippleButton
               mode='contained'
               onPress={() => handleSaveImage()}
               loading={fetchingData}
             >
               SAVE
-            </Button>
+            </RippleButton>
+
             <Image style={{ flex: 1 }} source={{ uri: image }} />
           </View>
         )}

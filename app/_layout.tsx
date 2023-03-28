@@ -22,8 +22,8 @@ import rootReducer from '../redux/reducers';
 // const store = createStoreHook(rootReducer);
 
 // Initialize Firebase
-export const firebaseApp = initializeApp(firebaseConfig);
-const analytics = getAnalytics(firebaseApp);
+// export const firebaseApp = initializeApp(firebaseConfig);
+// const analytics = getAnalytics(firebaseApp);
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -32,7 +32,7 @@ export {
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: 'home',
+  // initialRouteName: 'home',
 };
 
 export default function RootLayout() {
@@ -60,28 +60,15 @@ function RootLayoutNav() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
 
-  if (false) {
-    return (
-      <Stack
-        screenOptions={{
-          headerRight: () => (
-            <AntDesign
-              name='infocirlceo'
-              size={24}
-              color={colorScheme === 'dark' ? 'white' : 'black'}
-              onPress={() => router.push('/modal')}
-            />
-          ),
-        }}
-      >
-        <Stack.Screen name='login' />
-      </Stack>
-    );
+  if (typeof process !== 'undefined' && process.on) {
+    process.on('unhandledRejection', (reason, promise) => {
+      console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+      // Optionally, send this to an error tracking service like Sentry
+    });
   }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      {/* <ReduxProvider store={store}> */}
       <UserProvider>
         <Stack
           screenOptions={{
@@ -99,10 +86,10 @@ function RootLayoutNav() {
             name='home'
             options={{ headerShown: true, title: '' }}
           />
+
           <Stack.Screen name='modal' options={{ presentation: 'modal' }} />
         </Stack>
       </UserProvider>
-      {/* </ReduxProvider> */}
     </ThemeProvider>
   );
 }
