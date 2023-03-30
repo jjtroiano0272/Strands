@@ -22,7 +22,6 @@ readme tracking
 > > [ ] First page to open is /login iff !auth, else /feed
 > > [ ] Resolve Possible unahdneled promise rejection
 > > [ ] CGPT: What IS a promise?
-> > [ ] Firebase tutorial
 > > [ ] Add function to be able to take a new pic at save tab
 > >
 > > 27MAR2023
@@ -32,7 +31,10 @@ readme tracking
 > > [ ] Clean up all those little font-awesome etc. extension suggestions
 > >
 > > 28MAR2023
-[ ] 
+> > [x] Resolve Possible unahdneled promise rejection
+> > [ ] type any fix
+> > [ ] Firebase tutorial
+> > [ ] Fixing tabs structure so `save` is not a tab, and just another screen you access through `add`
 
 Notes:
 
