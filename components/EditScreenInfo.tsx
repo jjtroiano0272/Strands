@@ -86,15 +86,15 @@ export default function EditScreenInfo({
 
         <View
           style={[styles.codeHighlightContainer, styles.homeScreenFilename]}
-          darkColor='rgba(255,255,255,0.05)'
-          lightColor='rgba(0,0,0,0.05)'
+          // darkColor='rgba(255,255,255,0.05)'
+          // lightColor='rgba(0,0,0,0.05)'
         >
           <MonoText>{path}</MonoText>
         </View>
         <Text
           style={styles.getStartedText}
-          lightColor='rgba(0,0,0,0.8)'
-          darkColor='rgba(255,255,255,0.8)'
+          // lightColor='rgba(0,0,0,0.8)'
+          // darkColor='rgba(255,255,255,0.8)'
         >
           Change any of the text, save the file, and your app will automatically
           update.

@@ -13,13 +13,15 @@ export interface IAPIData {
       lng: number;
     };
   },
-  phone: numer | string,
+  phone: string,
   website: string,
   company: {
     name: string,
     catchPhrase: string,
     bs: string;
   };
+  // Custom fields we'll set
+  seasonal: boolean;
 }
 
 export type UserContextType = {

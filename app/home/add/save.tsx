@@ -1,21 +1,9 @@
-import * as FileSystem from 'expo-file-system';
-import {
-  View,
-  Image,
-  Text,
-  TouchableOpacity,
-  Alert,
-  Keyboard,
-  TouchableWithoutFeedback,
-  FlatList,
-} from 'react-native';
-import React, { useEffect, useState } from 'react';
-import {
-  useSearchParams,
-  useLocalSearchParams,
-  Stack,
-  useRouter,
-} from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import Swiper from 'react-native-swiper';
+import SwiperNumber from 'react-native-swiper';
+import { View, Image, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState } from 'react';
+import { Stack, useRouter } from 'expo-router';
 import { RouteProp, useRoute, useTheme } from '@react-navigation/native';
 import {
   Button,
@@ -31,25 +19,18 @@ import {
 // require('firebase/firestore');
 // require('firebase/firebase-storage');
 // Firebase 9 imports
-import {
-  getStorage,
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-  uploadBytes,
-  UploadTask,
-} from 'firebase/storage';
+import { getStorage, ref, uploadBytes } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
 
 // import { firebaseApp } from '../_layout';
-import { Dropdown } from 'react-native-material-dropdown';
 import DropDownPicker from 'react-native-dropdown-picker';
-import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+type RouteParams = {
+  imgUri: string;
+};
 
 export default function save() {
-  type RouteParams = {
-    imgUri: string;
-  };
   console.log(`getAuth: ${JSON.stringify(getAuth())}`);
 
   // const storage = getStorage(firebaseApp);
@@ -64,11 +45,9 @@ export default function save() {
   const [loading, setLoading] = useState<boolean>(false);
   const [postSuccess, setPostSuccess] = useState<boolean>(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  // const dropdownOpen = false;
-  // const setDropdownOpen = () => {
-  //   showModal();
-  // };
   const [dropdownValue, setDropdownValue] = useState<string[] | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
   const labels = [
     // '1A',
     // '1B',
@@ -83,48 +62,25 @@ export default function save() {
     '4B',
     '4C',
   ];
-  const labelsToImages = {
-    // '1A': require('../../assets/images/hairType_1A.png'),
-    // '1B': require('../../assets/images/hairType_1B.png'),
-    // '1C': require('../../assets/images/hairType_1C.png'),
-    '2A': require('../../assets/images/hairType_2A.png'),
-    '2B': require('../../assets/images/hairType_2B.png'),
-    '2C': require('../../assets/images/hairType_2C.png'),
-    '3A': require('../../assets/images/hairType_3A.png'),
-    '3B': require('../../assets/images/hairType_3B.png'),
-    '3C': require('../../assets/images/hairType_3C.png'),
-    '4A': require('../../assets/images/hairType_4A.png'),
-    '4B': require('../../assets/images/hairType_4B.png'),
-    '4C': require('../../assets/images/hairType_4C.png'),
-  };
-  const newOneToUse: any = [
-    require('../../assets/images/hairType_2A.png'),
-    require('../../assets/images/hairType_2B.png'),
-    require('../../assets/images/hairType_2C.png'),
-    require('../../assets/images/hairType_3A.png'),
-    require('../../assets/images/hairType_3B.png'),
-    require('../../assets/images/hairType_3C.png'),
-    require('../../assets/images/hairType_4A.png'),
-    require('../../assets/images/hairType_4B.png'),
-    require('../../assets/images/hairType_4C.png'),
-  ];
 
   const hairTypeImages = [
-    // { id: '2A', uri: 'https://example.com/image1.jpg' },
-
-    { id: '2A', uri: require('../../assets/images/hairType_2A.png') },
-    { id: '2B', uri: require('../../assets/images/hairType_2B.png') },
-    { id: '2C', uri: require('../../assets/images/hairType_2C.png') },
-    { id: '3A', uri: require('../../assets/images/hairType_3A.png') },
-    { id: '3B', uri: require('../../assets/images/hairType_3B.png') },
-    { id: '3C', uri: require('../../assets/images/hairType_3C.png') },
-    { id: '4A', uri: require('../../assets/images/hairType_4A.png') },
-    { id: '4B', uri: require('../../assets/images/hairType_4B.png') },
-    { id: '4C', uri: require('../../assets/images/hairType_4C.png') },
+    { id: '2A', uri: require('../../../assets/images/hairType_2A.png') },
+    { id: '2B', uri: require('../../../assets/images/hairType_2B.png') },
+    { id: '2C', uri: require('../../../assets/images/hairType_2C.png') },
+    { id: '3A', uri: require('../../../assets/images/hairType_3A.png') },
+    { id: '3B', uri: require('../../../assets/images/hairType_3B.png') },
+    { id: '3C', uri: require('../../../assets/images/hairType_3C.png') },
+    { id: '4A', uri: require('../../../assets/images/hairType_4A.png') },
+    { id: '4B', uri: require('../../../assets/images/hairType_4B.png') },
+    { id: '4C', uri: require('../../../assets/images/hairType_4C.png') },
   ];
 
   const labelObjs = labels.map(label => ({ label, value: label }));
   const [items, setItems] = useState(labelObjs);
+  let images: Object[] = [{ uri: 'https://picsum.photos/id/0/200/300' }];
+  for (let i = 1; i < 11; i++) {
+    images.push([{ uri: `https://picsum.photos/id/${i}/200/300` }]);
+  }
 
   const handleImageUpload = async () => {
     try {
@@ -249,10 +205,14 @@ export default function save() {
     }
   };
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const showModal = () => setModalVisible(true);
-  const hideModal = () => setModalVisible(false);
-  const containerStyle = { backgroundColor: 'white', padding: 20 };
+  const handleShowModal = () => setModalVisible(true);
+
+  const handleHideModal = () => setModalVisible(false);
+
+  const handleStarRating = (item: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setDefaultRating(item);
+  };
 
   return (
     <ModalProvider>
@@ -266,7 +226,17 @@ export default function save() {
         }}
       >
         <Stack.Screen options={{ headerShown: false }} />
-        {imgUri && <Image source={{ uri: imgUri, height: 300, width: 300 }} />}
+        {/* {imgUri && <Image source={{ uri: imgUri, height: 300, width: 300 }} />} */}
+        <Swiper>
+          {images.map((image, index) => (
+            <Image
+              key={index}
+              source={image}
+              style={{ width: '100%', height: '100%' }}
+            />
+          ))}
+        </Swiper>
+
         {/* Hair type */}
         <DropDownPicker
           open={dropdownOpen}
@@ -291,31 +261,10 @@ export default function save() {
           ]}
         />
         <Portal>
-          <Modal
-            visible={modalVisible}
-            onDismiss={hideModal}
-            // contentContainerStyle={[
-            //   containerStyle,
-            //   {
-            //     height: 300,
-            //     width: 300,
-            //     justifyContent: 'center',
-            //     alignItems: 'center',
-            //   },
-            // ]}
-          >
-            {/* <View
-              style={{
-                flex: 1,
-                justifyContent: 'center',
-                alignItems: 'center',
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                padding: 8,
-              }}
-            > */}
+          <Modal visible={modalVisible} onDismiss={handleHideModal}>
             <View style={{ justifyContent: 'center', alignItems: 'center' }}>
               <FlatList
+                // TODO Optimize by using aither SVG or putting Skeleton on them until loaded FULLY
                 data={hairTypeImages}
                 renderItem={({ item }) => (
                   <TouchableOpacity
@@ -338,14 +287,11 @@ export default function save() {
             </View>
 
             {/* TODO Requires attribution to use! */}
-            {/* </View> */}
           </Modal>
         </Portal>
-
         {/* Hair length? */}
         {/* Color */}
         {/* Treatment done */}
-
         {/* Star rating */}
         <View
           style={{
@@ -360,7 +306,7 @@ export default function save() {
                 style={{ marginHorizontal: 7 }}
                 activeOpacity={0.7}
                 key={item}
-                onPress={() => setDefaultRating(item)}
+                onPress={() => handleStarRating(item)}
               >
                 <MaterialCommunityIcons
                   name={item <= defaultRating ? 'star' : 'star-outline'}
@@ -371,12 +317,10 @@ export default function save() {
             );
           })}
         </View>
-
         {/* Responds well to */}
         {/* <TextInput /> */}
         {/* Responds poorly to */}
         {/* <TextInput /> */}
-
         {/* Comments */}
         <TextInput
           style={{ width: '100%' }}

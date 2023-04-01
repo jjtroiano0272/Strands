@@ -1,6 +1,8 @@
 import React from 'react';
+import { faker } from '@faker-js/faker';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { IAPIData } from '../@types/types';
+import { Badge as RNEBadge } from 'react-native-elements';
 import Colors from '../constants/Colors';
 import useFetch from '../hooks/useFetch';
 import { ExternalLink } from '../components/ExternalLink';
@@ -13,6 +15,7 @@ import {
   Paragraph,
   MD3DarkTheme,
   MD3LightTheme,
+  Badge,
 } from 'react-native-paper';
 import { Text, View } from '../components/Themed';
 import { Link } from 'expo-router';
@@ -28,6 +31,11 @@ export default function GridItem({
   imgSrc?: string;
 }) {
   const theme = useTheme();
+
+  console.log(`imgsrc: ${imgSrc}`);
+  console.log(`${typeof imgSrc}`);
+
+  const dummyPhoneNumber = faker.phone.number();
 
   return (
     <Link
@@ -54,7 +62,18 @@ export default function GridItem({
           subtitleStyle={{
             color: theme.colors.text,
           }}
-          left={props => <Avatar.Icon {...props} size={30} icon={'star'} />}
+          left={props => (
+            <Avatar.Icon
+              {...props}
+              size={30}
+              icon={dummyPhoneNumber.startsWith('1') ? 'airplane' : 'star'}
+              style={{
+                backgroundColor: dummyPhoneNumber.startsWith('1')
+                  ? theme.colors.primary
+                  : theme.colors.text,
+              }}
+            />
+          )}
         />
 
         <Card.Cover
@@ -62,6 +81,13 @@ export default function GridItem({
             uri: imgSrc,
           }}
         />
+        {dummyPhoneNumber.startsWith('1') && (
+          <RNEBadge
+            value='Seasonal'
+            status='primary'
+            containerStyle={{ position: 'absolute', top: -4, right: -4 }}
+          />
+        )}
       </Card>
     </Link>
   );

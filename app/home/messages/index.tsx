@@ -37,6 +37,7 @@ const Messages = () => {
           .map((item: any, index: number) => (
             // item.data.thumbnail !== 'self' ? item.data.thumbnail : null}/>))
             <List.Item
+              key={index}
               style={{ marginVertical: 20, padding: 10 }}
               theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
               title={item.data.author}

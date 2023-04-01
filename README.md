@@ -35,6 +35,24 @@ readme tracking
 > > [ ] type any fix
 > > [ ] Firebase tutorial
 > > [ ] Fixing tabs structure so `save` is not a tab, and just another screen you access through `add`
+> >
+> > 29MAR2023
+> > [x] Context Provider Snippet
+> > [ ] Clean up all those little font-awesome etc. extension suggestions
+> >
+> > 30MAR2023
+> > [o] Get rid of those console.warnings
+> > [x] Routing
+> >
+> > 31MAR2023
+> > [x] Phone functionality ((there doesn't seem to be any real way to directly call and not have the extra menu button))
+> > [ ] Creating post in DB
+> > [ ] Authorized users only (blocking app access)
+> >
+> > 01APR2023
+> > [ ] Follow reddit post of help for verifying types
+> > [ ] SSO (Google)
+> > [ ] Try structuing it with (auth) the same struture
 
 Notes:
 
@@ -47,43 +65,43 @@ Notes:
 - Remember that what the 'home' route is, is actually called 'feed'!
 
 **_NOTES FROM MONICA_**
-1st page
-user profile/data:
-name
-phone number
-email (email update from particular salon)
-is the client seasonal (boolean)
-[some salons have client's card on file to charge for no show]
-(salon information)
+===PAGE 1:
+[ ] User profile/data:
+[ ] Name
+[ ] Phone number
+[ ] Email (email update from particular salon)
+[ ] [Some salons have client's card on file to charge for no show]
+[ ] (Salon information)
+[o] is the client seasonal (boolean)
 
-2nd page
+PAGE 2:
 comments
 
-3rd page
-formulas (e.g. seaonsal flicnets up north can use Redken salon)
-if they have a formula from RedKen, you can't exactly translate it into an Aveda salon
-s.t. if they go back and forth, they have _both_ formulas
+PAGE 3:
 
-Use case:
-Stylist at given salon has client enter--check if client exists in DB, else create profile for client, then that client's profile should be visible by everyone with access to the app
-AUTH: only stylist with valid non-expired license number are permitted access
+- FORMULAS (e.g. seaonsal clients up north can use Redken salon)
+- If they have a formula from RedKen, you can't exactly translate it into an Aveda salon s.t. if they go back and forth, they have _both_ formulas
 
 PROFILE: [username] show before and after pictures (possibly in carousel)
 
-search page: with map with geolocation showing clients location by salon
+SEARCH PAGE: with map with geolocation showing clients location by salon
 
-Search bar on the nav header
+- Search bar on the nav header
 
-What kind of products a client likes to use
-'has very frizzy hair, needs something anti-frizz and hydrating'
+- What kind of products a client likes to use
+- 'Has very frizzy hair, needs something anti-frizz and hydrating'
+- Ability to submit multiple photos of a client
 
-Ability to submit multiple photos of a client
+USE CASE:
+Stylist at given salon has client enter--check if client exists in DB, else create profile for client, then that client's profile should be visible by everyone with access to the app
+AUTH: only stylist with valid non-expired license number are permitted access
 
-EX:
-*Their gray is really resistant
-*Lifts warm
-Prefers cool tones
-PReferer neutrals, warms
-Wants natural results
-Wants obvious dimension
-Wants chunky highlights
+COMMENTS ON CLIENT EXAMPLE:
+
+- Their gray is really resistant
+- Lifts warm
+- Prefers cool tones
+- PReferer neutrals, warms
+- Wants natural results
+- Wants obvious dimension
+- Wants chunky highlights

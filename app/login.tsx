@@ -18,6 +18,7 @@ import { firebaseConfig } from '../firebaseConfig';
 import { UserContext } from '../context/UserContext';
 import { Auth } from '../components/auth/Auth';
 import { Link, Stack } from 'expo-router';
+import { useAuth } from '../context/auth';
 
 export default function Login() {
   const auth = getAuth();
@@ -31,12 +32,15 @@ export default function Login() {
   const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
   const onToggleSnackBar = () => setSnackbarVisible(!snackbarVisible);
   const onDismissSnackBar = () => setSnackbarVisible(false);
+  const newAuth = useAuth();
 
   const handleLogin = () => {
     // Login Logic
     signInWithEmailAndPassword(auth, email!, password!)
       .then(res => {
         console.log(`login res: ${JSON.stringify(res)}`);
+        newAuth?.signIn();
+
         userCtx?.setIsLoggedIn(true);
         // Alert.alert(`You're in, bbbbbb!`);
       })

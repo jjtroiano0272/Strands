@@ -23,8 +23,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MediaLibraryPermissionResponse } from 'expo-image-picker';
 import { getStorage, ref, uploadBytes } from 'firebase/storage';
 import { uuidv4 } from '@firebase/util';
-import ButtonWithRipple from '../../components/RippleButton';
-import RippleButton from '../../components/RippleButton';
+import ButtonWithRipple from '../../../components/RippleButton';
+import RippleButton from '../../../components/RippleButton';
 
 export default function Add() {
   const theme = useTheme();
@@ -140,7 +140,8 @@ export default function Add() {
     // VERSION A
     if (imgUri) {
       router.push({
-        pathname: './save',
+        // pathname: './save',
+        pathname: '/home/add/save',
         params: {
           imgUri,
         },

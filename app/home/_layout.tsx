@@ -33,7 +33,7 @@ export default () => {
         }}
       />
       <Tabs.Screen
-        name='add'
+        name='add/index'
         options={{
           tabBarIcon: ({ color, focused }) => (
             <FontAwesome
@@ -51,6 +51,12 @@ export default () => {
             <FontAwesome name='envelope' size={iconSize} color={color} />
           ),
           tabBarLabel: 'Messages',
+        }}
+      />
+      <Tabs.Screen
+        name='add/save'
+        options={{
+          tabBarButton: () => null,
         }}
       />
     </Tabs>

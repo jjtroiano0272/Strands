@@ -1,4 +1,5 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Slot } from 'expo-router';
 import {
   DarkTheme,
   DefaultTheme,
@@ -17,6 +18,7 @@ import { UserProvider } from '../context/UserContext';
 import { Provider as ReduxProvider } from 'react-redux';
 import { createStoreHook } from 'react-redux';
 import rootReducer from '../redux/reducers';
+import { Provider as NewAuthProvider } from '../context/auth';
 // import thunk from 'redux-thunk';
 
 // const store = createStoreHook(rootReducer);
@@ -68,9 +70,11 @@ function RootLayoutNav() {
   }
 
   return (
+    // TODO Combine these two into one Provider
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <UserProvider>
-        <Stack
+      <NewAuthProvider>
+        {/* <UserProvider> */}
+        {/* <Stack
           screenOptions={{
             headerRight: () => (
               <AntDesign
@@ -86,10 +90,12 @@ function RootLayoutNav() {
             name='home'
             options={{ headerShown: true, title: '' }}
           />
-
           <Stack.Screen name='modal' options={{ presentation: 'modal' }} />
-        </Stack>
-      </UserProvider>
+        </Stack> */}
+
+        <Slot />
+        {/* </UserProvider> */}
+      </NewAuthProvider>
     </ThemeProvider>
   );
 }

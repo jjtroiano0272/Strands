@@ -1,6 +1,17 @@
 import { faker } from '@faker-js/faker';
-import React, { useEffect } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import {
+  ActionSheetIOS,
+  Alert,
+  Image,
+  Linking,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 import { IAPIData } from '../@types/types';
 import Colors from '../constants/Colors';
 import useFetch from '../hooks/useFetch';
@@ -21,27 +32,65 @@ import { Text, View } from '../components/Themed';
 import { Link, Stack, useRouter, useSearchParams } from 'expo-router';
 import { useTheme } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { UserContext } from '../context/UserContext';
+
+// TODO Offload to types file
+type NewType = {
+  id?: string;
+  name?: string;
+  company?: string;
+  username?: string;
+  imgSrc?: string;
+};
 
 export default function ClientProfile() {
+  const userCtx = useContext(UserContext);
   const router = useRouter();
   const theme = useTheme();
+  const [phoneModalVisible, setPhoneModalVisible] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState<string>(
+    faker.phone.number('###-###-###').toString()
+  );
+  const { name, company, username, id, imgSrc }: NewType = useSearchParams();
   const { data, error, loading } = useFetch(
     'https://jsonplaceholder.typicode.com/users'
   );
 
-  // TODO Offload to types file
-  type NewType = {
-    id?: string;
-    name?: string;
-    company?: string;
-    username?: string;
-    imgSrc?: string;
+  // TODO These need to be replace with actual data, but will need to be engineered.
+  // For example, user actually needs to come from something like the user context for the actual user.
+  const placeholders = {
+    recipient: faker.name.firstName(),
+    user: faker.name.fullName(),
   };
+  const messageBody = encodeURI(
+    `Hi ${placeholders.recipient} this is ${placeholders.user}. I just wanted to confirm the upcoming appointment with you`
+  );
 
-  const foo = useSearchParams();
-  console.log(`search params: ${JSON.stringify(foo)}`);
+  const handleOptionsMenu = (phoneNumber: string) => {
+    const menuOptions = ['Call', 'Text', 'Cancel'];
 
-  const { id, name, company, username, imgSrc }: NewType = useSearchParams();
+    // Show the action sheet to the user
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: menuOptions,
+        cancelButtonIndex: menuOptions.length - 1,
+      },
+      async (index: number) => {
+        // if else method
+        if (menuOptions[index] === 'Call') {
+          await Linking.openURL(`tel:${phoneNumber}`).catch(err =>
+            console.error(`Error trying to make call! ${err}`)
+          );
+        } else if (menuOptions[index] === 'Text') {
+          await Linking.openURL(`sms:${phoneNumber}?body=${messageBody}`).catch(
+            err => console.error(`Error trying to send message! ${err}`)
+          );
+        } else {
+          return;
+        }
+      }
+    );
+  };
 
   useEffect(() => {
     // console.log(`uri used: https://picsum.photos/id/${id + 64}/700/700`);
@@ -84,7 +133,7 @@ export default function ClientProfile() {
           {/* Phone + prompt to hook into API to call */}
           <List.Item
             theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-            title={faker.phone.number('###-###-###').toString()}
+            title={phoneNumber}
             // description='Item description'
             left={props => (
               <MaterialCommunityIcons
@@ -93,7 +142,7 @@ export default function ClientProfile() {
                 color={theme.colors.primary}
               />
             )}
-            onPress={() => null}
+            onPress={() => handleOptionsMenu(phoneNumber)}
             style={{ padding: 10, marginVertical: 10, borderRadius: 7 }}
           />
 
@@ -117,6 +166,37 @@ export default function ClientProfile() {
           </Paragraph>
         </Card.Content>
       </Card>
+
+      <Modal
+        visible={phoneModalVisible}
+        animationType='slide'
+        transparent={true}
+      >
+        <View
+          style={{
+            position: 'absolute',
+            padding: 20,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0)',
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => setPhoneModalVisible(!phoneModalVisible)}
+          >
+            <Text style={{ fontSize: 36 }}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => console.log('15 more minutes')}>
+            <Text style={{ fontSize: 36 }}>15 more minutes</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => console.log('No more limit for today')}
+          >
+            <Text style={{ fontSize: 36 }}>No more limit for today</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
