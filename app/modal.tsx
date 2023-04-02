@@ -7,6 +7,7 @@ import { Button } from 'react-native-paper';
 
 import EditScreenInfo from '../components/EditScreenInfo';
 import { Text, View } from '../components/Themed';
+import { useAuth } from '../context/auth';
 import { UserContext } from '../context/UserContext';
 
 export default function ModalScreen() {
@@ -15,6 +16,7 @@ export default function ModalScreen() {
   const handleLogout = () => {
     // setLogout in Context
     userCtx?.setIsLoggedIn(false);
+    useAuth()?.signOut();
   };
 
   return (

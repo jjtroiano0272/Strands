@@ -1,16 +1,15 @@
 import { useRouter, useSegments } from 'expo-router';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import auth from '@react-native-firebase/auth';
 
 type AuthContextType = {
-  // signIn: () => void,
-  // signOut: () => setAuth(null),
-  // user,
   signIn: () => void;
   signOut: () => void;
-  user: any;
+  user: any; // TODO Define it somehow...
 };
 
-const AuthContext = createContext<AuthContextType | null>(null);
+// Property 'signOut' does not exist on type 'AuthContextType | null'.ts(2339)
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 // This hook can be used to access the user info.
 export function useAuth() {
@@ -50,6 +49,7 @@ export function Provider(props: any) {
   };
   const signOut = () => {
     setAuth(null);
+    console.log(`in Auth; successfully signed out within Provider!`);
   };
 
   useProtectedRoute(user);

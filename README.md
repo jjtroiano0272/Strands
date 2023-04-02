@@ -47,12 +47,17 @@ readme tracking
 > > 31MAR2023
 > > [x] Phone functionality ((there doesn't seem to be any real way to directly call and not have the extra menu button))
 > > [ ] Creating post in DB
-> > [ ] Authorized users only (blocking app access)
+> > [o] Authorized users only (blocking app access)
 > >
 > > 01APR2023
 > > [ ] Follow reddit post of help for verifying types
 > > [ ] SSO (Google)
-> > [ ] Try structuing it with (auth) the same struture
+> > [x] Try structuing it with (auth) the same struture
+> > [ ] Use a simple auth override for dev mode
+> > [ ] Making sure the screen stack is arranged correctly
+> >
+> > 02APR2023
+> > [ ] Finishing authorized users
 
 Notes:
 

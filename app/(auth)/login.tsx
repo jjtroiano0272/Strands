@@ -12,16 +12,19 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithRedirect,
 } from 'firebase/auth';
 import { DarkTheme, useTheme } from '@react-navigation/native';
-import { firebaseConfig } from '../firebaseConfig';
-import { UserContext } from '../context/UserContext';
-import { Auth } from '../components/auth/Auth';
+import { firebaseConfig } from '../../firebaseConfig';
+import { UserContext } from '../../context/UserContext';
+import { Auth } from '../../components/auth/Auth';
 import { Link, Stack } from 'expo-router';
-import { useAuth } from '../context/auth';
+import { useAuth } from '../../context/auth';
+import { SAMLAuthProvider } from 'firebase/auth';
 
 export default function Login() {
   const auth = getAuth();
+  const newAuth = useAuth();
   const [email, setEmail] = useState<string | null>(null);
   const [password, setPassword] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
@@ -32,7 +35,10 @@ export default function Login() {
   const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
   const onToggleSnackBar = () => setSnackbarVisible(!snackbarVisible);
   const onDismissSnackBar = () => setSnackbarVisible(false);
-  const newAuth = useAuth();
+  const samlProvider = new SAMLAuthProvider('saml.example-provider');
+
+  const firebaseAuth = getAuth();
+  signInWithRedirect(firebaseAuth, samlProvider);
 
   const handleLogin = () => {
     // Login Logic

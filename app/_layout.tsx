@@ -74,7 +74,7 @@ function RootLayoutNav() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <NewAuthProvider>
         {/* <UserProvider> */}
-        {/* <Stack
+        <Stack
           screenOptions={{
             headerRight: () => (
               <AntDesign
@@ -91,9 +91,9 @@ function RootLayoutNav() {
             options={{ headerShown: true, title: '' }}
           />
           <Stack.Screen name='modal' options={{ presentation: 'modal' }} />
-        </Stack> */}
+        </Stack>
 
-        <Slot />
+        {/* <Slot /> */}
         {/* </UserProvider> */}
       </NewAuthProvider>
     </ThemeProvider>
