@@ -2,6 +2,12 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "baseUrl": "./app",
+    "paths": {
+      // "@/*": ["*"],
+      // "@context/*": ["./context/*"],
+      // "@components/*": ["./components/*"]
+    }
   }
 }

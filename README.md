@@ -50,14 +50,26 @@ readme tracking
 > > [o] Authorized users only (blocking app access)
 > >
 > > 01APR2023
+> > [x] Try structuing it with (auth) the same struture
 > > [ ] Follow reddit post of help for verifying types
 > > [ ] SSO (Google)
-> > [x] Try structuing it with (auth) the same struture
 > > [ ] Use a simple auth override for dev mode
 > > [ ] Making sure the screen stack is arranged correctly
 > >
 > > 02APR2023
+> > [x] Any vs. unknown
 > > [ ] Finishing authorized users
+> > [ ] DESIGN: background of slowly rising bubbles that tilts around the scene sublty based on device gyro (inspiration from Discord's oauth page)
+> >
+> > 03APR2023
+> > [x] Finishing authorized users
+> > [ ] Login with Google
+> > [ ] Register with Google
+> > [x] Login snackbar error show ups
+> >
+> > 04APR2023
+> > [ ] Register: register with SSO
+> > [ ]
 
 Notes:
 

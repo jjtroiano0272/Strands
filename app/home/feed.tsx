@@ -54,6 +54,7 @@ const Feed = () => {
     error: any;
     loading: any;
   } = useFetch('https://www.reddit.com/r/FancyFollicles.json');
+  console.log(`num items in data: ${data?.length}`);
 
   return (
     // TODO Pull down to refresh (run API call again, but only dispatch to anything that has CHANGED)
@@ -68,6 +69,7 @@ const Feed = () => {
             !error &&
             data &&
             data
+              .slice(0, data.length - 1)
               .filter((item: any) => item.data.thumbnail !== 'self')
               .map((item: any, index: number) => (
                 <GridItem
@@ -96,8 +98,9 @@ const Feed = () => {
                       },
                     },
                     email: 'foo@bar.com',
-                    phone: 911,
+                    phone: '911',
                     website: 'google.com',
+                    seasonal: true,
                   }}
                 />
               ))}

@@ -1,5 +1,13 @@
-import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
-import React, { useContext, useState } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import { View } from 'react-native';
 import {
   Button,
   MD3DarkTheme,
@@ -7,23 +15,25 @@ import {
   Snackbar,
   TextInput,
 } from 'react-native-paper';
-import { View } from 'react-native';
 import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from 'firebase/auth';
 import { DarkTheme, useTheme } from '@react-navigation/native';
-import { firebaseConfig } from '../firebaseConfig';
-import { UserContext } from '../context/UserContext';
-import { Auth } from '../components/auth/Auth';
+import { firebaseConfig } from '../../firebaseConfig';
 import { Link, Stack } from 'expo-router';
+import { UserContext } from '../../context/UserContext';
+import { Auth as SignInWithPopupButton } from '../../components/auth/Auth';
+import { Keyboard } from 'react-native';
+import { useAuth } from '../../context/auth';
 
 export default function Register() {
   const auth = getAuth();
   const [email, setEmail] = useState<string | null>(null);
   const [password, setPassword] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
+  const [licenseId, setLicenseId] = useState<string | null>(null);
   const theme = useTheme();
   const userCtx = useContext(UserContext);
   const [errors, setErrors] = useState<string | undefined | null>();
@@ -31,6 +41,7 @@ export default function Register() {
   const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
   const onToggleSnackBar = () => setSnackbarVisible(!snackbarVisible);
   const onDismissSnackBar = () => setSnackbarVisible(false);
+  const myAuth = useAuth();
 
   const handleRegister = () => {
     createUserWithEmailAndPassword(auth, email!, password!)
@@ -44,8 +55,9 @@ export default function Register() {
         setSnackbarVisible(true);
 
         // TODO Set Auth to now be verified, which leads to the user being redirected to feed (since they're logged in)
-        user.refreshToken;
+        // user.refreshToken;
         userCtx?.setIsLoggedIn(true);
+        myAuth?.signIn();
       })
       .catch(err => {
         const errorCode = err.code;
@@ -58,12 +70,21 @@ export default function Register() {
       });
   };
 
+  // TODO Temporary workaround for getting the keyboard out of the way only when there's an error
+  useEffect(() => {
+    snackbarVisible && Keyboard.dismiss();
+  }, [snackbarVisible]);
+
   return (
     <View style={styles.container}>
+      {/* <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    > */}
       <Stack.Screen options={{ headerShown: false }} />
 
       <TextInput
-        style={{ width: 300 }}
+        style={styles.input}
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         placeholder='email'
         keyboardType='email-address'
@@ -71,7 +92,7 @@ export default function Register() {
         // error={!email && true}
       />
       <TextInput
-        style={{ width: 300 }}
+        style={styles.input}
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         placeholder='password'
         keyboardType='visible-password'
@@ -79,10 +100,16 @@ export default function Register() {
         secureTextEntry={true}
       />
       <TextInput
-        style={{ width: 300 }}
+        style={styles.input}
+        theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         placeholder='name'
         onChangeText={name => setName(name)}
+      />
+      <TextInput
+        style={styles.input}
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+        placeholder='license number'
+        onChangeText={licenseId => setLicenseId(licenseId)}
       />
 
       <Button
@@ -93,24 +120,14 @@ export default function Register() {
       >
         Create account
       </Button>
-      {/* <Button
-        style={{ margin: 10, width: 300 }}
-        contentStyle={{ padding: 20 }}
-        // onPress={handleRegister}
-        // onPress={handleRegister}
-      >
-        Register
-      </Button> */}
 
-      {/* <Link href='register'>Register me!</Link> */}
-
-      <Auth />
+      <SignInWithPopupButton />
 
       <Snackbar
         visible={snackbarVisible}
         duration={3000}
         onDismiss={onDismissSnackBar}
-        theme={theme.dark ? MD3LightTheme : MD3DarkTheme}
+        theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         action={{
           label: 'Undo',
           onPress: () => {
@@ -120,6 +137,7 @@ export default function Register() {
       >
         {errors}
       </Snackbar>
+      {/* </KeyboardAvoidingView> */}
     </View>
   );
 }
@@ -130,4 +148,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  input: { width: 300 },
 });

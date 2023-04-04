@@ -13,10 +13,12 @@ import { UserContext } from '../context/UserContext';
 export default function ModalScreen() {
   const theme = useTheme();
   const userCtx = useContext(UserContext);
+  const auth = useAuth();
+
   const handleLogout = () => {
     // setLogout in Context
     userCtx?.setIsLoggedIn(false);
-    useAuth()?.signOut();
+    auth?.signOut();
   };
 
   return (
@@ -26,9 +28,9 @@ export default function ModalScreen() {
       <Stack.Screen options={{ title: 'Information in a modal' }} />
 
       <Button
-        mode='contained'
-        contentStyle={{ padding: 30 }}
         style={{ margin: 30 }}
+        contentStyle={{ padding: 30 }}
+        mode='contained'
         onPress={handleLogout}
       >
         Logout

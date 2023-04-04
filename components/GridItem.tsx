@@ -32,8 +32,8 @@ export default function GridItem({
 }) {
   const theme = useTheme();
 
-  console.log(`imgsrc: ${imgSrc}`);
-  console.log(`${typeof imgSrc}`);
+  // console.log(`imgsrc: ${imgSrc}`);
+  // console.log(`${typeof imgSrc}`);
 
   const dummyPhoneNumber = faker.phone.number();
 
