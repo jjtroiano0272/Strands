@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import Swiper from 'react-native-swiper';
 import SwiperNumber from 'react-native-swiper';
-import { View, Image, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, Image, TouchableOpacity, FlatList } from 'react-native';
 import React, { useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { RouteProp, useRoute, useTheme } from '@react-navigation/native';
@@ -13,6 +13,10 @@ import {
   Modal,
   Portal,
   Provider as ModalProvider,
+  Snackbar,
+  IconButton,
+  Checkbox,
+  Switch,
 } from 'react-native-paper';
 // Firebase 8 imports
 // import firebase from 'firebase';
@@ -21,10 +25,12 @@ import {
 // Firebase 9 imports
 import { getStorage, ref, uploadBytes } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 // import { firebaseApp } from '../_layout';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { auth, db, firebaseConfig } from '../../../firebaseConfig';
 
 type RouteParams = {
   imgUri: string;
@@ -39,14 +45,26 @@ export default function save() {
   const router = useRouter();
   const { imgUri } = route.params;
 
-  const [comment, setComment] = useState<string>('');
+  const [comments, setComments] = useState<string>('');
   const [defaultRating, setDefaultRating] = useState(2);
   const [maxRating, setMaxRating] = useState([1, 2, 3, 4, 5]);
   const [loading, setLoading] = useState<boolean>(false);
   const [postSuccess, setPostSuccess] = useState<boolean>(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownValue, setDropdownValue] = useState<string[] | null>(null);
+  const [productsDropdownOpen, setProductsDropdownOpen] =
+    useState<boolean>(false);
+  const [productsDropdownValue, setProductsDropdownValue] = useState<
+    string[] | null
+  >(null);
+  const [productsList, setProductsList] = useState([
+    {
+      label: "Trader Joe's Tea Tree Conditioner",
+    },
+    { label: 'Arctic Fox Coloring' },
+  ]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [isSeasonal, setIsSeasonal] = useState<boolean>(false);
 
   const labels = [
     // '1A',
@@ -86,75 +104,6 @@ export default function save() {
     try {
       setLoading(true);
 
-      // Firebase 8 methodology
-      // const response = await fetch(imgUri);
-      // const blob = await response.blob();
-      // const childPath = `post/${
-      //   firebase.auth().currentUser?.uid
-      // }/${Math.random().toString(36)}`;
-      // console.log(`childPath: ${childPath}`);
-
-      // const task = firebase.storage().ref().child(childPath).put(blob);
-      // const taskProgress = (snapshot: any) => {
-      //   console.log(`transferred: ${snapshot.bytesTransferred}`);
-      // };
-
-      // const taskCompleted = (snapshot: any) => {
-      //   snapshot.ref
-      //     .getDownloadURL()
-      //     .then((snapshot: any) => console.log(`snapshot: ${snapshot}`));
-      // };
-
-      // const taskError = (snapshot: any) => {
-      //   console.error(`Error uploading! ${snapshot}`);
-      // };
-
-      // task.on('state_changed', taskProgress, taskCompleted, taskError);
-
-      // Firebase 9 methodology
-      // const storage = getStorage();
-      // const foo = Date.now().toString();
-      // const storageRef = ref(storage, `images/some-child-${foo}`);
-
-      // const response = await fetch(imgUri);
-      // const blob = await response.blob();
-
-      // uploadBytes(storageRef, blob)
-      //   .then(snapshot => {
-      //     console.log('Uploaded a blob or file!');
-      //     setLoading(false);
-      //   })
-      //   .catch(err => console.error(`Whoops! ${err}`));
-
-      // Firebase 9 methodology, II
-      // const response = await fetch(imgUri);
-      // const blob = await response.blob();
-      // const childPath = `images/${
-      //   getAuth().currentUser?.uid
-      // }/${Math.random().toString(36)}`;
-      // console.log(`childPath: ${childPath}`);
-
-      // const storageRef = ref(getStorage());
-      // const fileRef = ref(storageRef, childPath);
-      // const uploadTask = (fileRef as any).put(blob);
-
-      // // const uploadTask: UploadTask = fileRef.put(blob);
-
-      // uploadTask.on(
-      //   'state_changed',
-      //   (snapshot: any) => {
-      //     console.log(`transferred: ${snapshot.bytesTransferred}`);
-      //   },
-      //   (error: any) => {
-      //     console.error(`Error uploading! ${error}`);
-      //   },
-      //   () => {
-      //     getDownloadURL(fileRef).then(downloadURL => {
-      //       console.log(`downloadURL: ${downloadURL}`);
-      //     });
-      //   }
-      // );
-
       // Firebase Methodology, Part III
       const response = await fetch(imgUri);
       const blob = await response.blob();
@@ -193,8 +142,10 @@ export default function save() {
         console.log(`metadata: ${snapshot.metadata}`);
         setPostSuccess(true);
         setLoading(false);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         // navigate user back to previous page/route
+        router.replace('/home');
 
         setTimeout(() => {
           setPostSuccess(false);
@@ -203,6 +154,24 @@ export default function save() {
     } catch (err) {
       console.error(`Error in uploading image: ${err}`);
     }
+
+    const postsRef = collection(db, 'postNew');
+    addDoc(postsRef, {
+      auth: {
+        displayName: auth.currentUser?.displayName,
+        uid: auth.currentUser?.uid,
+      },
+      createdAt: serverTimestamp(), // TODO: Isn't this handled automatically, serverside?
+      comments: comments,
+      rating: defaultRating,
+      isSeasonal: isSeasonal,
+    })
+      .then(res => {
+        setSnackbarMessage(`Posted successfully!`);
+      })
+      .catch(err => {
+        setSnackbarMessage(`Error posting! ${err}`);
+      });
   };
 
   const handleShowModal = () => setModalVisible(true);
@@ -213,6 +182,10 @@ export default function save() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setDefaultRating(item);
   };
+
+  const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
+  const onDismissSnackBar = () => setSnackbarVisible(false);
+  const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
 
   return (
     <ModalProvider>
@@ -236,7 +209,6 @@ export default function save() {
             />
           ))}
         </Swiper>
-
         {/* Hair type */}
         <DropDownPicker
           open={dropdownOpen}
@@ -293,6 +265,7 @@ export default function save() {
         {/* Color */}
         {/* Treatment done */}
         {/* Star rating */}
+        {/* TODO Can probably offload to own component */}
         <View
           style={{
             justifyContent: 'center',
@@ -317,6 +290,14 @@ export default function save() {
             );
           })}
         </View>
+
+        <View style={{ flexDirection: 'row' }}>
+          <Text>Client is seasonal</Text>
+          <Switch
+            value={isSeasonal}
+            onChange={() => setIsSeasonal(!isSeasonal)}
+          />
+        </View>
         {/* Responds well to */}
         {/* <TextInput /> */}
         {/* Responds poorly to */}
@@ -325,10 +306,24 @@ export default function save() {
         <TextInput
           style={{ width: '100%' }}
           label='Comments'
-          value={comment}
-          onChangeText={text => setComment(text)}
+          value={comments}
+          onChangeText={text => setComments(text)}
           multiline={true}
           theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+        />
+
+        <DropDownPicker
+          theme={!theme.dark ? 'LIGHT' : 'DARK'}
+          open={productsDropdownOpen}
+          setOpen={setProductsDropdownOpen}
+          value={productsDropdownValue}
+          setValue={setProductsDropdownValue}
+          items={productsList}
+          setItems={setProductsList}
+          multiple={true}
+          mode='SIMPLE'
+          placeholder='Products used'
+          badgeDotColors={Object.values(theme.colors)}
         />
       </View>
 
@@ -348,22 +343,27 @@ export default function save() {
           contentStyle={{ padding: 20 }}
           buttonColor={postSuccess ? 'green' : undefined}
         >
-          {/* if (loading) {
-            display nothing
-          }
-          if (!loading && !postSuccess) {
-            'Post'
-          }
-          if (!loading && postSuccess) {
-            'Posted successfully!'
-          } */}
-
           {!loading && !postSuccess
             ? 'Post'
             : !loading && postSuccess
             ? 'Posted successfully!'
             : null}
         </Button>
+
+        <Snackbar
+          visible={snackbarVisible}
+          duration={3000}
+          onDismiss={onDismissSnackBar}
+          theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+          action={{
+            label: 'OK',
+            onPress: () => {
+              // Do something
+            },
+          }}
+        >
+          {snackbarMessage}
+        </Snackbar>
       </View>
     </ModalProvider>
   );

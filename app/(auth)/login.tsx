@@ -9,6 +9,7 @@ import {
 import React, { useContext, useEffect, useState } from 'react';
 import {
   Button,
+  HelperText,
   MD3DarkTheme,
   MD3LightTheme,
   Snackbar,
@@ -36,7 +37,9 @@ export default function Login() {
   const firebaseAuth = getAuth();
   const myAuth = useAuth();
   const [email, setEmail] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [password, setPassword] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
   const theme = useTheme();
   const userCtx = useContext(UserContext);
@@ -47,6 +50,20 @@ export default function Login() {
   const onDismissSnackBar = () => setSnackbarVisible(false);
   const samlProvider = new SAMLAuthProvider('saml.example-provider');
   const googleProvider = new GoogleAuthProvider();
+
+  // TODO Only display errors for a few seconds, then fade out, but keep the red line underneath
+  const validateEmail = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email!)) {
+      setEmailError('Invalid email format');
+    }
+  };
+
+  const validatePassword = () => {
+    if (password!.length < 8 && password!.length > 0) {
+      setPasswordError('Password must be at least 8 characters long');
+    }
+  };
 
   const handleLogin = () => {
     // TODO
@@ -134,29 +151,34 @@ export default function Login() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* TODO This needs to be only on register screen. Makes no sense to have a name field FOR LOGGING IN */}
-      {/* <TextInput
-        style={{ width: 300 }}
-        placeholder='name'
-        onChangeText={name => setName(name)}
-        theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-      /> */}
       <TextInput
-        style={{ width: 300 }}
+        style={styles.input}
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         placeholder='email'
         keyboardType='email-address'
         onChangeText={email => setEmail(email)}
-        // error={!email && true}
+        error={!!emailError}
+        onBlur={validateEmail}
+        autoFocus={true}
       />
+      <HelperText type='error' visible={!!emailError}>
+        Email address is invalid!
+      </HelperText>
+
       <TextInput
-        style={{ width: 300 }}
+        style={styles.input}
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         placeholder='password'
         keyboardType='visible-password'
         onChangeText={password => setPassword(password)}
+        error={!!passwordError}
+        onBlur={validatePassword}
         secureTextEntry={true}
       />
+      <HelperText type='error' visible={!!emailError}>
+        Email address is invalid!
+      </HelperText>
+
       <Button
         style={{ margin: 10, marginTop: 30, width: 300 }}
         mode='contained'
@@ -169,8 +191,6 @@ export default function Login() {
         <Button
           style={{ margin: 10, width: 300 }}
           contentStyle={{ padding: 20 }}
-          // onPress={handleRegister}
-          // onPress={() => console.log('registering....')}
         >
           Register
         </Button>
@@ -226,4 +246,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  input: { width: 300 },
 });

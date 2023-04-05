@@ -10,6 +10,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import {
   Button,
+  HelperText,
   MD3DarkTheme,
   MD3LightTheme,
   Snackbar,
@@ -30,18 +31,23 @@ import { useAuth } from '../../context/auth';
 
 export default function Register() {
   const auth = getAuth();
+  const myAuth = useAuth();
+
   const [email, setEmail] = useState<string | null>(null);
   const [password, setPassword] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
   const [licenseId, setLicenseId] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [licenseError, setLicenseError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<string | undefined | null>();
+
   const theme = useTheme();
   const userCtx = useContext(UserContext);
-  const [errors, setErrors] = useState<string | undefined | null>();
 
   const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
   const onToggleSnackBar = () => setSnackbarVisible(!snackbarVisible);
   const onDismissSnackBar = () => setSnackbarVisible(false);
-  const myAuth = useAuth();
 
   const handleRegister = () => {
     createUserWithEmailAndPassword(auth, email!, password!)
@@ -70,6 +76,33 @@ export default function Register() {
       });
   };
 
+  const validateEmail = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email!)) {
+      setEmailError('Invalid email format');
+    }
+  };
+
+  const validatePassword = () => {
+    if (password!.length < 8 && password!.length > 0) {
+      setPasswordError('Password must be at least 8 characters long');
+    }
+  };
+
+  const validateLicenseId = () => {
+    const licenseIdRegex = /^[A-Za-z]{2}\d{7}$/;
+    if (!licenseIdRegex.test(licenseId!)) {
+      setLicenseError('A license must have two letters followed by 7 numbers!');
+    }
+  };
+
+  const validateForm = () => {
+    validateEmail();
+    validatePassword();
+    validateLicenseId;
+    return !emailError && !passwordError && !licenseError;
+  };
+
   // TODO Temporary workaround for getting the keyboard out of the way only when there's an error
   useEffect(() => {
     snackbarVisible && Keyboard.dismiss();
@@ -81,36 +114,60 @@ export default function Register() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     > */}
+
       <Stack.Screen options={{ headerShown: false }} />
 
+      {/* TODO Offload into its own customizable component that I can iterate over */}
       <TextInput
         style={styles.input}
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         placeholder='email'
         keyboardType='email-address'
+        error={!!emailError}
+        onBlur={validateEmail}
         onChangeText={email => setEmail(email)}
-        // error={!email && true}
+        autoFocus={true}
+        
       />
+      <HelperText type='error' visible={!!emailError}>
+        Email address is invalid!
+      </HelperText>
+
       <TextInput
         style={styles.input}
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         placeholder='password'
         keyboardType='visible-password'
+        error={!!passwordError}
+        onBlur={validatePassword}
         onChangeText={password => setPassword(password)}
         secureTextEntry={true}
       />
+      <HelperText type='error' visible={!!passwordError}>
+        Email address is invalid!
+      </HelperText>
+
       <TextInput
         style={styles.input}
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         placeholder='name'
         onChangeText={name => setName(name)}
       />
+      <HelperText type='error' visible={false}>
+        Email address is invalid!
+      </HelperText>
+
       <TextInput
         style={styles.input}
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         placeholder='license number'
+        error={!!licenseError}
+        onBlur={validateLicenseId}
         onChangeText={licenseId => setLicenseId(licenseId)}
       />
+      <HelperText type='error' visible={!!licenseError}>
+        Email address is invalid!
+      </HelperText>
 
       <Button
         style={{ margin: 10, marginTop: 30, width: 300 }}

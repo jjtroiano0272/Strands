@@ -68,8 +68,13 @@ readme tracking
 > > [x] Login snackbar error show ups
 > >
 > > 04APR2023
-> > [ ] Register: register with SSO
-> > [ ]
+> > [~] Register: register with SSO
+> > [ ] Dismissable keyboard
+> >
+> > 05APR2023
+> > [x] Creating records on my db
+> > [ ] What data exactly should a post include?
+> > [ ] Linking Storage images to DB posts s.t. that post has images included with it
 
 Notes:
 
@@ -104,7 +109,6 @@ PROFILE: [username] show before and after pictures (possibly in carousel)
 SEARCH PAGE: with map with geolocation showing clients location by salon
 
 - Search bar on the nav header
-
 - What kind of products a client likes to use
 - 'Has very frizzy hair, needs something anti-frizz and hydrating'
 - Ability to submit multiple photos of a client
