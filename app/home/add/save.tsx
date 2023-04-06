@@ -23,14 +23,25 @@ import {
 // require('firebase/firestore');
 // require('firebase/firebase-storage');
 // Firebase 9 imports
-import { getStorage, ref, uploadBytes } from 'firebase/storage';
-import { getAuth } from 'firebase/auth';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { getStorage, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import {
+  addDoc,
+  getDocs,
+  collection,
+  getDoc,
+  getFirestore,
+  serverTimestamp,
+  doc,
+  DocumentReference,
+} from 'firebase/firestore';
+import { getAuth, User } from 'firebase/auth';
 
 // import { firebaseApp } from '../_layout';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { auth, db, firebaseConfig } from '../../../firebaseConfig';
+import { ScrollView } from 'react-native-gesture-handler';
+import { firebase } from '@react-native-firebase/auth';
 
 type RouteParams = {
   imgUri: string;
@@ -59,12 +70,14 @@ export default function save() {
   >(null);
   const [productsList, setProductsList] = useState([
     {
-      label: "Trader Joe's Tea Tree Conditioner",
+      label: `Trader Joe's Tea Tree Conditioner`,
+      value: `Trader Joe's Tea Tree Conditioner`,
     },
-    { label: 'Arctic Fox Coloring' },
+    { label: `Arctic Fox Coloring`, value: `Arctic Fox Coloring` },
   ]);
   const [modalVisible, setModalVisible] = useState(false);
   const [isSeasonal, setIsSeasonal] = useState<boolean>(false);
+  const [postData, setPostData] = useState<{} | null>(null);
 
   const labels = [
     // '1A',
@@ -121,16 +134,63 @@ export default function save() {
         console.log(`transferred: ${snapshot.bytesTransferred}`);
       };
 
-      try {
-        const taskCompleted = async (snapshot: {
-          ref: { getDownloadURL: () => any };
-        }) => {
-          const downloadURL = await snapshot.ref.getDownloadURL();
-          console.log(`snapshot: ${downloadURL}`);
+      // try {
+      //   const taskCompleted = async (snapshot: {
+      //     ref: { getDownloadURL: () => any };
+      //   }) => {
+      //     const downloadURL = await snapshot.ref.getDownloadURL().then(arg => {
+      //       savePostData();
+      //     });
+
+      //     console.log(`snapshot: ${downloadURL}`);
+      //   };
+      // } catch (err) {
+      //   console.error(`Error in completed task: ${err}`);
+      // }
+
+      const taskCompleted = async () => {
+        const snapshot = await getDownloadURL((await task).ref);
+        savePostData(snapshot);
+      };
+
+      const savePostData = (downloadURL: string) => {
+        // Firebase 8
+        // firebase
+        //   .firestore()
+        //   .collection('posts')
+        //   .doc(firebase.auth().currentUser?.uid)
+        //   .collection('userPosts')
+        //   .add({
+        //     downloadURL,
+        //     caption,
+        //     creation: firebase.firestore().FieldValue.serverTimeStamp,
+        //   });
+
+        // Mine
+        // getDoc(firebase.auth().currentUser.uid);
+
+        // CGPT1
+        // const db = getFirestore();
+        // const currentUser: User | null = getAuth().currentUser;
+        // const postRef: DocumentReference = doc(db, 'posts', currentUser?.uid);
+
+        // CGPT2
+        const db = getFirestore();
+        const currentUser = getAuth().currentUser;
+        const postsRef = collection(db, 'posts');
+        const userPostsRef = collection(
+          doc(postsRef, currentUser?.uid),
+          'userPosts'
+        );
+
+        const newPost = {
+          downloadURL: downloadURL,
+          caption: 'hard coded caption for testing purposes',
+          creation: serverTimestamp(),
         };
-      } catch (err) {
-        console.error(`Error in completed task: ${err}`);
-      }
+
+        addDoc(userPostsRef, newPost);
+      };
 
       const taskError = (error: any) => {
         console.error(`Error uploading! ${error}`);
@@ -140,6 +200,7 @@ export default function save() {
       task.then(snapshot => {
         console.log('Does this mean it was successful?');
         console.log(`metadata: ${snapshot.metadata}`);
+
         setPostSuccess(true);
         setLoading(false);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -165,6 +226,7 @@ export default function save() {
       comments: comments,
       rating: defaultRating,
       isSeasonal: isSeasonal,
+      productsUsed: productsList,
     })
       .then(res => {
         setSnackbarMessage(`Posted successfully!`);
@@ -187,184 +249,191 @@ export default function save() {
   const onDismissSnackBar = () => setSnackbarVisible(false);
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
 
+  // TODO Possibly saving post as posts/userPosts
+  // posts contains user id, then click through that id to find all posts by that id
+  // { caption, createdAt, mediaUrl (points to fireStore) }
+
   return (
     <ModalProvider>
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'flex-start',
-          alignItems: 'center',
-          paddingVertical: 30,
-          paddingHorizontal: 10,
-        }}
-      >
-        <Stack.Screen options={{ headerShown: false }} />
-        {/* {imgUri && <Image source={{ uri: imgUri, height: 300, width: 300 }} />} */}
-        <Swiper>
-          {images.map((image, index) => (
-            <Image
-              key={index}
-              source={image}
-              style={{ width: '100%', height: '100%' }}
-            />
-          ))}
-        </Swiper>
-        {/* Hair type */}
-        <DropDownPicker
-          open={dropdownOpen}
-          value={dropdownValue}
-          items={items}
-          setOpen={setModalVisible}
-          setValue={setDropdownValue}
-          setItems={setItems}
-          theme={!theme.dark ? 'LIGHT' : 'DARK'}
-          multiple={true}
-          max={2}
-          mode='BADGE'
-          placeholder='Hair type'
-          badgeDotColors={[
-            '#e76f51',
-            '#00b4d8',
-            '#e9c46a',
-            '#e76f51',
-            '#8ac926',
-            '#00b4d8',
-            '#e9c46a',
-          ]}
-        />
-        <Portal>
-          <Modal visible={modalVisible} onDismiss={handleHideModal}>
-            <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-              <FlatList
-                // TODO Optimize by using aither SVG or putting Skeleton on them until loaded FULLY
-                data={hairTypeImages}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    onPress={() => {
-                      dropdownValue === null
-                        ? setDropdownValue([item.id])
-                        : setDropdownValue([...dropdownValue, item.id]);
-                      setModalVisible(false);
-                    }}
-                  >
-                    <Image
-                      style={{ width: 120, height: 120, margin: 10 }}
-                      source={item.uri}
-                    />
-                  </TouchableOpacity>
-                )}
-                keyExtractor={item => item.id}
-                numColumns={3}
-              />
-            </View>
-
-            {/* TODO Requires attribution to use! */}
-          </Modal>
-        </Portal>
-        {/* Hair length? */}
-        {/* Color */}
-        {/* Treatment done */}
-        {/* Star rating */}
-        {/* TODO Can probably offload to own component */}
+      <ScrollView>
         <View
           style={{
-            justifyContent: 'center',
-            flexDirection: 'row',
-            marginVertical: 30,
+            flex: 1,
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            paddingVertical: 30,
+            paddingHorizontal: 10,
           }}
         >
-          {maxRating.map((item, key) => {
-            return (
-              <TouchableOpacity
-                style={{ marginHorizontal: 7 }}
-                activeOpacity={0.7}
-                key={item}
-                onPress={() => handleStarRating(item)}
-              >
-                <MaterialCommunityIcons
-                  name={item <= defaultRating ? 'star' : 'star-outline'}
-                  size={36}
-                  color='#FF9529'
+          <Stack.Screen options={{ headerShown: false }} />
+          {/* {imgUri && <Image source={{ uri: imgUri, height: 300, width: 300 }} />} */}
+          <Swiper>
+            {images.map((image, index) => (
+              <Image
+                key={index}
+                source={image}
+                style={{ width: '100%', height: '100%' }}
+              />
+            ))}
+          </Swiper>
+          {/* Hair type */}
+          <DropDownPicker
+            open={dropdownOpen}
+            value={dropdownValue}
+            items={items}
+            setOpen={setModalVisible}
+            setValue={setDropdownValue}
+            setItems={setItems}
+            theme={!theme.dark ? 'LIGHT' : 'DARK'}
+            multiple={true}
+            max={2}
+            mode='BADGE'
+            placeholder='Hair type'
+            badgeDotColors={[
+              '#e76f51',
+              '#00b4d8',
+              '#e9c46a',
+              '#e76f51',
+              '#8ac926',
+              '#00b4d8',
+              '#e9c46a',
+            ]}
+          />
+          <Portal>
+            <Modal visible={modalVisible} onDismiss={handleHideModal}>
+              <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                <FlatList
+                  // TODO Optimize by using aither SVG or putting Skeleton on them until loaded FULLY
+                  data={hairTypeImages}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      onPress={() => {
+                        dropdownValue === null
+                          ? setDropdownValue([item.id])
+                          : setDropdownValue([...dropdownValue, item.id]);
+                        setModalVisible(false);
+                      }}
+                    >
+                      <Image
+                        style={{ width: 120, height: 120, margin: 10 }}
+                        source={item.uri}
+                      />
+                    </TouchableOpacity>
+                  )}
+                  keyExtractor={item => item.id}
+                  numColumns={3}
                 />
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+              </View>
 
-        <View style={{ flexDirection: 'row' }}>
-          <Text>Client is seasonal</Text>
-          <Switch
-            value={isSeasonal}
-            onChange={() => setIsSeasonal(!isSeasonal)}
+              {/* TODO Requires attribution to use! */}
+            </Modal>
+          </Portal>
+          {/* Hair length? */}
+          {/* Color */}
+          {/* Treatment done */}
+          {/* Star rating */}
+          {/* TODO Can probably offload to own component */}
+          <View
+            style={{
+              justifyContent: 'center',
+              flexDirection: 'row',
+              marginVertical: 30,
+            }}
+          >
+            {maxRating.map((item, key) => {
+              return (
+                <TouchableOpacity
+                  style={{ marginHorizontal: 7 }}
+                  activeOpacity={0.7}
+                  key={item}
+                  onPress={() => handleStarRating(item)}
+                >
+                  <MaterialCommunityIcons
+                    name={item <= defaultRating ? 'star' : 'star-outline'}
+                    size={36}
+                    color='#FF9529'
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <View style={{ flexDirection: 'row' }}>
+            <Text>Client is seasonal</Text>
+            <Switch
+              value={isSeasonal}
+              onChange={() => setIsSeasonal(!isSeasonal)}
+            />
+          </View>
+          {/* Responds well to */}
+          {/* <TextInput /> */}
+          {/* Responds poorly to */}
+          {/* <TextInput /> */}
+          {/* Comments */}
+          <TextInput
+            style={{ width: '100%' }}
+            label='Comments'
+            value={comments}
+            onChangeText={text => setComments(text)}
+            multiline={true}
+            theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+          />
+
+          <DropDownPicker
+            theme={!theme.dark ? 'LIGHT' : 'DARK'}
+            open={productsDropdownOpen}
+            setOpen={setProductsDropdownOpen}
+            value={productsDropdownValue}
+            setValue={setProductsDropdownValue}
+            items={productsList}
+            setItems={setProductsList}
+            multiple={true}
+            mode='SIMPLE'
+            placeholder='Products used'
+            badgeDotColors={Object.values(theme.colors)}
+            style={{ marginVertical: 20 }}
           />
         </View>
-        {/* Responds well to */}
-        {/* <TextInput /> */}
-        {/* Responds poorly to */}
-        {/* <TextInput /> */}
-        {/* Comments */}
-        <TextInput
-          style={{ width: '100%' }}
-          label='Comments'
-          value={comments}
-          onChangeText={text => setComments(text)}
-          multiline={true}
-          theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-        />
 
-        <DropDownPicker
-          theme={!theme.dark ? 'LIGHT' : 'DARK'}
-          open={productsDropdownOpen}
-          setOpen={setProductsDropdownOpen}
-          value={productsDropdownValue}
-          setValue={setProductsDropdownValue}
-          items={productsList}
-          setItems={setProductsList}
-          multiple={true}
-          mode='SIMPLE'
-          placeholder='Products used'
-          badgeDotColors={Object.values(theme.colors)}
-        />
-      </View>
-
-      <View
-        style={{
-          paddingVertical: 30,
-          paddingHorizontal: 10,
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <Button
-          mode='contained'
-          onPress={handleImageUpload}
-          loading={loading}
-          style={{ borderRadius: 50, width: 150 }}
-          contentStyle={{ padding: 20 }}
-          buttonColor={postSuccess ? 'green' : undefined}
-        >
-          {!loading && !postSuccess
-            ? 'Post'
-            : !loading && postSuccess
-            ? 'Posted successfully!'
-            : null}
-        </Button>
-
-        <Snackbar
-          visible={snackbarVisible}
-          duration={3000}
-          onDismiss={onDismissSnackBar}
-          theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-          action={{
-            label: 'OK',
-            onPress: () => {
-              // Do something
-            },
+        <View
+          style={{
+            paddingVertical: 30,
+            paddingHorizontal: 10,
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
         >
-          {snackbarMessage}
-        </Snackbar>
-      </View>
+          <Button
+            mode='contained'
+            onPress={handleImageUpload}
+            loading={loading}
+            style={{ borderRadius: 50, width: 150 }}
+            contentStyle={{ padding: 20 }}
+            buttonColor={postSuccess ? 'green' : undefined}
+          >
+            {!loading && !postSuccess
+              ? 'Post'
+              : !loading && postSuccess
+              ? 'Posted successfully!'
+              : null}
+          </Button>
+
+          <Snackbar
+            visible={snackbarVisible}
+            duration={3000}
+            onDismiss={onDismissSnackBar}
+            theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+            action={{
+              label: 'OK',
+              onPress: () => {
+                // Do something
+              },
+            }}
+          >
+            {snackbarMessage}
+          </Snackbar>
+        </View>
+      </ScrollView>
     </ModalProvider>
   );
 }

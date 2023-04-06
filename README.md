@@ -73,7 +73,14 @@ readme tracking
 > >
 > > 05APR2023
 > > [x] Creating records on my db
-> > [ ] What data exactly should a post include?
+> > [o] What data exactly should a post include?
+> > [ ] Feed: show people within x miles radius or most recently added (recent additions get 'added x time ago')
+> > [ ] save: show in the image carousel recent images taken
+> > [ ] per client: before/after images
+> > [ ] Linking Storage images to DB posts s.t. that post has images included with it
+> >
+> > 06APR2023
+> > [ ] Clean up upload function
 > > [ ] Linking Storage images to DB posts s.t. that post has images included with it
 
 Notes:
