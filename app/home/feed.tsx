@@ -54,7 +54,8 @@ const Feed = () => {
     error: any;
     loading: any;
   } = useFetch('https://www.reddit.com/r/FancyFollicles.json');
-  console.log(`num items in data: ${data?.length}`);
+  data?.length !== undefined &&
+    console.log(`num items in data: ${data?.length}`);
 
   return (
     // TODO Pull down to refresh (run API call again, but only dispatch to anything that has CHANGED)
@@ -82,7 +83,7 @@ const Feed = () => {
                     company: {
                       bs: 'foooo',
                       catchPhrase: 'hello',
-                      name: JSON.stringify(item.data.ups),
+                      name: JSON.stringify(item.data.ups, null, 2),
                     },
                     name: item.data.author,
                     // Any keys after this aren't consumed by [username]

@@ -80,8 +80,15 @@ readme tracking
 > > [ ] Linking Storage images to DB posts s.t. that post has images included with it
 > >
 > > 06APR2023
-> > [ ] Clean up upload function
+> > [o] Clean up upload function
+> > [x] Sending products used data correctly
 > > [ ] Linking Storage images to DB posts s.t. that post has images included with it
+> > [ ] Fixing virtualizedList error
+> > [ ] Swiper shows array of images
+> >
+> > 07APR2023
+> > [ ] Swiper shows array of images
+> > ---- [ ] Changing image to image[]
 
 Notes:
 
@@ -133,3 +140,13 @@ COMMENTS ON CLIENT EXAMPLE:
 - Wants natural results
 - Wants obvious dimension
 - Wants chunky highlights
+
+Potential fields to add for save.tsx:
+
+- Hair length?
+- Color
+- Treatment done
+- Star rating
+  - Responds well to
+  - Responds poorly to
+  - Comments

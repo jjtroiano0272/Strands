@@ -32,7 +32,8 @@ export default function Add() {
   const route = useRoute();
   const [type, setType] = useState(CameraType.back);
   const [camera, setCamera] = useState<Camera | null>(null);
-  const [image, setImage] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<string[] | null>(null);
+  // const [imagePaths, setImagePaths] = useState<string[] | null>(null);
   const [fetchingData, setFetchingData] = useState(false);
   const [loading, setLoading] = useState(false);
   // const [permission, requestPermission] = Camera.useCameraPermissions();
@@ -66,90 +67,80 @@ export default function Add() {
     );
   };
 
+  // TODO You probably don't need to write this async since takePictureAsync already is a Promise
   const handleTakePicture = async () => {
     if (camera) {
       const res = camera._onCameraReady();
-      // console.log(`What this is?: ${res}`);
 
       await camera
         .takePictureAsync()
-        .then(res => setImage(res.uri))
+        .then(res => setSelectedImages([res.uri]))
         .catch(err => console.error(`Error when taking picture! ${err}`));
+    } else {
+      console.error(`Camera unavaible! Or something.`);
     }
   };
 
   // TODO change to .then.catch methodology
-  const pickImage = async () => {
-    try {
-      // No permissions request is necessary for launching the image library
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, // TODO future support for uploading short videos?
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
+  const handlePickImage = () => {
+    // try {
+    //   // No permissions request is necessary for launching the image library
+    //   let result = await ImagePicker.launchImageLibraryAsync({
+    //     mediaTypes: ImagePicker.MediaTypeOptions.Images, // TODO future support for uploading short videos?
+    //     // allowsEditing: true,
+    //     allowsMultipleSelection: true,
+    //     aspect: [4, 3],
+    //     quality: 1,
+    //   });
+
+    //   console.log(`Image pick result: ${result}`);
+
+    //   if (!result.cancelled) {
+    //     setImage(result.assets[0].uri);
+    //   }
+    // } catch (err) {
+    //   console.error(`Error picking image: ${err}`);
+    // }
+
+    // TODO future support for uploading short videos?
+    const result = ImagePicker.launchImageLibraryAsync({
+      // allowsEditing: true,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      aspect: [4, 3],
+      quality: 1,
+    })
+      .then(res => {
+        console.log(`res: ${JSON.stringify(res, null, 2)}`);
+
+        // this is the local device's path to the image, where assets is the string[] containing all selected images
+        // setImage(res?.assets![0].uri);
+        // setImagePaths(res?.assets!.map(image => image.uri));
+        setSelectedImages(res?.assets!.map(image => image.uri));
+      })
+      .catch(err => {
+        console.error(`Something happened picking image: ${err}`);
       });
-
-      console.log(`Image pick result: ${result}`);
-
-      if (!result.canceled) {
-        setImage(result.assets[0].uri);
-      }
-    } catch (err) {
-      console.error(`Error picking image: ${err}`);
-    }
   };
 
   // PREVIOUSLY WAS ASYNC WITH DIFFERENT METHODS
   // const handleSaveImage = async () => {
   const handleSaveImage = () => {
-    // Timestamp: 02:18
-    // const imageBase64 = await FileSystem.readAsStringAsync(imageUrl, {
-    //   encoding: FileSystem.EncodingType.Base64,
-    // });
-    //
-    //
-    // GOOD CODE
-    // try {
-    //   const storage = getStorage();
-    //   const imagesRef = ref(storage, `images/${uuidv4()}`);
-    //   // const blob = Blob(JSON.stringify(imageBase64));
-    //   // console.log(`imageBase64: ${imageBase64}`);
-    //   // router.push({ pathname: '/save', params: { imageBase64 } });
-    //   fetch(image)
-    //     .then(response => response.blob())
-    //     .then(blob => {
-    //       setFetchingData(true);
-    //       // Use the `blob` object as needed, e.g. upload to Firestore with uploadBytes()
-    //       uploadBytes(imagesRef, blob).then(snapshot => {
-    //         console.log(`Uploaded blob or file`);
-    //         setFetchingData(false);
-    //       });
-    //     })
-    //     .catch(error => {
-    //       setFetchingData(false);
-    //       // Handle any errors that occurred during the fetch request
-    //       Alert.alert('Error uploading image!');
-    //       console.error(error);
-    //     });
-    // } catch (error) {
-    //   console.error('outer error');
-    // }
+    const imgUris = selectedImages?.map(path => encodeURIComponent(path));
 
-    const imgUri = image ? encodeURIComponent(image) : null;
+    console.log(`imagePaths: ${JSON.stringify(selectedImages, null, 2)}`);
+    console.log(`encoded URIs: ${JSON.stringify(imgUris, null, 2)}`);
 
     // VERSION A
-    if (imgUri) {
+    if (imgUris) {
       router.push({
         // pathname: './save',
         pathname: '/home/add/save',
         params: {
-          imgUri,
+          imgUris,
         },
       });
     }
-
-    // VERSION B
-    // router.push('./save');
   };
 
   useEffect(() => {
@@ -196,7 +187,7 @@ export default function Add() {
             mode='contained'
           />
           <IconButton
-            onPress={pickImage}
+            onPress={handlePickImage}
             icon={'view-gallery-outline'}
             iconColor={theme.colors.primary}
             size={20}
@@ -204,7 +195,7 @@ export default function Add() {
           />
         </View>
 
-        {image && (
+        {selectedImages && (
           <View style={{ flex: 0.3, justifyContent: 'flex-end' }}>
             {/* <IconButton
               icon='cancel'
@@ -223,7 +214,8 @@ export default function Add() {
               SAVE
             </RippleButton>
 
-            <Image style={{ flex: 1 }} source={{ uri: image }} />
+            {/* TODO Will probably need a redesign of this for better UX */}
+            <Image style={{ flex: 1 }} source={{ uri: selectedImages[0] }} />
           </View>
         )}
       </Camera>

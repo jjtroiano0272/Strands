@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import Swiper from 'react-native-swiper';
 import SwiperNumber from 'react-native-swiper';
 import { View, Text, Image, TouchableOpacity, FlatList } from 'react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { RouteProp, useRoute, useTheme } from '@react-navigation/native';
 import {
@@ -17,6 +17,7 @@ import {
   IconButton,
   Checkbox,
   Switch,
+  List,
 } from 'react-native-paper';
 // Firebase 8 imports
 // import firebase from 'firebase';
@@ -42,13 +43,14 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { auth, db, firebaseConfig } from '../../../firebaseConfig';
 import { ScrollView } from 'react-native-gesture-handler';
 import { firebase } from '@react-native-firebase/auth';
+import StarRating from '../../../components/StarRating';
 
 type RouteParams = {
   imgUri: string;
 };
 
 export default function save() {
-  console.log(`getAuth: ${JSON.stringify(getAuth())}`);
+  console.log(`getAuth: ${JSON.stringify(getAuth(), null, 2)}`);
 
   // const storage = getStorage(firebaseApp);
   const theme = useTheme();
@@ -57,10 +59,10 @@ export default function save() {
   const { imgUri } = route.params;
 
   const [comments, setComments] = useState<string>('');
-  const [defaultRating, setDefaultRating] = useState(2);
-  const [maxRating, setMaxRating] = useState([1, 2, 3, 4, 5]);
   const [loading, setLoading] = useState<boolean>(false);
   const [postSuccess, setPostSuccess] = useState<boolean>(false);
+  const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
+  const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownValue, setDropdownValue] = useState<string[] | null>(null);
   const [productsDropdownOpen, setProductsDropdownOpen] =
@@ -78,6 +80,9 @@ export default function save() {
   const [modalVisible, setModalVisible] = useState(false);
   const [isSeasonal, setIsSeasonal] = useState<boolean>(false);
   const [postData, setPostData] = useState<{} | null>(null);
+  const [selectedUserRating, setSelectedUserRating] = useState<number | null>(
+    null
+  );
 
   const labels = [
     // '1A',
@@ -114,90 +119,24 @@ export default function save() {
   }
 
   const handleImageUpload = async () => {
-    try {
-      setLoading(true);
+    setLoading(true);
 
-      // Firebase Methodology, Part III
-      const response = await fetch(imgUri);
-      const blob = await response.blob();
-      const storage = getStorage();
-      const auth = getAuth();
-      const childPath = `post/${auth.currentUser?.uid}/${Math.random().toString(
-        36
-      )}`;
-      console.log(`childPath: ${childPath}`);
+    // Firebase Methodology, Part III
+    const response = await fetch(imgUri);
+    const blob = await response.blob();
+    const storage = getStorage();
+    const auth = getAuth();
+    const childPath = `post/${auth.currentUser?.uid}/${Math.random().toString(
+      36
+    )}`;
+    console.log(`childPath: ${childPath}`);
 
-      const storageRef = ref(storage, childPath);
-      const task = uploadBytes(storageRef, blob);
+    const storageRef = ref(storage, childPath);
+    const task = uploadBytes(storageRef, blob);
 
-      const taskProgress = (snapshot: { bytesTransferred: any }) => {
-        console.log(`transferred: ${snapshot.bytesTransferred}`);
-      };
-
-      // try {
-      //   const taskCompleted = async (snapshot: {
-      //     ref: { getDownloadURL: () => any };
-      //   }) => {
-      //     const downloadURL = await snapshot.ref.getDownloadURL().then(arg => {
-      //       savePostData();
-      //     });
-
-      //     console.log(`snapshot: ${downloadURL}`);
-      //   };
-      // } catch (err) {
-      //   console.error(`Error in completed task: ${err}`);
-      // }
-
-      const taskCompleted = async () => {
-        const snapshot = await getDownloadURL((await task).ref);
-        savePostData(snapshot);
-      };
-
-      const savePostData = (downloadURL: string) => {
-        // Firebase 8
-        // firebase
-        //   .firestore()
-        //   .collection('posts')
-        //   .doc(firebase.auth().currentUser?.uid)
-        //   .collection('userPosts')
-        //   .add({
-        //     downloadURL,
-        //     caption,
-        //     creation: firebase.firestore().FieldValue.serverTimeStamp,
-        //   });
-
-        // Mine
-        // getDoc(firebase.auth().currentUser.uid);
-
-        // CGPT1
-        // const db = getFirestore();
-        // const currentUser: User | null = getAuth().currentUser;
-        // const postRef: DocumentReference = doc(db, 'posts', currentUser?.uid);
-
-        // CGPT2
-        const db = getFirestore();
-        const currentUser = getAuth().currentUser;
-        const postsRef = collection(db, 'posts');
-        const userPostsRef = collection(
-          doc(postsRef, currentUser?.uid),
-          'userPosts'
-        );
-
-        const newPost = {
-          downloadURL: downloadURL,
-          caption: 'hard coded caption for testing purposes',
-          creation: serverTimestamp(),
-        };
-
-        addDoc(userPostsRef, newPost);
-      };
-
-      const taskError = (error: any) => {
-        console.error(`Error uploading! ${error}`);
-      };
-
-      // task.on('state_changed', taskProgress, taskError, taskCompleted);
-      task.then(snapshot => {
+    // task.on('state_changed', taskProgress, taskError, taskCompleted);
+    task
+      .then(snapshot => {
         console.log('Does this mean it was successful?');
         console.log(`metadata: ${snapshot.metadata}`);
 
@@ -211,10 +150,29 @@ export default function save() {
         setTimeout(() => {
           setPostSuccess(false);
         }, 2000);
-      });
-    } catch (err) {
-      console.error(`Error in uploading image: ${err}`);
-    }
+      })
+      .catch(err => console.error(`error uploading! ${err}`));
+
+    // TODO Get rid of nested functions
+    (async () => {
+      const downloadURL = await getDownloadURL((await task).ref);
+
+      const db = getFirestore();
+      const currentUser = getAuth().currentUser;
+      const postsRef = collection(db, 'posts');
+      const userPostsRef = collection(
+        doc(postsRef, currentUser?.uid),
+        'userPosts'
+      );
+
+      const newPost = {
+        downloadURL: downloadURL,
+        caption: 'hard coded caption for testing purposes',
+        creation: serverTimestamp(),
+      };
+
+      addDoc(userPostsRef, newPost);
+    })();
 
     const postsRef = collection(db, 'postNew');
     addDoc(postsRef, {
@@ -224,9 +182,9 @@ export default function save() {
       },
       createdAt: serverTimestamp(), // TODO: Isn't this handled automatically, serverside?
       comments: comments,
-      rating: defaultRating,
+      rating: selectedUserRating,
       isSeasonal: isSeasonal,
-      productsUsed: productsList,
+      productsUsed: productsDropdownValue,
     })
       .then(res => {
         setSnackbarMessage(`Posted successfully!`);
@@ -240,14 +198,7 @@ export default function save() {
 
   const handleHideModal = () => setModalVisible(false);
 
-  const handleStarRating = (item: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setDefaultRating(item);
-  };
-
-  const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
   const onDismissSnackBar = () => setSnackbarVisible(false);
-  const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
 
   // TODO Possibly saving post as posts/userPosts
   // posts contains user id, then click through that id to find all posts by that id
@@ -267,7 +218,11 @@ export default function save() {
         >
           <Stack.Screen options={{ headerShown: false }} />
           {/* {imgUri && <Image source={{ uri: imgUri, height: 300, width: 300 }} />} */}
-          <Swiper>
+          <Swiper
+            containerStyle={{ height: 300, width: 300, borderRadius: 10 }}
+            // containerStyle={{ flex: 1 }}
+            onIndexChanged={() => Haptics.ImpactFeedbackStyle.Light}
+          >
             {images.map((image, index) => (
               <Image
                 key={index}
@@ -276,8 +231,10 @@ export default function save() {
               />
             ))}
           </Swiper>
+          <StarRating />
           {/* Hair type */}
           <DropDownPicker
+            placeholder='Hair type'
             open={dropdownOpen}
             value={dropdownValue}
             items={items}
@@ -288,16 +245,21 @@ export default function save() {
             multiple={true}
             max={2}
             mode='BADGE'
-            placeholder='Hair type'
-            badgeDotColors={[
-              '#e76f51',
-              '#00b4d8',
-              '#e9c46a',
-              '#e76f51',
-              '#8ac926',
-              '#00b4d8',
-              '#e9c46a',
-            ]}
+            badgeDotColors={Object.values(theme.colors)}
+          />
+          <DropDownPicker
+            placeholder='Products used'
+            theme={!theme.dark ? 'LIGHT' : 'DARK'}
+            open={productsDropdownOpen}
+            setOpen={setProductsDropdownOpen}
+            value={productsDropdownValue}
+            setValue={setProductsDropdownValue}
+            items={productsList}
+            setItems={setProductsList}
+            multiple={true}
+            mode='SIMPLE'
+            badgeDotColors={Object.values(theme.colors)}
+            style={{ marginVertical: 20 }}
           />
           <Portal>
             <Modal visible={modalVisible} onDismiss={handleHideModal}>
@@ -325,51 +287,21 @@ export default function save() {
                 />
               </View>
 
-              {/* TODO Requires attribution to use! */}
+              {/* TODO Images requires attribution to use! */}
             </Modal>
           </Portal>
-          {/* Hair length? */}
-          {/* Color */}
-          {/* Treatment done */}
-          {/* Star rating */}
-          {/* TODO Can probably offload to own component */}
-          <View
-            style={{
-              justifyContent: 'center',
-              flexDirection: 'row',
-              marginVertical: 30,
-            }}
-          >
-            {maxRating.map((item, key) => {
-              return (
-                <TouchableOpacity
-                  style={{ marginHorizontal: 7 }}
-                  activeOpacity={0.7}
-                  key={item}
-                  onPress={() => handleStarRating(item)}
-                >
-                  <MaterialCommunityIcons
-                    name={item <= defaultRating ? 'star' : 'star-outline'}
-                    size={36}
-                    color='#FF9529'
-                  />
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <List.Item
+            theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+            style={{ width: '100%' }}
+            title='Client is seasonal'
+            right={props => (
+              <Switch
+                value={isSeasonal}
+                onChange={() => setIsSeasonal(!isSeasonal)}
+              />
+            )}
+          />
 
-          <View style={{ flexDirection: 'row' }}>
-            <Text>Client is seasonal</Text>
-            <Switch
-              value={isSeasonal}
-              onChange={() => setIsSeasonal(!isSeasonal)}
-            />
-          </View>
-          {/* Responds well to */}
-          {/* <TextInput /> */}
-          {/* Responds poorly to */}
-          {/* <TextInput /> */}
-          {/* Comments */}
           <TextInput
             style={{ width: '100%' }}
             label='Comments'
@@ -377,21 +309,6 @@ export default function save() {
             onChangeText={text => setComments(text)}
             multiline={true}
             theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-          />
-
-          <DropDownPicker
-            theme={!theme.dark ? 'LIGHT' : 'DARK'}
-            open={productsDropdownOpen}
-            setOpen={setProductsDropdownOpen}
-            value={productsDropdownValue}
-            setValue={setProductsDropdownValue}
-            items={productsList}
-            setItems={setProductsList}
-            multiple={true}
-            mode='SIMPLE'
-            placeholder='Products used'
-            badgeDotColors={Object.values(theme.colors)}
-            style={{ marginVertical: 20 }}
           />
         </View>
 

@@ -77,7 +77,7 @@ export default function Login() {
     // Login Logic
     signInWithEmailAndPassword(firebaseAuth, email!, password!)
       .then(res => {
-        console.log(`login res: ${JSON.stringify(res)}`);
+        console.log(`login res: ${JSON.stringify(res, null, 2)}`);
         myAuth?.signIn();
 
         userCtx?.setIsLoggedIn(true);

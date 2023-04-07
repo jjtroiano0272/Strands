@@ -55,7 +55,9 @@ export default function Register() {
         // Signed in
         const user = userCredential.user;
 
-        console.log(`Registered successfully!\n${JSON.stringify(user)}`);
+        console.log(
+          `Registered successfully!\n${JSON.stringify(user, null, 2)}`
+        );
 
         setErrors('Registered successfully!');
         setSnackbarVisible(true);
@@ -127,7 +129,6 @@ export default function Register() {
         onBlur={validateEmail}
         onChangeText={email => setEmail(email)}
         autoFocus={true}
-        
       />
       <HelperText type='error' visible={!!emailError}>
         Email address is invalid!

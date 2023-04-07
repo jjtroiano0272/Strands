@@ -12,7 +12,7 @@ export const Auth = () => {
   const handleSignIn = async () => {
     await signInWithPopup(auth, googleAuthProvider)
       .then(res => {
-        console.log(JSON.stringify(res));
+        console.log(`in signInWithPopup: ${JSON.stringify(res, null, 2)}`);
         cookie.set('auth-token', res.user.refreshToken);
       })
       .catch(err => console.error(err));
