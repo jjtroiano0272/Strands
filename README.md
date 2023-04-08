@@ -87,8 +87,9 @@ readme tracking
 > > [ ] Swiper shows array of images
 > >
 > > 07APR2023
-> > [ ] Swiper shows array of images
-> > ---- [ ] Changing image to image[]
+> > [x] Swiper shows array of images
+> > ---- [x] Changing image to image[]
+> > [ ] VirtualizedList error
 
 Notes:
 

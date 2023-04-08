@@ -46,17 +46,23 @@ import { firebase } from '@react-native-firebase/auth';
 import StarRating from '../../../components/StarRating';
 
 type RouteParams = {
-  imgUri: string;
+  imgUris: string;
 };
 
 export default function save() {
   console.log(`getAuth: ${JSON.stringify(getAuth(), null, 2)}`);
 
+  const numColors = 6;
+  const badgeColors = Array.from({ length: numColors }, (_, i) => {
+    const hue = (360 / numColors) * i; // calculate hue value for current color
+    return `hsl(${hue}, ${70}%, ${70}%)`; // return HSL color string
+  });
+
   // const storage = getStorage(firebaseApp);
   const theme = useTheme();
   const route = useRoute<RouteProp<Record<string, RouteParams>, string>>();
   const router = useRouter();
-  const { imgUri } = route.params;
+  const imgUris = route.params.imgUris.split(',');
 
   const [comments, setComments] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -113,16 +119,17 @@ export default function save() {
 
   const labelObjs = labels.map(label => ({ label, value: label }));
   const [items, setItems] = useState(labelObjs);
+  // let images: Object[] = [{ uri: 'https://picsum.photos/id/0/200/300' }];
   let images: Object[] = [{ uri: 'https://picsum.photos/id/0/200/300' }];
-  for (let i = 1; i < 11; i++) {
-    images.push([{ uri: `https://picsum.photos/id/${i}/200/300` }]);
-  }
+  // for (let i = 1; i < 11; i++) {
+  //   images.push([{ uri: `https://picsum.photos/id/${i}/200/300` }]);
+  // }
 
   const handleImageUpload = async () => {
     setLoading(true);
 
     // Firebase Methodology, Part III
-    const response = await fetch(imgUri);
+    const response = await fetch(imgUris);
     const blob = await response.blob();
     const storage = getStorage();
     const auth = getAuth();
@@ -219,14 +226,14 @@ export default function save() {
           <Stack.Screen options={{ headerShown: false }} />
           {/* {imgUri && <Image source={{ uri: imgUri, height: 300, width: 300 }} />} */}
           <Swiper
-            containerStyle={{ height: 300, width: 300, borderRadius: 10 }}
             // containerStyle={{ flex: 1 }}
+            containerStyle={{ height: 300, width: '100%', borderRadius: 30 }}
             onIndexChanged={() => Haptics.ImpactFeedbackStyle.Light}
           >
-            {images.map((image, index) => (
+            {imgUris.map((uri, index) => (
               <Image
                 key={index}
-                source={image}
+                source={{ uri: uri }}
                 style={{ width: '100%', height: '100%' }}
               />
             ))}
@@ -234,57 +241,57 @@ export default function save() {
           <StarRating />
           {/* Hair type */}
           <DropDownPicker
-            placeholder='Hair type'
-            open={dropdownOpen}
-            value={dropdownValue}
-            items={items}
-            setOpen={setModalVisible}
-            setValue={setDropdownValue}
-            setItems={setItems}
             theme={!theme.dark ? 'LIGHT' : 'DARK'}
-            multiple={true}
+            badgeDotColors={badgeColors}
+            items={items}
             max={2}
             mode='BADGE'
-            badgeDotColors={Object.values(theme.colors)}
+            multiple={true}
+            open={dropdownOpen}
+            placeholder='Hair type'
+            setItems={setItems}
+            setOpen={setModalVisible}
+            setValue={setDropdownValue}
+            value={dropdownValue}
           />
           <DropDownPicker
-            placeholder='Products used'
-            theme={!theme.dark ? 'LIGHT' : 'DARK'}
-            open={productsDropdownOpen}
-            setOpen={setProductsDropdownOpen}
-            value={productsDropdownValue}
-            setValue={setProductsDropdownValue}
-            items={productsList}
-            setItems={setProductsList}
-            multiple={true}
-            mode='SIMPLE'
-            badgeDotColors={Object.values(theme.colors)}
             style={{ marginVertical: 20 }}
+            theme={!theme.dark ? 'LIGHT' : 'DARK'}
+            badgeDotColors={badgeColors}
+            items={productsList}
+            mode='BADGE'
+            multiple={true}
+            open={productsDropdownOpen}
+            placeholder='Products used'
+            setItems={setProductsList}
+            setOpen={setProductsDropdownOpen}
+            setValue={setProductsDropdownValue}
+            value={productsDropdownValue}
           />
           <Portal>
             <Modal visible={modalVisible} onDismiss={handleHideModal}>
-              <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-                <FlatList
-                  // TODO Optimize by using aither SVG or putting Skeleton on them until loaded FULLY
-                  data={hairTypeImages}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      onPress={() => {
-                        dropdownValue === null
-                          ? setDropdownValue([item.id])
-                          : setDropdownValue([...dropdownValue, item.id]);
-                        setModalVisible(false);
-                      }}
-                    >
-                      <Image
-                        style={{ width: 120, height: 120, margin: 10 }}
-                        source={item.uri}
-                      />
-                    </TouchableOpacity>
-                  )}
-                  keyExtractor={item => item.id}
-                  numColumns={3}
-                />
+              <View
+                style={{
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                {/* TODO Optimize by using aither SVG or putting Skeleton on them until loaded FULLY */}
+
+                {hairTypeImages.map(image => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      dropdownValue === null
+                        ? setDropdownValue([image.id])
+                        : setDropdownValue([...dropdownValue, image.id]);
+                      setModalVisible(false);
+                    }}
+                  >
+                    {/* <Image key={image.id} source={{ uri: '' }} /> */}
+                    <Button mode='contained'>{image.id}</Button>
+                  </TouchableOpacity>
+                ))}
               </View>
 
               {/* TODO Images requires attribution to use! */}
