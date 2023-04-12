@@ -1,4 +1,3 @@
-import ParticleBackground from 'react-native-particle-background';
 import FontAwesome from '@expo/vector-icons/FontAwesome5';
 import {
   Alert,
@@ -6,6 +5,8 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import React, { useContext, useEffect, useState } from 'react';
 import {
@@ -35,6 +36,7 @@ import { useAuth } from '../../context/auth';
 import { SAMLAuthProvider, GoogleAuthProvider } from 'firebase/auth';
 // import { BubbleBackground } from '../../components/AnimatedBackground';
 import Particles from 'react-particles';
+import { AnimatedBackground } from '../../components/AnimatedBackground';
 // import ParticleAnimation from 'react-particle-animation';
 
 export default function Login() {
@@ -64,7 +66,7 @@ export default function Login() {
   };
 
   const validatePassword = () => {
-    if (password!.length < 8 && password!.length > 0) {
+    if (password && password.length < 8 && password.length > 0) {
       setPasswordError('Password must be at least 8 characters long');
     }
   };
@@ -152,7 +154,7 @@ export default function Login() {
   }, [snackbarVisible]);
 
   return (
-    <View style={styles.container}>
+    <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>
       <Stack.Screen options={{ headerShown: false }} />
 
       <TextInput
@@ -240,29 +242,10 @@ export default function Login() {
       >
         {errors}
       </Snackbar>
+
       {/* BackgroundView */}
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          bottom: 0,
-          right: 0,
-          backgroundColor: theme.colors.background,
-          zIndex: -1,
-        }}
-      >
-        <ParticleBackground
-          // particleColor='#rgba(0, 255, 34,0.2)'
-          // particleColor={theme.colors.background}
-          particleColor='black'
-          particleSize={8}
-          particleDispersion={32}
-          backgroundColor='transparent'
-          t
-        />
-      </View>
-    </View>
+      {/* <AnimatedBackground /> */}
+    </Pressable>
   );
 }
 
