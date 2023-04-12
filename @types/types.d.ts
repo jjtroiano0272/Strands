@@ -28,3 +28,9 @@ export type UserContextType = {
   isLoggedIn: boolean;
   setIsLoggedIn: (arg: boolean) => void;
 };
+
+declare module "react-particle-backgrounds" {
+  function foo(): void;
+  export = foo;
+}
+

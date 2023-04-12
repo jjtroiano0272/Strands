@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import * as FileSystem from 'expo-file-system';
 import { Camera, CameraCapturedPicture, CameraType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -25,6 +26,7 @@ import { getStorage, ref, uploadBytes } from 'firebase/storage';
 import { uuidv4 } from '@firebase/util';
 import ButtonWithRipple from '../../../components/RippleButton';
 import RippleButton from '../../../components/RippleButton';
+import Swiper from 'react-native-swiper';
 
 export default function Add() {
   const theme = useTheme();
@@ -83,25 +85,6 @@ export default function Add() {
 
   // TODO change to .then.catch methodology
   const handlePickImage = () => {
-    // try {
-    //   // No permissions request is necessary for launching the image library
-    //   let result = await ImagePicker.launchImageLibraryAsync({
-    //     mediaTypes: ImagePicker.MediaTypeOptions.Images, // TODO future support for uploading short videos?
-    //     // allowsEditing: true,
-    //     allowsMultipleSelection: true,
-    //     aspect: [4, 3],
-    //     quality: 1,
-    //   });
-
-    //   console.log(`Image pick result: ${result}`);
-
-    //   if (!result.cancelled) {
-    //     setImage(result.assets[0].uri);
-    //   }
-    // } catch (err) {
-    //   console.error(`Error picking image: ${err}`);
-    // }
-
     // TODO future support for uploading short videos?
     const result = ImagePicker.launchImageLibraryAsync({
       // allowsEditing: true,
@@ -111,7 +94,8 @@ export default function Add() {
       quality: 1,
     })
       .then(res => {
-        console.log(`res: ${JSON.stringify(res, null, 2)}`);
+        // TODO res.canceled causes the error, so just comment this line out to get rid of it
+        console.log(`res: ${JSON.stringify(res.assets, null, 2)}`);
 
         // this is the local device's path to the image, where assets is the string[] containing all selected images
         // setImage(res?.assets![0].uri);
@@ -128,13 +112,22 @@ export default function Add() {
   const handleSaveImage = () => {
     const imgUris = selectedImages?.map(path => encodeURIComponent(path));
 
-    console.log(`imagePaths: ${JSON.stringify(selectedImages, null, 2)}`);
-    console.log(`encoded URIs: ${JSON.stringify(imgUris, null, 2)}`);
+    console.log(
+      `imagePaths (${selectedImages?.length}): ${JSON.stringify(
+        selectedImages,
+        null,
+        2
+      )}`
+    );
+    console.log(
+      `encoded URIs (${imgUris?.length}): ${JSON.stringify(imgUris, null, 2)}`
+    );
 
     // VERSION A
     if (imgUris) {
       router.push({
         // pathname: './save',
+        // TODO For some reason this acts as replace() and not push()....
         pathname: '/home/add/save',
         params: {
           imgUris,
@@ -175,9 +168,10 @@ export default function Add() {
         <View style={styles.buttonContainer}>
           <IconButton
             icon='camera-flip-outline'
-            iconColor={theme.colors.primary}
+            iconColor={theme.colors.text}
             size={20}
             onPress={toggleCameraType}
+            mode='contained'
           />
           <IconButton
             onPress={handleTakePicture}
@@ -189,9 +183,9 @@ export default function Add() {
           <IconButton
             onPress={handlePickImage}
             icon={'view-gallery-outline'}
-            iconColor={theme.colors.primary}
+            iconColor={theme.colors.text}
             size={20}
-            mode='outlined'
+            // mode='contained'
           />
         </View>
 
@@ -215,7 +209,20 @@ export default function Add() {
             </RippleButton>
 
             {/* TODO Will probably need a redesign of this for better UX */}
-            <Image style={{ flex: 1 }} source={{ uri: selectedImages[0] }} />
+            <Swiper
+              // containerStyle={{ flex: 1 }}
+              containerStyle={{ height: 300, width: '100%', borderRadius: 30 }}
+              onIndexChanged={() => Haptics.ImpactFeedbackStyle.Light}
+              showsPagination={selectedImages.length < 2 && false}
+            >
+              {selectedImages.map((uri, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: uri }}
+                  style={{ width: '100%', height: '100%' }}
+                />
+              ))}
+            </Swiper>
           </View>
         )}
       </Camera>

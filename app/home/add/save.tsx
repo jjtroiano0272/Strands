@@ -50,7 +50,7 @@ type RouteParams = {
 };
 
 export default function save() {
-  console.log(`getAuth: ${JSON.stringify(getAuth(), null, 2)}`);
+  console.log(`\x1B[34mgetAuth: ${JSON.stringify(getAuth(), null, 2)}`);
 
   const numColors = 6;
   const badgeColors = Array.from({ length: numColors }, (_, i) => {
@@ -63,6 +63,7 @@ export default function save() {
   const route = useRoute<RouteProp<Record<string, RouteParams>, string>>();
   const router = useRouter();
   const imgUris = route.params.imgUris.split(',');
+  const [newImgUris, setNewImgUris] = useState<string[] | null>(null);
 
   const [comments, setComments] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -76,6 +77,7 @@ export default function save() {
   const [productsDropdownValue, setProductsDropdownValue] = useState<
     string[] | null
   >(null);
+  // TODO These will realistically have to be pulled from some DB probably
   const [productsList, setProductsList] = useState([
     {
       label: `Trader Joe's Tea Tree Conditioner`,
@@ -119,86 +121,187 @@ export default function save() {
 
   const labelObjs = labels.map(label => ({ label, value: label }));
   const [items, setItems] = useState(labelObjs);
-  // let images: Object[] = [{ uri: 'https://picsum.photos/id/0/200/300' }];
-  let images: Object[] = [{ uri: 'https://picsum.photos/id/0/200/300' }];
-  // for (let i = 1; i < 11; i++) {
-  //   images.push([{ uri: `https://picsum.photos/id/${i}/200/300` }]);
-  // }
 
+  const [blobArr, setBlobArr] = useState<any>(null);
   const handleImageUpload = async () => {
     setLoading(true);
 
-    // Firebase Methodology, Part III
-    const response = await fetch(imgUris);
-    const blob = await response.blob();
-    const storage = getStorage();
-    const auth = getAuth();
-    const childPath = `post/${auth.currentUser?.uid}/${Math.random().toString(
-      36
-    )}`;
-    console.log(`childPath: ${childPath}`);
-
-    const storageRef = ref(storage, childPath);
-    const task = uploadBytes(storageRef, blob);
-
-    // task.on('state_changed', taskProgress, taskError, taskCompleted);
-    task
-      .then(snapshot => {
-        console.log('Does this mean it was successful?');
-        console.log(`metadata: ${snapshot.metadata}`);
-
-        setPostSuccess(true);
-        setLoading(false);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-        // navigate user back to previous page/route
-        router.replace('/home');
-
-        setTimeout(() => {
-          setPostSuccess(false);
-        }, 2000);
-      })
-      .catch(err => console.error(`error uploading! ${err}`));
-
-    // TODO Get rid of nested functions
-    (async () => {
-      const downloadURL = await getDownloadURL((await task).ref);
-
-      const db = getFirestore();
-      const currentUser = getAuth().currentUser;
-      const postsRef = collection(db, 'posts');
-      const userPostsRef = collection(
-        doc(postsRef, currentUser?.uid),
-        'userPosts'
+    if (imgUris.length === 1) {
+      const response = await fetch(imgUris[0]);
+      console.log(
+        `response (expecting 1): ${JSON.stringify(response, null, 2)}`
       );
 
-      const newPost = {
-        downloadURL: downloadURL,
-        caption: 'hard coded caption for testing purposes',
-        creation: serverTimestamp(),
-      };
+      // const responses = await fetch(imgUris[0]);
+      const blob = await response.blob();
+      const storage = getStorage();
+      const auth = getAuth();
+      const dbDestinationPath = `post/${
+        auth.currentUser?.uid
+      }/${Math.random().toString(36)}`;
+      console.log(`dbDestinationPath: ${dbDestinationPath}`);
 
-      addDoc(userPostsRef, newPost);
-    })();
+      const storageRef = ref(storage, dbDestinationPath);
+      const task = uploadBytes(storageRef, blob);
 
-    const postsRef = collection(db, 'postNew');
-    addDoc(postsRef, {
-      auth: {
-        displayName: auth.currentUser?.displayName,
-        uid: auth.currentUser?.uid,
-      },
-      createdAt: serverTimestamp(), // TODO: Isn't this handled automatically, serverside?
-      comments: comments,
-      rating: selectedUserRating,
-      isSeasonal: isSeasonal,
-      productsUsed: productsDropdownValue,
-    })
-      .then(res => {
-        setSnackbarMessage(`Posted successfully!`);
+      // task.on('state_changed', taskProgress, taskError, taskCompleted);
+      task
+        .then(snapshot => {
+          console.log('Does this mean it was successful?');
+          console.log(`metadata: ${snapshot.metadata}`);
+
+          setPostSuccess(true);
+          setLoading(false);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+          // navigate user back to previous page/route
+          router.replace('/home');
+
+          setTimeout(() => {
+            setPostSuccess(false);
+          }, 2000);
+        })
+        .catch(err => console.error(`error uploading! ${err}`));
+
+      // TODO Get rid of nested functions
+      (async () => {
+        const downloadURL = await getDownloadURL((await task).ref);
+
+        const db = getFirestore();
+        const currentUser = getAuth().currentUser;
+        const postsRef = collection(db, 'posts');
+        const userPostsRef = collection(
+          doc(postsRef, currentUser?.uid),
+          'userPosts'
+        );
+
+        const newPost = {
+          downloadURL: downloadURL,
+          caption: 'hard coded caption for testing purposes',
+          creation: serverTimestamp(),
+        };
+
+        addDoc(userPostsRef, newPost);
+      })();
+
+      const postsRef = collection(db, 'postNew');
+      addDoc(postsRef, {
+        auth: {
+          displayName: auth.currentUser?.displayName,
+          uid: auth.currentUser?.uid,
+        },
+        createdAt: serverTimestamp(), // TODO: Isn't this handled automatically, serverside?
+        comments: comments.length > 0 ? comments : null,
+        rating: selectedUserRating,
+        isSeasonal: isSeasonal,
+        productsUsed: productsDropdownValue,
       })
-      .catch(err => {
-        setSnackbarMessage(`Error posting! ${err}`);
+        .then(res => {
+          setSnackbarMessage(`Posted successfully!`);
+        })
+        .catch(err => {
+          setSnackbarMessage(`Error posting! ${err}`);
+        });
+    }
+
+    if (imgUris.length > 1) {
+      const storage = getStorage();
+      const auth = getAuth();
+      const dbDestinationPath = `post/${
+        auth.currentUser?.uid
+      }/${Math.random().toString(36)}`;
+      const storageRef = ref(storage, dbDestinationPath);
+
+      // Elements in imgUris look like
+      // "file:///var/mobile/Containers/Data/Application/6BD76F07-7E63-44DA-A409-E4EC93762834/Library/Caches/ExponentExperienceData/%2540jonathan.troiano%252FYelpForHairStylists/ImagePicker/75264F55-F27A-4126-AC3F-E126D30849BA.jpg",
+
+      imgUris.map(uri => {
+        fetch(uri)
+          .then(res => {
+            const newBlob = res.blob();
+            console.log(`newBlob: ${JSON.stringify(newBlob, null, 2)}`);
+
+            setBlobArr([...blobArr, newBlob]);
+          })
+          .catch(err => console.error(`Error in promise: ${err}`));
       });
+
+      // blobArr.map((blob: Blob | Uint8Array | ArrayBuffer)=>
+      //   const task = uploadBytes(storageRef, blob)
+      // )
+
+      const uploadFiles = async (files: Blob[]) => {
+        const promises = [];
+        for (const file of files) {
+          const fileName = file.name;
+          const storageRef = ref(storage, fileName);
+          const uploadTask = uploadBytes(storageRef, file);
+          promises.push(uploadTask);
+        }
+        await Promise.all(promises);
+        console.log('Files uploaded successfully');
+      };
+      uploadFiles(blobArr);
+
+      // // task.on('state_changed', taskProgress, taskError, taskCompleted);
+      // task
+      //   .then(snapshot => {
+      //     console.log('Does this mean it was successful?');
+      //     console.log(`metadata: ${snapshot.metadata}`);
+
+      //     setPostSuccess(true);
+      //     setLoading(false);
+      //     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      //     // navigate user back to previous page/route
+      //     router.replace('/home');
+
+      //     setTimeout(() => {
+      //       setPostSuccess(false);
+      //     }, 2000);
+      //   })
+      //   .catch(err => console.error(`error uploading! ${err}`));
+
+      // // TODO Get rid of nested functions
+      // (async () => {
+      //   const downloadURL = await getDownloadURL((await task).ref);
+
+      //   const db = getFirestore();
+      //   const currentUser = getAuth().currentUser;
+      //   const postsRef = collection(db, 'posts');
+      //   const userPostsRef = collection(
+      //     doc(postsRef, currentUser?.uid),
+      //     'userPosts'
+      //   );
+
+      //   const newPost = {
+      //     downloadURL: downloadURL,
+      //     caption: 'hard coded caption for testing purposes',
+      //     creation: serverTimestamp(),
+      //   };
+
+      //   addDoc(userPostsRef, newPost);
+      // })();
+
+      // const postsRef = collection(db, 'postNew');
+      // addDoc(postsRef, {
+      //   auth: {
+      //     displayName: auth.currentUser?.displayName,
+      //     uid: auth.currentUser?.uid,
+      //   },
+      //   createdAt: serverTimestamp(), // TODO: Isn't this handled automatically, serverside?
+      //   comments: comments.length > 0 ? comments : null,
+      //   rating: selectedUserRating,
+      //   isSeasonal: isSeasonal,
+      //   productsUsed: productsDropdownValue,
+      // })
+      //   .then(res => {
+      //     setSnackbarMessage(`Posted successfully!`);
+      //   })
+      //   .catch(err => {
+      //     setSnackbarMessage(`Error posting! ${err}`);
+      //   });
+    }
   };
 
   const handleShowModal = () => setModalVisible(true);
@@ -210,6 +313,10 @@ export default function save() {
   // TODO Possibly saving post as posts/userPosts
   // posts contains user id, then click through that id to find all posts by that id
   // { caption, createdAt, mediaUrl (points to fireStore) }
+
+  useEffect(() => {
+    console.log(`newImgUris: ${JSON.stringify(newImgUris, null, 2)}`);
+  }, [newImgUris]);
 
   return (
     <ModalProvider>
@@ -281,6 +388,7 @@ export default function save() {
 
                 {hairTypeImages.map(image => (
                   <TouchableOpacity
+                    key={image.id}
                     onPress={() => {
                       dropdownValue === null
                         ? setDropdownValue([image.id])
@@ -289,7 +397,12 @@ export default function save() {
                     }}
                   >
                     {/* <Image key={image.id} source={{ uri: '' }} /> */}
-                    <Button mode='contained'>{image.id}</Button>
+                    <Button
+                      mode='contained'
+                      contentStyle={{ padding: 20, margin: 10 }}
+                    >
+                      {image.id}
+                    </Button>
                   </TouchableOpacity>
                 ))}
               </View>

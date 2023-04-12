@@ -90,6 +90,22 @@ readme tracking
 > > [x] Swiper shows array of images
 > > ---- [x] Changing image to image[]
 > > [ ] VirtualizedList error
+> >
+> > 08APR2023
+> > [x] 'res.cancelled' error
+> > [ ] Upload multiple images
+> > [ ] SigninWithRedirect? (SSO sign in)
+> >
+> > 09APR2023
+> > [ ] Handling downloadURL
+> > [ ] Upload multiple images
+> >
+> > 10APR2023
+> > [ ] Upload multiple images
+> > [ ] Take image UI update
+> >
+> > 11APR2023
+> > [ ]
 
 Notes:
 
