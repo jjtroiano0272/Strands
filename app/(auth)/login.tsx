@@ -243,7 +243,6 @@ export default function Login() {
         {errors}
       </Snackbar>
 
-      {/* BackgroundView */}
       {/* <AnimatedBackground /> */}
     </Pressable>
   );

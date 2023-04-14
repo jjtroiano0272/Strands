@@ -71,7 +71,12 @@ const Feed = () => {
             data &&
             data
               .slice(0, data.length - 1)
-              .filter((item: any) => item.data.thumbnail !== 'self')
+              .filter(
+                (item: any) =>
+                  item.data.thumbnail !== 'default' &&
+                  item.data.thumbnail !== 'self' &&
+                  item.data.thumbnail !== 'nsfw'
+              )
               .map((item: any, index: number) => (
                 <GridItem
                   key={index}

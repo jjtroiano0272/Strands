@@ -33,7 +33,12 @@ const Messages = () => {
 
       {data &&
         data
-          .filter((item: any) => item.data.thumbnail !== 'self')
+          .filter(
+            (item: any) =>
+              item.data.thumbnail !== 'default' &&
+              item.data.thumbnail !== 'self' &&
+              item.data.thumbnail !== 'nsfw'
+          )
           .map((item: any, index: number) => (
             // item.data.thumbnail !== 'self' ? item.data.thumbnail : null}/>))
             <List.Item

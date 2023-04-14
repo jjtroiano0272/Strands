@@ -109,6 +109,13 @@ readme tracking
 > >
 > > 12APR2023
 > > [ ] Excessive number callback
+> >
+> > 13APR2023
+> > [ ] add.tsx UI update
+> > [ ] Multi-image upload
+> > [ ] Linking images to posts
+> > [ ] VirtualizedList error (second Select item box renders this)
+> > [ ] Add to snackbar
 
 Notes:
 

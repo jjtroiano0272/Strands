@@ -166,27 +166,40 @@ export default function Add() {
         ref={ref => setCamera(ref)}
       >
         <View style={styles.buttonContainer}>
-          <IconButton
-            icon='camera-flip-outline'
-            iconColor={theme.colors.text}
-            size={20}
-            onPress={toggleCameraType}
-            mode='contained'
-          />
-          <IconButton
-            onPress={handleTakePicture}
-            icon={'camera'}
-            iconColor={theme.colors.primary}
-            size={42}
-            mode='contained'
-          />
-          <IconButton
-            onPress={handlePickImage}
-            icon={'view-gallery-outline'}
-            iconColor={theme.colors.text}
-            size={20}
-            // mode='contained'
-          />
+          <View
+            style={{
+              // TODO Calculate contrast numerically
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              flex: 1,
+              flexDirection: 'row',
+              width: 300,
+              alignItems: 'flex-end',
+              justifyContent: 'center',
+              padding: 30,
+            }}
+          >
+            <IconButton
+              // mode='contained'
+              icon='camera-flip-outline'
+              iconColor='#ccc'
+              onPress={toggleCameraType}
+              size={20}
+            />
+            <IconButton
+              mode='contained'
+              icon={'camera'}
+              iconColor={theme.colors.primary}
+              onPress={handleTakePicture}
+              size={42}
+            />
+            <IconButton
+              // mode='contained'
+              icon={'view-gallery-outline'}
+              iconColor='#ccc'
+              onPress={handlePickImage}
+              size={20}
+            />
+          </View>
         </View>
 
         {selectedImages && (
@@ -233,12 +246,12 @@ export default function Add() {
 const styles = StyleSheet.create({
   camera: { flex: 1 },
   buttonContainer: {
-    flex: 1,
     // backgroundColor: 'transparent',
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'center',
-    padding: 30,
+    // padding: 30,
   },
   button: {},
   text: {},

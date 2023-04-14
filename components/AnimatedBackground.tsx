@@ -1,3 +1,4 @@
+import { Emitter } from 'react-native-particles';
 import ParticleBackground from 'react-native-particle-background';
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, Animated, Easing } from 'react-native';
@@ -63,6 +64,17 @@ export const AnimatedBackground = ({ scene }: { scene?: unknown }) => {
         particleDispersion={32}
         backgroundColor='transparent'
       />
+      {/* <Emitter
+        numberOfParticles={50}
+        emissionRate={5}
+        interval={200}
+        particleLife={1500}
+        direction={-90}
+        spread={360}
+        fromPosition={{ x: 200, y: 200 }}
+      >
+        <Text>Particle</Text>
+      </Emitter> */}
     </View>
   );
 };
