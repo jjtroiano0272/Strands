@@ -16,26 +16,33 @@ import GridItem from '../../components/GridItem';
 import { Stack } from 'expo-router';
 import { Connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
+import {
+  DocumentData,
+  Timestamp,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  getFirestore,
+} from 'firebase/firestore';
 // import { fetchUser } from '../../redux/actions';
+import { db } from '../../firebaseConfig';
+import { getAuth } from 'firebase/auth';
+
+type MyDbData = {
+  caption: string;
+  creation: Timestamp;
+  downloadURL: string;
+};
 
 const Feed = () => {
   const theme = useTheme();
-  // const { data, error, loading } = useFetch(
-  //   'https://jsonplaceholder.typicode.com/users'
-  // );
+  const [myDbData, setMyDbData] = useState<DocumentData[] | null>(null);
+  const currentUser = getAuth().currentUser;
+  const userID = getAuth().currentUser?.uid;
+  // const userPostsCollectionRef = collection(db, 'posts', userID!, 'userPosts');
+  const userPostsCollectionRef = collection(db, 'postNew');
 
-  /**
-   * res.data.children
-   * children[{}]
-   *
-   * child: {
-   *  data: {
-   *    thumbnail: string,
-   *    url_overridden_by_dest: string,
-   *    author: string,
-   *  }
-   * }
-   */
   const {
     data,
     error,
@@ -56,6 +63,57 @@ const Feed = () => {
   } = useFetch('https://www.reddit.com/r/FancyFollicles.json');
   data?.length !== undefined &&
     console.log(`num items in data: ${data?.length}`);
+
+  // (async () => {
+  //   // const currentUser = getAuth().currentUser;
+  //   const postsRef = collection(db, 'posts');
+  //   console.log(`postsRef: ${JSON.stringify(postsRef, null, 2)}`);
+
+  //   // const userPostsRef = collection(
+  //   //   doc(postsRef, currentUser?.uid),
+  //   //   'userPosts'
+  //   // );
+
+  //   // foo
+  //   console.log(
+  //     `line 60: ${JSON.stringify(
+  //       doc(db, 'posts', 'eEXdyCMr0pgwCb8qNHeD11NT2683'),
+  //       null,
+  //       2
+  //     )}`
+  //   );
+  //   const docRef = doc(db, 'posts', 'eEXdyCMr0pgwCb8qNHeD11NT2683');
+  //   console.log(`line 66 ${JSON.stringify(docRef, null, 2)}`);
+
+  //   const docSnap = await getDoc(docRef);
+
+  //   if (docSnap.exists()) {
+  //     console.log('Document data:', docSnap.data());
+  //   } else {
+  //     // docSnap.data() will be undefined in this case
+  //     console.log('No such document!');
+  //   }
+  // })();
+
+  // TODO There's a better way to write this so the output gets stored in a var
+
+  useEffect(() => {
+    let list: DocumentData[] = [];
+    getDocs(userPostsCollectionRef)
+      .then(querySnapshot => {
+        querySnapshot.forEach(doc => {
+          list.push(doc.data());
+
+          // setMyDbData([...myDbData!, data]);
+        });
+
+        setMyDbData(list);
+        console.log(`myDbData: \x1b[32m${JSON.stringify(myDbData, null, 2)}`);
+      })
+      .catch(error => {
+        console.log('Error getting document:', error);
+      });
+  }, [!myDbData]);
 
   return (
     // TODO Pull down to refresh (run API call again, but only dispatch to anything that has CHANGED)
@@ -110,6 +168,46 @@ const Feed = () => {
                   }}
                 />
               ))}
+        </View>
+
+        <View style={styles.cardsContainer}>
+          {myDbData &&
+            myDbData?.map((item: any, index: number) => (
+              <GridItem
+                usingMyOwnDB={true}
+                key={index}
+                imgSrc={
+                  item.downloadURL
+                    ? item.downloadURL
+                    : 'https://unsplash.it/200/200'
+                }
+                user={{
+                  username: item.auth.uid,
+                  company: {
+                    bs: 'foooo',
+                    catchPhrase: 'hello',
+                    name: item.auth.uid,
+                  },
+                  name: item?.data?.author,
+                  // Any keys after this aren't consumed by [username]
+                  id: 3,
+                  address: {
+                    street: 'string',
+                    suite: 'string',
+                    city: 'string',
+                    zipcode: 44444,
+                    geo: {
+                      lat: 50,
+                      lng: -20,
+                    },
+                  },
+                  email: 'foo@bar.com',
+                  phone: '911',
+                  website: 'google.com',
+                  seasonal: true,
+                }}
+              />
+            ))}
         </View>
       </View>
 

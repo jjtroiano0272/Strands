@@ -20,77 +20,142 @@ import {
 import { Text, View } from '../components/Themed';
 import { Link } from 'expo-router';
 import { DarkTheme, useTheme } from '@react-navigation/native';
+import { Timestamp } from 'firebase/firestore';
 
 export default function GridItem({
+  usingMyOwnDB,
   user,
   index,
   imgSrc,
+  auth,
+  comments,
+  createdAt,
+  isSeasonal,
+  productsUsed,
+  rating,
 }: {
+  usingMyOwnDB?: boolean;
   user?: IAPIData;
   index?: number;
   imgSrc?: string;
+
+  auth?: {
+    displayName?: string;
+    uid?: string;
+  };
+  comments?: string;
+  createdAt: Timestamp;
+  isSeasonal: boolean;
+  productsUsed: [label: string, value: string];
+  rating: number;
 }) {
   const theme = useTheme();
-
-  // console.log(`imgsrc: ${imgSrc}`);
-  // console.log(`${typeof imgSrc}`);
-
   const dummyPhoneNumber = faker.phone.number();
 
-  return (
-    <Link
-      href={{
-        pathname: `/${user?.username}`,
-        params: {
-          name: user?.name,
-          company: user?.company.name,
-          username: user?.username,
-          // imgSrc: imgSrc,
-        },
-      }}
-    >
-      <Card
-        style={styles.card}
-        theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+  if (!usingMyOwnDB) {
+    return (
+      <Link
+        href={{
+          pathname: `/${user?.username}`,
+          params: {
+            name: user?.name,
+            company: user?.company.name,
+            username: user?.username,
+            // imgSrc: imgSrc,
+          },
+        }}
       >
-        <Card.Title
-          title={user?.name}
-          titleStyle={{
-            color: theme.colors.text,
-          }}
-          subtitle={user?.company.name}
-          subtitleStyle={{
-            color: theme.colors.text,
-          }}
-          left={props => (
-            <Avatar.Icon
-              {...props}
-              size={30}
-              icon={dummyPhoneNumber.startsWith('1') ? 'airplane' : 'star'}
-              style={{
-                backgroundColor: dummyPhoneNumber.startsWith('1')
-                  ? theme.colors.primary
-                  : theme.colors.text,
-              }}
+        <Card
+          style={styles.card}
+          theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+        >
+          <Card.Title
+            title={user?.name}
+            titleStyle={{
+              color: theme.colors.text,
+            }}
+            subtitle={user?.company.name}
+            subtitleStyle={{
+              color: theme.colors.text,
+            }}
+            left={props => (
+              <Avatar.Icon
+                {...props}
+                size={30}
+                icon={
+                  isSeasonal
+                    ? 'airplane'
+                    : dummyPhoneNumber.startsWith('1')
+                    ? 'airplane'
+                    : 'star'
+                }
+                style={{
+                  backgroundColor: dummyPhoneNumber.startsWith('1')
+                    ? theme.colors.primary
+                    : theme.colors.text,
+                }}
+              />
+            )}
+          />
+
+          <Card.Cover
+            source={{
+              uri: imgSrc,
+            }}
+          />
+          {dummyPhoneNumber.startsWith('1') && (
+            <RNEBadge
+              value='Seasonal'
+              status='primary'
+              containerStyle={{ position: 'absolute', top: -4, right: -4 }}
             />
           )}
-        />
-
-        <Card.Cover
-          source={{
-            uri: imgSrc,
-          }}
-        />
-        {dummyPhoneNumber.startsWith('1') && (
-          <RNEBadge
-            value='Seasonal'
-            status='primary'
-            containerStyle={{ position: 'absolute', top: -4, right: -4 }}
+        </Card>
+      </Link>
+    );
+  } else {
+    return (
+      <Link
+        href={{
+          pathname: `/${auth?.displayName ? auth?.displayName : auth?.uid}`,
+          params: {
+            name: auth?.displayName ? auth?.displayName : auth?.uid,
+            company: auth?.displayName ? auth?.displayName : auth?.uid,
+            username: auth?.displayName ? auth?.displayName : auth?.uid,
+          },
+        }}
+      >
+        <Card
+          style={styles.card}
+          theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+        >
+          <Card.Title
+            title={auth?.displayName ? auth?.displayName : auth?.uid}
+            titleStyle={{
+              color: theme.colors.text,
+            }}
+            subtitle={auth?.displayName ? auth?.displayName : auth?.uid}
+            subtitleStyle={{
+              color: theme.colors.text,
+            }}
+            left={props => (
+              <Avatar.Icon
+                {...props}
+                size={30}
+                icon={isSeasonal ? 'airplane' : ''}
+              />
+            )}
           />
-        )}
-      </Card>
-    </Link>
-  );
+
+          <Card.Cover
+            source={{
+              uri: 'https://unsplash.it/200/200',
+            }}
+          />
+        </Card>
+      </Link>
+    );
+  }
 }
 
 const styles = StyleSheet.create({

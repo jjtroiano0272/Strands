@@ -111,11 +111,23 @@ readme tracking
 > > [ ] Excessive number callback
 > >
 > > 13APR2023
-> > [ ] add.tsx UI update
-> > [ ] Multi-image upload
+> > [x] add.tsx UI update
+> > [x] Multi-image upload
 > > [ ] Linking images to posts
 > > [ ] VirtualizedList error (second Select item box renders this)
 > > [ ] Add to snackbar
+> >
+> > 14APR2023
+> > [ ] Pull in my data to app
+> >
+> > 15 APR2023
+> >
+> > 16 APR2023
+> > [x] Pull in my data to app
+> >
+> > 17APR2023
+> > [x] Display my data correctly in UI (it's heinously slow though idk why)
+> > [ ] Restructure my data so it's what it needs
 
 Notes:
 

@@ -206,6 +206,12 @@ export default function save() {
             if (blob !== null) {
               console.log(`blob: ${JSON.stringify(blob)}`);
 
+              console.log(
+                `Before entering blobArr ternary. blobArr truthiness: ${
+                  blobArr ? true : false
+                }`
+              );
+
               blobArr
                 ? setBlobArr([...blobArr, blob]) // Probably origin of 'cannot convert null'
                 : setBlobArr([blob]); // Probably origin of 'cannot convert null'
@@ -218,35 +224,28 @@ export default function save() {
           });
       });
 
-      // blobArr.map((blob: Blob | Uint8Array | ArrayBuffer)=>
-      //   const task = uploadBytes(storageRef, blob)
-      // )
+      // const uploadFiles = async (files: Blob[]) => {
 
-      const uploadFiles = async (files: Blob[]) => {
-        const promises = [];
+      const promises = [];
 
-        for (const file of files) {
-          console.log(`Line 229; ${JSON.stringify(file)}`);
-          console.log(
-            file ? 'file truthy\n\n\n\n\n\n\n' : 'file falsy\n\n\n\n\n\n\n'
-          );
-          const fileName = file.name;
-          const storageRef = ref(storage, fileName);
+      for (const file of blobArr) {
+        const fileName = file.name;
+        const storageRef = ref(storage, fileName);
 
-          const uploadTask = uploadBytes(storageRef, file);
-          promises.push(uploadTask);
-        }
+        const uploadTask = uploadBytes(storageRef, file);
+        promises.push(uploadTask);
+      }
 
-        await Promise.all(promises)
-          .then(res => console.log(`I think it all worked?\n${res}`))
-          .catch(err => {
-            console.error(`Error in resolving Promise.all: ${err}`);
-            setSnackbarMessage(err);
-          });
+      await Promise.all(promises)
+        .then(res => console.log(`I think it all worked?\n${res}`))
+        .catch(err => {
+          console.error(`Error in resolving Promise.all: ${err}`);
+          setSnackbarMessage(err);
+        });
 
-        console.log('Files uploaded successfully');
-      };
-      uploadFiles(blobArr);
+      console.log('Files uploaded successfully');
+      // };
+      // uploadFiles(blobArr);
     }
   };
 
@@ -263,6 +262,15 @@ export default function save() {
   useEffect(() => {
     console.log(`newImgUris: ${JSON.stringify(newImgUris, null, 2)}`);
   }, [newImgUris]);
+
+  useEffect(() => {
+    if (blobArr && blobArr.length > 0) {
+      const uploadFiles = async (files: Blob[]) => {
+        // ...
+      };
+      uploadFiles(blobArr);
+    }
+  }, [blobArr]);
 
   return (
     <ModalProvider>
