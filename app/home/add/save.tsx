@@ -42,6 +42,7 @@ import {
   serverTimestamp,
   doc,
   DocumentReference,
+  Timestamp,
 } from 'firebase/firestore';
 import { getAuth, User } from 'firebase/auth';
 
@@ -78,6 +79,7 @@ export default function save() {
   const [newImgUris, setNewImgUris] = useState<string[] | null>(null);
 
   const [comments, setComments] = useState<string>('');
+  const [salon, setSalon] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [postSuccess, setPostSuccess] = useState<boolean>(false);
   const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
@@ -109,8 +111,28 @@ export default function save() {
 
   const labelObjs = labels.map(label => ({ label, value: label }));
   const [items, setItems] = useState(labelObjs);
-
   const [blobArr, setBlobArr] = useState<any>(null);
+
+  /**
+   * auth: {
+          displayName: auth.currentUser?.displayName,
+          uid: auth.currentUser?.uid,
+        },
+    createdAt: serverTimestamp(),
+    comments: comments.length > 0 ? comments : null,
+    rating: selectedUserRating,
+    isSeasonal: isSeasonal,
+    productsUsed: productsDropdownValue,
+   */
+  const [formData, setFormData] = useState<{
+    auth: string;
+    createdAt: Timestamp;
+    comments: string;
+    rating: number;
+    isSeasonal: boolean;
+    productsUsed: [label: string, value: string];
+  } | null>(null);
+
   const handleImageUpload = async () => {
     setLoading(true);
 
@@ -329,6 +351,14 @@ export default function save() {
             setOpen={setProductsDropdownOpen}
             setValue={setProductsDropdownValue}
             value={productsDropdownValue}
+          />
+          <TextInput
+            style={{ width: '100%' }}
+            theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+            label='Salon'
+            value={salon}
+            onChangeText={text => setSalon(text)}
+            multiline={true}
           />
           <Portal>
             <Modal visible={modalVisible} onDismiss={handleHideModal}>

@@ -138,13 +138,11 @@ export default function GridItem({
             subtitleStyle={{
               color: theme.colors.text,
             }}
-            left={props => (
-              <Avatar.Icon
-                {...props}
-                size={30}
-                icon={isSeasonal ? 'airplane' : ''}
-              />
-            )}
+            left={props =>
+              isSeasonal && (
+                <Avatar.Icon {...props} size={30} icon={'airplane'} />
+              )
+            }
           />
 
           <Card.Cover

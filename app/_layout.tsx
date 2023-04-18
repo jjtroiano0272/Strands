@@ -8,7 +8,7 @@ import {
 import { useFonts } from 'expo-font';
 import { Redirect, SplashScreen, Stack, Tabs, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, useColorScheme } from 'react-native';
+import { Alert, Pressable, View, useColorScheme } from 'react-native';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
@@ -20,6 +20,7 @@ import { createStoreHook } from 'react-redux';
 import rootReducer from '../redux/reducers';
 import { Provider as AuthProvider } from '../context/auth';
 import { TouchableOpacity } from 'react-native-gesture-handler';
+import { IconButton } from 'react-native-paper';
 // import thunk from 'redux-thunk';
 
 // const store = createStoreHook(rootReducer);
@@ -79,21 +80,49 @@ function RootLayoutNav() {
         <Stack
           screenOptions={{
             headerRight: () => (
-              <TouchableOpacity
-                hitSlop={{
-                  bottom: 50,
-                  left: 100,
-                  right: 50,
-                  top: 50,
-                }}
-                onPress={() => router.push('/modal')}
-              >
-                <AntDesign
-                  name='infocirlceo'
-                  size={24}
-                  color={colorScheme === 'dark' ? 'white' : 'black'}
-                />
-              </TouchableOpacity>
+              <>
+                {3 < 5 ? (
+                  <>
+                    <IconButton
+                      icon='filter-outline'
+                      color='red'
+                      size={20}
+                      onPress={() => console.warn(`Search function`)}
+                    />
+                    <TouchableOpacity
+                      hitSlop={{
+                        bottom: 50,
+                        left: 100,
+                        right: 50,
+                        top: 50,
+                      }}
+                      onPress={() => router.push('/modal')}
+                    >
+                      <AntDesign
+                        name='infocirlceo'
+                        size={24}
+                        color={colorScheme === 'dark' ? 'white' : 'black'}
+                      />
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <TouchableOpacity
+                    hitSlop={{
+                      bottom: 50,
+                      left: 100,
+                      right: 50,
+                      top: 50,
+                    }}
+                    onPress={() => router.push('/modal')}
+                  >
+                    <AntDesign
+                      name='infocirlceo'
+                      size={24}
+                      color={colorScheme === 'dark' ? 'white' : 'black'}
+                    />
+                  </TouchableOpacity>
+                )}
+              </>
             ),
           }}
         >

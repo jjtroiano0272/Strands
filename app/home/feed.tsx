@@ -1,7 +1,7 @@
-//useFetch.js
-import { useState, useEffect } from 'react';
+import * as Haptics from 'expo-haptics';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Alert, StyleSheet } from 'react-native';
+import { Alert, RefreshControl, StyleSheet } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { useTheme } from '@react-navigation/native';
 
@@ -24,10 +24,13 @@ import {
   getDoc,
   getDocs,
   getFirestore,
+  query,
+  where,
 } from 'firebase/firestore';
 // import { fetchUser } from '../../redux/actions';
 import { db } from '../../firebaseConfig';
 import { getAuth } from 'firebase/auth';
+import { IconButton, TextInput } from 'react-native-paper';
 
 type MyDbData = {
   caption: string;
@@ -64,40 +67,22 @@ const Feed = () => {
   data?.length !== undefined &&
     console.log(`num items in data: ${data?.length}`);
 
-  // (async () => {
-  //   // const currentUser = getAuth().currentUser;
-  //   const postsRef = collection(db, 'posts');
-  //   console.log(`postsRef: ${JSON.stringify(postsRef, null, 2)}`);
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-  //   // const userPostsRef = collection(
-  //   //   doc(postsRef, currentUser?.uid),
-  //   //   'userPosts'
-  //   // );
+    fetchMyData();
 
-  //   // foo
-  //   console.log(
-  //     `line 60: ${JSON.stringify(
-  //       doc(db, 'posts', 'eEXdyCMr0pgwCb8qNHeD11NT2683'),
-  //       null,
-  //       2
-  //     )}`
-  //   );
-  //   const docRef = doc(db, 'posts', 'eEXdyCMr0pgwCb8qNHeD11NT2683');
-  //   console.log(`line 66 ${JSON.stringify(docRef, null, 2)}`);
-
-  //   const docSnap = await getDoc(docRef);
-
-  //   if (docSnap.exists()) {
-  //     console.log('Document data:', docSnap.data());
-  //   } else {
-  //     // docSnap.data() will be undefined in this case
-  //     console.log('No such document!');
-  //   }
-  // })();
+    setTimeout(() => {
+      setRefreshing(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }, 2000);
+  }, []);
 
   // TODO There's a better way to write this so the output gets stored in a var
 
-  useEffect(() => {
+  const fetchMyData = () => {
     let list: DocumentData[] = [];
     getDocs(userPostsCollectionRef)
       .then(querySnapshot => {
@@ -113,12 +98,58 @@ const Feed = () => {
       .catch(error => {
         console.log('Error getting document:', error);
       });
+  };
+
+  const fetchUsers = async (search: string) => {
+    // FIREBASE 8 METHODOLOGY
+    // Also, back then firestore didn't contain a fuzzy search
+    // firebase
+    //   .firestore()
+    //   .collection('users')
+    //   .where('name', '>=', search)
+    //   .get()
+    //   .then((snapshot: any) => {
+    //     let localUsers = snapshot.docs.map((doc: any) => {
+    //       const data = doc.data();
+    //       const id = doc.id;
+    //       return { id, ...data };
+    //     });
+
+    // FIREBASE 9 METHODOLOGY
+    // const db = getFirestore();
+    const q = query(
+      collection(db, 'postNew'),
+      where('clientName', '>=', search)
+    );
+
+    const snapshot = await getDocs(q);
+
+    let localUsers = snapshot.docs.map(doc => {
+      const data = doc.data();
+      const id = doc.id;
+      return { id, ...data };
+    });
+
+    console.log(`users: ${JSON.stringify(localUsers)}`);
+  };
+
+  useEffect(() => {
+    fetchMyData();
   }, [!myDbData]);
 
   return (
     // TODO Pull down to refresh (run API call again, but only dispatch to anything that has CHANGED)
-    <ScrollView style={styles.getStartedContainer}>
-      <Stack.Screen options={{ headerShown: false }} />
+    <ScrollView
+      style={styles.getStartedContainer}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+      }
+    >
+      <Stack.Screen
+        options={{
+          headerShown: false,
+        }}
+      />
 
       {/* TODO Add a filter button for like 'Show me people of x hair type within x miles of me, etc. */}
       <View style={styles.container}>
@@ -175,40 +206,21 @@ const Feed = () => {
             myDbData?.map((item: any, index: number) => (
               <GridItem
                 usingMyOwnDB={true}
+                isSeasonal={item.isSeasonal}
+                auth={item?.auth}
                 key={index}
                 imgSrc={
                   item.downloadURL
                     ? item.downloadURL
                     : 'https://unsplash.it/200/200'
                 }
-                user={{
-                  username: item.auth.uid,
-                  company: {
-                    bs: 'foooo',
-                    catchPhrase: 'hello',
-                    name: item.auth.uid,
-                  },
-                  name: item?.data?.author,
-                  // Any keys after this aren't consumed by [username]
-                  id: 3,
-                  address: {
-                    street: 'string',
-                    suite: 'string',
-                    city: 'string',
-                    zipcode: 44444,
-                    geo: {
-                      lat: 50,
-                      lng: -20,
-                    },
-                  },
-                  email: 'foo@bar.com',
-                  phone: '911',
-                  website: 'google.com',
-                  seasonal: true,
-                }}
               />
             ))}
         </View>
+      </View>
+
+      <View>
+        <TextInput onChangeText={fetchUsers} />
       </View>
 
       <View style={styles.helpContainer}>

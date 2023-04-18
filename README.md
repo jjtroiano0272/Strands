@@ -128,6 +128,19 @@ readme tracking
 > > 17APR2023
 > > [x] Display my data correctly in UI (it's heinously slow though idk why)
 > > [ ] Restructure my data so it's what it needs
+> > [ ] Add filter function to feed
+> > [ ] Add Geolocation to posts
+> > [x] Add pul down to refresh to feed
+> > [ ] Pack save.tsx data to send in an object instead of multiple variables
+
+PLANNING:
+Posts should have the structure
+
+Users should have the structure
+
+> uid
+> avatar (string: URL)
+> displayName
 
 Notes:
 
