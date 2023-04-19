@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { RefreshControl, StyleSheet } from 'react-native';
 import { Text } from '../../components/Themed';
 import { useTheme } from '@react-navigation/native';
@@ -15,10 +15,34 @@ import {
 } from 'react-native-paper';
 import React from 'react';
 
+export type User = {
+  id?: string;
+  comments?: string;
+  createdAt?: {
+    seconds?: number;
+    nanoseconds?: number;
+  };
+  isSeasonal?: boolean;
+  productsUsed?: [
+    {
+      value?: string;
+      label?: string;
+    }
+  ];
+  clientName?: string;
+  auth?: {
+    displayName?: string;
+    uid?: string;
+  };
+  rating?: number;
+};
+
 const Search = () => {
+  const md5 = require('md5');
   const theme = useTheme();
   const [refreshing, setRefreshing] = React.useState(false);
-  const [displayUsers, setDisplayUsers] = useState<unknown[] | null>(null);
+  const [displayUsers, setDisplayUsers] = useState<User[] | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   const handleRefresh = useCallback(() => {
     // setRefreshing(true);
@@ -31,9 +55,6 @@ const Search = () => {
   }, []);
 
   const searchUsers = async (search: string) => {
-    const foo = getGravatarURL('jtroiano@fau.edu');
-    console.log(`HASH: ${foo}`);
-
     // FIREBASE 9 METHODOLOGY
     // const db = getFirestore();
     const q = query(
@@ -54,9 +75,7 @@ const Search = () => {
     console.log(`users: ${JSON.stringify(localUsers)}`);
   };
 
-  const md5 = require('md5');
-
-  function getGravatarURL(email: string) {
+  const getGravatarURL = (email: string) => {
     // Trim leading and trailing whitespace from
     // an email address and force all characters
     // to lower case
@@ -67,50 +86,66 @@ const Search = () => {
 
     // Grab the actual image URL
     return `https://www.gravatar.com/avatar/${hash}`;
-  }
+  };
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery !== '') {
+        searchUsers(searchQuery);
+      } else {
+        setDisplayUsers(null);
+      }
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-      }
-    >
-      <Stack.Screen options={{ headerShown: false }} />
-
+    <>
       <TextInput
         // style={styles.input}
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-        onChangeText={searchUsers}
+        onChangeText={setSearchQuery}
+        value={searchQuery}
         placeholder='Search for user'
         keyboardType='default'
         autoFocus={true}
         style={{ width: '100%' }}
         // onBlur={validateEmail}
       />
-      {displayUsers?.map((user: unknown, index: number) => (
-        <List.Item
-          key={index}
-          title='First Item'
-          description='Item description'
-          left={props => (
-            <List.Icon
-              {...props}
-              icon={
-                true
-                  ? () => (
-                      <Avatar.Image
-                        size={24}
-                        source={{ uri: 'https://unsplash.it/100/100' }}
-                      />
-                    )
-                  : 'folder'
-              }
-            />
-          )}
-        />
-      ))}
-    </ScrollView>
+      <ScrollView
+        style={styles.container}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
+        <Stack.Screen options={{ headerShown: false }} />
+
+        {displayUsers?.map((user: User, index: number) => (
+          <List.Item
+            key={index}
+            title={user.clientName}
+            // description={user.rating}
+            onPress={() => console.warn(`Expecting to navigate to user's page`)}
+            left={props => (
+              <List.Icon
+                {...props}
+                icon={
+                  true
+                    ? () => (
+                        <Avatar.Image
+                          size={24}
+                          source={{ uri: 'https://unsplash.it/100/100' }}
+                        />
+                      )
+                    : 'folder'
+                }
+              />
+            )}
+          />
+        ))}
+      </ScrollView>
+    </>
   );
 };
 

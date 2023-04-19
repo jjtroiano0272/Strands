@@ -131,7 +131,11 @@ readme tracking
 > > [ ] Add filter function to feed
 > > [ ] Add Geolocation to posts
 > > [x] Add pul down to refresh to feed
-> > [ ] Pack save.tsx data to send in an object instead of multiple variables
+> > [ ] REFACTOR: Pack save.tsx data to send in an object instead of multiple variables
+> >
+> > 18APR2023
+> > [ ] Add filter function to feed
+> > [ ]
 
 PLANNING:
 Posts should have the structure

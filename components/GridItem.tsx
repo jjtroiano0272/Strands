@@ -44,10 +44,10 @@ export default function GridItem({
     uid?: string;
   };
   comments?: string;
-  createdAt: Timestamp;
-  isSeasonal: boolean;
-  productsUsed: [label: string, value: string];
-  rating: number;
+  createdAt?: Timestamp;
+  isSeasonal?: boolean;
+  productsUsed?: [label: string, value: string];
+  rating?: number;
 }) {
   const theme = useTheme();
   const dummyPhoneNumber = faker.phone.number();

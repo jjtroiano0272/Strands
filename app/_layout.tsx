@@ -4,11 +4,18 @@ import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
+  useRoute,
 } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Redirect, SplashScreen, Stack, Tabs, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, View, useColorScheme } from 'react-native';
+import {
+  Alert,
+  Dimensions,
+  Pressable,
+  View,
+  useColorScheme,
+} from 'react-native';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
@@ -71,6 +78,11 @@ function RootLayoutNav() {
     });
   }
 
+  const { height } = Dimensions.get('window');
+
+  // const route = useRoute();
+  // const showFilterButton = route.name === 'feed'; // Set to true only on the 'feed' route
+
   return (
     // TODO Combine these two into one Provider
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -81,47 +93,26 @@ function RootLayoutNav() {
           screenOptions={{
             headerRight: () => (
               <>
-                {3 < 5 ? (
-                  <>
-                    <IconButton
-                      icon='filter-outline'
-                      color='red'
-                      size={20}
-                      onPress={() => console.warn(`Search function`)}
-                    />
-                    <TouchableOpacity
-                      hitSlop={{
-                        bottom: 50,
-                        left: 100,
-                        right: 50,
-                        top: 50,
-                      }}
-                      onPress={() => router.push('/modal')}
-                    >
-                      <AntDesign
-                        name='infocirlceo'
-                        size={24}
-                        color={colorScheme === 'dark' ? 'white' : 'black'}
-                      />
-                    </TouchableOpacity>
-                  </>
-                ) : (
-                  <TouchableOpacity
-                    hitSlop={{
-                      bottom: 50,
-                      left: 100,
-                      right: 50,
-                      top: 50,
-                    }}
-                    onPress={() => router.push('/modal')}
-                  >
-                    <AntDesign
-                      name='infocirlceo'
-                      size={24}
-                      color={colorScheme === 'dark' ? 'white' : 'black'}
-                    />
-                  </TouchableOpacity>
-                )}
+                <IconButton
+                  icon='filter-outline'
+                  size={20}
+                  onPress={() => router.push('/filtersModal')}
+                />
+                <TouchableOpacity
+                  hitSlop={{
+                    bottom: 50,
+                    left: 100,
+                    right: 50,
+                    top: 50,
+                  }}
+                  onPress={() => router.push('/modal')}
+                >
+                  <AntDesign
+                    name='infocirlceo'
+                    size={24}
+                    color={colorScheme === 'dark' ? 'white' : 'black'}
+                  />
+                </TouchableOpacity>
               </>
             ),
           }}
@@ -131,6 +122,13 @@ function RootLayoutNav() {
             options={{ headerShown: true, title: '' }}
           />
           <Stack.Screen name='modal' options={{ presentation: 'modal' }} />
+          <Stack.Screen
+            name='filtersModal'
+            options={{
+              presentation: 'modal',
+              contentStyle: { backgroundColor: 'red' },
+            }}
+          />
         </Stack>
 
         {/* <Slot /> */}

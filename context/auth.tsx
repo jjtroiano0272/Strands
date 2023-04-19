@@ -6,6 +6,7 @@ export type AuthContextType = {
   signIn: () => void;
   signOut: () => void;
   user: any; // TODO Define it somehow...
+  sortFeedBy: string[]
 };
 
 // Property 'signOut' does not exist on type 'AuthContextType | null'.ts(2339)
@@ -48,6 +49,7 @@ function useProtectedRoute(user: any) {
 
 export function Provider(props: any) {
   const [user, setAuth] = useState<any | null>(null);
+  const [sortFeedBy, setSortFeedBy] = useState<string[]>([''])
 
   const signIn = () => {
     console.log(`Signing in from provider`);
@@ -97,6 +99,7 @@ export function Provider(props: any) {
         signIn,
         signOut,
         user,
+        sortFeedBy
       }}
     >
       {props.children}
