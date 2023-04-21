@@ -29,8 +29,29 @@ export type UserContextType = {
   setIsLoggedIn: (arg: boolean) => void;
 };
 
+export type FireBasePost = {
+  auth?: {
+    displayName?: string;
+    uid?: string;
+  };
+  rating?: number;
+  clientName?: string;
+  createdAt?: {
+    seconds?: number,
+    nanoseconds?: number;
+  };
+  comments?: string;
+  rating?: number;
+  isSeasonal?: boolean;
+  productsUsed?: [
+    {
+      label?: string,
+      value?: string;
+    }];
+  downloadURL?: string;
+};
+
 declare module "react-particle-backgrounds" {
   function foo(): void;
   export = foo;
 }
-

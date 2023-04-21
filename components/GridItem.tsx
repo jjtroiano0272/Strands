@@ -147,7 +147,7 @@ export default function GridItem({
 
           <Card.Cover
             source={{
-              uri: 'https://unsplash.it/200/200',
+              uri: imgSrc,
             }}
           />
         </Card>

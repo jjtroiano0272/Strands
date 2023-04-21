@@ -1,5 +1,3 @@
-readme tracking
-
 > > [ ] Why export default over just export const? one extra line
 > > [ ] Chromatic aberration effect stuff under the status bars (top and bottom of screen)
 > > [ ] Do NOT show 'save' tab on bottom
@@ -132,10 +130,19 @@ readme tracking
 > > [ ] Add Geolocation to posts
 > > [x] Add pul down to refresh to feed
 > > [ ] REFACTOR: Pack save.tsx data to send in an object instead of multiple variables
+> > [x]Pull down to refresh (run API call again, but only dispatch to anything that has CHANGED)
 > >
-> > 18APR2023
+> > 19APR2023
 > > [ ] Add filter function to feed
-> > [ ]
+> > [ ] Concatenate all data to use into one structure
+> > [ ] >> Figure out shape of incoming datas so they can be concatenated
+> >
+> > 20APR2023
+> > [ ] in save.tsx, fixing problem with uploading image
+> > [ ] Error was previously coming from Firebase's 30 days-on-init access. Needed to be set to auth. https://stackoverflow.com/questions/58869759/email-firebase-client-access-to-your-cloud-firestore-database-expiring-in-x-d#answer-68780714 > > [ ] Better way to link image to post or something? YT tutorials
+> > [ ] Make sure the API Call in feed tries until it gets data (at least to a reasonable degree)
+> > [ ] filter
+> > [ ] Filter/sort data outside the return statement
 
 PLANNING:
 Posts should have the structure

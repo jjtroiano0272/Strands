@@ -57,6 +57,7 @@ import {
   labels as labelsConst,
   hairTypeImages as hairTypeImagesConst,
 } from '../../../constants/Labels';
+import { FireBasePost } from '../../../@types/types';
 
 type RouteParams = {
   imgUris: string;
@@ -105,37 +106,17 @@ export default function save() {
   const [selectedUserRating, setSelectedUserRating] = useState<number | null>(
     null
   );
-
   const labels = labelsConst;
   const hairTypeImages = hairTypeImagesConst;
-
   const labelObjs = labels.map(label => ({ label, value: label }));
   const [items, setItems] = useState(labelObjs);
   const [blobArr, setBlobArr] = useState<any>(null);
-
-  /**
-   * auth: {
-          displayName: auth.currentUser?.displayName,
-          uid: auth.currentUser?.uid,
-        },
-    createdAt: serverTimestamp(),
-    comments: comments.length > 0 ? comments : null,
-    rating: selectedUserRating,
-    isSeasonal: isSeasonal,
-    productsUsed: productsDropdownValue,
-   */
-  const [formData, setFormData] = useState<{
-    auth: string;
-    createdAt: Timestamp;
-    comments: string;
-    rating: number;
-    isSeasonal: boolean;
-    productsUsed: [label: string, value: string];
-  } | null>(null);
+  const [formData, setFormData] = useState<FireBasePost | null>(null);
 
   const handleImageUpload = async () => {
     setLoading(true);
 
+    /** Posts are organized by userID, then it shows the actual post. */
     const storage = getStorage();
     const auth = getAuth();
     const dbDestinationPath = `post/${
@@ -150,10 +131,8 @@ export default function save() {
           console.error(`Failed to fetch blob from imgUris: ${err}`)
         );
 
-      // const blob = await response.blob();
-      console.log(`dbDestinationPath: ${dbDestinationPath}`);
-
       const task = uploadBytes(storageRef, blob!); // TODO Is this good practice to use non-null assertion?
+      console.log(`task: ${JSON.stringify(task, null, 2)}`);
 
       task
         .then(snapshot => {
@@ -166,35 +145,45 @@ export default function save() {
 
           // navigate user back to previous page/route
           router.replace('/home');
-
+        })
+        .catch(err => {
+          setLoading(false);
           setTimeout(() => {
             setPostSuccess(false);
           }, 2000);
-        })
-        .catch(err => console.error(`error uploading! ${err}`));
+          console.error(`error uploading! ${err}`);
+        });
 
       // TODO Get rid of nested functions
-      (async () => {
-        const downloadURL = await getDownloadURL((await task).ref).catch(err =>
-          console.error(`error in downloadURL: ${err}`)
-        );
+      // TODO Get rid of, refactor this  because this is the one that posts to the wrong directory
+      // (async () => {
+      //   const downloadURL = await getDownloadURL((await task).ref).catch(err =>
+      //     console.error(`error in downloadURL: ${err}`)
+      //   );
 
-        const db = getFirestore();
-        const currentUser = getAuth().currentUser;
-        const postsRef = collection(db, 'posts');
-        const userPostsRef = collection(
-          doc(postsRef, currentUser?.uid),
-          'userPosts'
-        );
+      //   const db = getFirestore();
+      //   const currentUser = getAuth().currentUser;
+      //   const postsRef = collection(db, 'posts');
+      //   const userPostsRef = collection(
+      //     doc(postsRef, currentUser?.uid),
+      //     'userPosts'
+      //   );
 
-        const newPost = {
-          downloadURL: downloadURL,
-          caption: 'hard coded caption for testing purposes',
-          creation: serverTimestamp(),
-        };
+      //   const newPost = {
+      //     downloadURL: downloadURL,
+      //     caption: 'hard coded caption for testing purposes',
+      //     creation: serverTimestamp(),
+      //   };
 
-        addDoc(userPostsRef, newPost);
-      })();
+      //   addDoc(userPostsRef, newPost);
+      // })();
+
+      let downloadURL;
+      try {
+        downloadURL = await getDownloadURL((await task).ref);
+      } catch {
+        (err: any) => console.error(`error in getting download URL: ${err}`);
+      }
 
       const postsRef = collection(db, 'postNew');
       addDoc(postsRef, {
@@ -207,6 +196,7 @@ export default function save() {
         rating: selectedUserRating,
         isSeasonal: isSeasonal,
         productsUsed: productsDropdownValue,
+        downloadURL: downloadURL,
       })
         .then(res => {
           setSnackbarMessage(`Posted successfully!`);
