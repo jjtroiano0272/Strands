@@ -143,6 +143,14 @@
 > > [ ] Make sure the API Call in feed tries until it gets data (at least to a reasonable degree)
 > > [ ] filter
 > > [ ] Filter/sort data outside the return statement
+> >
+> > 21APR2023
+> > [x] Sorting function
+> > [ ] combine the two sorting functions
+> > [ ] rbf read
+> > [ ] guerilla watch
+> > [ ] picture of shorts to pick up?
+> > [ ] Altering jacket?  
 
 PLANNING:
 Posts should have the structure

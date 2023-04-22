@@ -95,6 +95,9 @@ const Feed = () => {
   const [myDbData, setMyDbData] = useState<FireBasePost[] | undefined | null>(
     null
   );
+  const [initialDbData, setInitialDbData] = useState<
+    FireBasePost[] | undefined | null
+  >(null);
   const userPostsCollectionRef = collection(db, 'postNew');
   const [refreshing, setRefreshing] = useState(false);
   const dimensions = useWindowDimensions();
@@ -144,6 +147,7 @@ const Feed = () => {
         });
 
         setMyDbData(list);
+        setInitialDbData(list);
       })
       .catch((error: FirebaseError) => {
         console.log(
@@ -219,52 +223,113 @@ const Feed = () => {
     },
   });
 
+  const sortByProperty = (
+    property: string,
+    data: FireBasePost[] | undefined | null,
+    asc?: boolean
+  ): FireBasePost[] | undefined | null => {
+    if (data) {
+      if (asc) {
+        return [...data].sort((a, b) => {
+          if (a[property] > b[property]) {
+            return 1;
+          } else if (a[property] < b[property]) {
+            return -1;
+          } else {
+            return 0;
+          }
+        });
+      } else {
+        return [...data].sort((a, b) => {
+          if (a[property] < b[property]) {
+            return 1;
+          } else if (a[property] > b[property]) {
+            return -1;
+          } else {
+            return 0;
+          }
+        });
+      }
+    }
+    // TODO Wouldn't it be more efficient to just return nothing instead passing any data around?
+    // It's the same effect--no data has changed.
+    return data;
+  };
+  const [pressed, setPressed] = useState<boolean | null>(null);
   const getDataSortedBy = (
-    varName: string
+    varName: string | null
   ): FireBasePost[] | undefined | void => {
     let result: FireBasePost[] | undefined | null;
-    if (varName === 'rating') {
-      result = myDbData?.sort((a, b) => {
-        if (a?.rating! > b?.rating!) {
-          return 1;
-        } else if (a?.rating! < b?.rating!) {
-          return -1;
-        } else {
-          return 0;
-        }
-      });
 
-      console.log(`result: ${JSON.stringify(result, null, 2)}`);
+    switch (varName) {
+      case 'createdAt':
+        setdataIsCurrentlySortedBy({
+          var: varName,
+          sortAsc: !dataIsCurrentlySortedBy?.sortAsc,
+        });
+        result = sortByProperty(varName, myDbData);
+      case 'isSeasonal':
+        result = sortByProperty(varName, myDbData);
+        break;
+      case 'displayName':
+        result = sortByProperty(`auth.${varName}`, myDbData);
+        break;
+      case 'rating':
+        setdataIsCurrentlySortedBy({
+          var: varName,
+          sortAsc: !dataIsCurrentlySortedBy?.sortAsc,
+        });
 
-      // return result;
-      myDbData && setMyDbData(result);
-    } else {
-      console.error(`No data supplied to sort by! Exiting...`);
+        result = sortByProperty(
+          varName,
+          myDbData,
+          dataIsCurrentlySortedBy?.sortAsc!
+        );
+        break;
+      case null:
+        console.log(`in null, resetting data....`);
+        setdataIsCurrentlySortedBy(null);
+        result = initialDbData;
+        break;
+      default:
+        console.error(`No data supplied to sort by! Exiting...`);
+        return;
     }
+
+    setMyDbData(result);
   };
+
+  const [dataIsCurrentlySortedBy, setdataIsCurrentlySortedBy] = useState<{
+    var: string | boolean | number;
+    sortAsc: boolean | null;
+  } | null>(null);
 
   useEffect(() => {
     fetchMyData();
   }, [!myDbData]);
 
   useEffect(() => {
-    console.log(`\x1b[32m${JSON.stringify(myDbData, null, 2)}`);
-  }, [myDbData]);
+    // console.log(`\x1b[32m${JSON.stringify(myDbData, null, 2)}`);
+    console.log(
+      `Sort direction: ${
+        dataIsCurrentlySortedBy?.sortAsc ? 'asc' : 'desc' ? 'null' : 'no'
+      }`
+    );
+  }, [dataIsCurrentlySortedBy?.sortAsc]);
 
   const bottomSheetRef = useRef<BottomSheet>(null);
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
   // variables
   // TODO These set the height of the modal but I need some  way to grab the dynamic height of it based on what data is being shown
-  const snapPoints = useMemo(() => ['40%'], []);
+  const snapPoints = useMemo(() => ['48%'], []);
 
   // callbacks
   const handlePresentModalPress = useCallback(() => {
     bottomSheetModalRef?.current?.present();
-    console.log('helloooooo?');
   }, []);
   const handleSheetChanges = useCallback((index: number) => {
-    console.log('handleSheetChanges', index);
+    // console.log('handleSheetChanges', index);
   }, []);
 
   return (
@@ -285,54 +350,6 @@ const Feed = () => {
           {/* TODO Add a filter button for like 'Show me people of x hair type within x miles of me, etc. */}
           <View style={styles.container}>
             {/* TODO Offload to custom component with only the needed text, standardized format */}
-            <View style={styles.cardsContainer}>
-              {/* {!loading &&
-                  !error &&
-                  redditPlaceholderData &&
-                  redditPlaceholderData
-                    .slice(0, redditPlaceholderData.length - 1)
-                    .filter(
-                      (item: any) =>
-                        item.data.thumbnail !== 'default' &&
-                        item.data.thumbnail !== 'self' &&
-                        item.data.thumbnail !== 'nsfw'
-                    )
-                    .map((item: any, index: number) => (
-                      <GridItem
-                        key={index}
-                        imgSrc={
-                          item.data.thumbnail !== 'self'
-                            ? item.data.thumbnail
-                            : null
-                        }
-                        user={{
-                          username: item.author,
-                          company: {
-                            bs: 'foooo',
-                            catchPhrase: 'hello',
-                            name: JSON.stringify(item.data.ups, null, 2),
-                          },
-                          name: item.data.author,
-                          // Any keys after this aren't consumed by [username]
-                          id: 3,
-                          address: {
-                            street: 'string',
-                            suite: 'string',
-                            city: 'string',
-                            zipcode: 44444,
-                            geo: {
-                              lat: 50,
-                              lng: -20,
-                            },
-                          },
-                          email: 'foo@bar.com',
-                          phone: '911',
-                          website: 'google.com',
-                          seasonal: true,
-                        }}
-                      />
-                    ))} */}
-            </View>
 
             <View style={styles.cardsContainer}>
               {myDbData &&
@@ -352,8 +369,12 @@ const Feed = () => {
             </View>
           </View>
 
-          <Button mode='contained' onPress={handlePresentModalPress}>
-            BottomSheet
+          <Button
+            mode='outlined'
+            onPress={handlePresentModalPress}
+            contentStyle={{ borderRadius: 50 }}
+          >
+            Sort Results
           </Button>
         </ScrollView>
 
@@ -371,13 +392,36 @@ const Feed = () => {
             .map((label, index: number) => (
               <List.Item
                 key={index}
-                theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
                 style={{ width: '100%' }}
+                theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
                 title={label.displayName}
-                left={props => <List.Icon {...props} icon={label.icon} />}
+                left={props => (
+                  <List.Icon
+                    {...props}
+                    icon={label.icon}
+                    color={
+                      label?.varName === dataIsCurrentlySortedBy?.var
+                        ? theme?.colors.primary
+                        : ''
+                    }
+                  />
+                )}
+                right={props => {
+                  if (label.varName === dataIsCurrentlySortedBy?.var) {
+                    if (dataIsCurrentlySortedBy.sortAsc) {
+                      return <List.Icon {...props} icon={'sort-ascending'} />;
+                    } else {
+                      return <List.Icon {...props} icon={'sort-descending'} />;
+                    }
+                  }
+                  return <List.Icon {...props} icon={''} />;
+                }}
                 onPress={() => getDataSortedBy(label.varName)}
               />
             ))}
+          <Button mode='outlined' onPress={() => getDataSortedBy(null)}>
+            RESET
+          </Button>
         </BottomSheetModal>
       </BottomSheetModalProvider>
     </>

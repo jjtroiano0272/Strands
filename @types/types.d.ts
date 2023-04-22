@@ -30,6 +30,7 @@ export type UserContextType = {
 };
 
 export type FireBasePost = {
+  [key: string]: string | number | boolean;
   auth?: {
     displayName?: string;
     uid?: string;
