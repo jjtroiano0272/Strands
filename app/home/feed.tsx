@@ -1,40 +1,24 @@
 import BottomSheet, {
-  useBottomSheet,
   BottomSheetModal,
   BottomSheetModalProvider,
 } from '@gorhom/bottom-sheet';
-import Sheet from 'react-modal-sheet';
 import * as Haptics from 'expo-haptics';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import axios from 'axios';
-import {
-  Alert,
-  RefreshControl,
-  StyleSheet,
-  useWindowDimensions,
-} from 'react-native';
+import { RefreshControl, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { useTheme } from '@react-navigation/native';
 
 import React from 'react';
 import { ScrollView } from 'react-native';
-import { FireBasePost, IAPIData } from '../../@types/types';
-import Colors from '../../constants/Colors';
+import { FireBasePost } from '../../@types/types';
 import useFetch from '../../hooks/useFetch';
-import { ExternalLink } from '../../components/ExternalLink';
-import { MonoText } from '../../components/StyledText';
 import GridItem from '../../components/GridItem';
 import { Stack } from 'expo-router';
-import { Connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
 import {
   DocumentData,
   Timestamp,
   collection,
-  doc,
-  getDoc,
   getDocs,
-  getFirestore,
   query,
   where,
 } from 'firebase/firestore';
@@ -42,31 +26,18 @@ import {
 import { db } from '../../firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import {
-  Avatar,
   Button,
-  IconButton,
+  Chip,
   List,
   MD3DarkTheme,
   MD3LightTheme,
-  Modal,
-  Portal,
-  Provider,
-  TextInput,
 } from 'react-native-paper';
-import { ListItem } from '@rneui/themed';
 import {
-  PanGestureHandler,
-  PanGestureHandlerGestureEvent,
-} from 'react-native-gesture-handler';
-import Animated, {
-  WithSpringConfig,
   useAnimatedGestureHandler,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import { Context } from 'react-native-reanimated/lib/types/lib/reanimated2/hook/commonTypes';
-import DropDownPicker from 'react-native-dropdown-picker';
 import {
   sortLabels,
   sortLabelsObj,
@@ -303,6 +274,8 @@ const Feed = () => {
     var: string | boolean | number;
     sortAsc: boolean | null;
   } | null>(null);
+  // rename to activeFilters
+  const [selectedFilters, setSelectedFilters] = useState<string[] | null>(null);
 
   useEffect(() => {
     fetchMyData();
@@ -317,20 +290,85 @@ const Feed = () => {
     );
   }, [dataIsCurrentlySortedBy?.sortAsc]);
 
+  useEffect(() => {
+    console.log(`selectedFilter: ${JSON.stringify(selectedFilters, null, 2)}`);
+  }, [selectedFilters]);
+
+  useEffect(() => {
+    // myDbData.map((item: FireBasePost, index: number) => (
+
+    console.log(`myDbData: ${JSON.stringify(myDbData, null, 2)}`);
+  }, [myDbData]);
+
   const bottomSheetRef = useRef<BottomSheet>(null);
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
   // variables
   // TODO These set the height of the modal but I need some  way to grab the dynamic height of it based on what data is being shown
-  const snapPoints = useMemo(() => ['48%'], []);
+  const snapPoints = useMemo(() => ['75%'], []);
 
   // callbacks
   const handlePresentModalPress = useCallback(() => {
     bottomSheetModalRef?.current?.present();
   }, []);
+  9;
   const handleSheetChanges = useCallback((index: number) => {
     // console.log('handleSheetChanges', index);
   }, []);
+
+  const handleFilterPress = (filterName: string) => {
+    if (selectedFilters?.includes(filterName)) {
+      const result = selectedFilters.filter(name => name !== filterName);
+      console.warn(
+        `result: ${JSON.stringify(
+          selectedFilters.filter(name => name !== filterName),
+          null,
+          2
+        )}`
+      );
+
+      return setSelectedFilters(
+        selectedFilters.filter(name => name !== filterName)
+      );
+    } else if (!selectedFilters?.includes(filterName)) {
+      return selectedFilters
+        ? setSelectedFilters([...selectedFilters, filterName])
+        : setSelectedFilters([filterName]);
+    } else {
+      // return setMyDbData(initialDbData);
+    }
+
+    console.log(
+      `${filterName}: ${!selectedFilters?.includes(filterName) ? 'ON' : 'OFF'}`
+    );
+
+    // TODO: Might need some catches in here just for data type mismatches
+    const result = myDbData?.filter(item => item[filterName]);
+    setMyDbData(result);
+
+    console.log(
+      `selectedFilters after pressing: ${JSON.stringify(
+        selectedFilters,
+        null,
+        2
+      )}`
+    );
+  };
+
+  const handleReset = () => {
+    getDataSortedBy(null);
+    setSelectedFilters(null);
+  };
+
+  const filteredData = selectedFilters?.length
+    ? myDbData?.filter((item: FireBasePost | any) =>
+        selectedFilters?.every(filter => filter[item])
+      )
+    : myDbData;
+
+  useEffect(() => {
+    console.log(`filteredData: ${filteredData ? true : false}`);
+  }, [filteredData]);
 
   return (
     <>
@@ -352,20 +390,39 @@ const Feed = () => {
             {/* TODO Offload to custom component with only the needed text, standardized format */}
 
             <View style={styles.cardsContainer}>
-              {myDbData &&
-                myDbData.map((item: FireBasePost, index: number) => (
-                  <GridItem
-                    key={index}
-                    usingMyOwnDB={true}
-                    isSeasonal={item?.isSeasonal}
-                    auth={item?.auth}
-                    imgSrc={
-                      item?.downloadURL
-                        ? item.downloadURL
-                        : `https://unsplash.it/id/${index}200/200`
-                    }
-                  />
-                ))}
+              {selectedFilters?.length
+                ? myDbData
+                    ?.filter((item: FireBasePost | any) =>
+                      selectedFilters?.every(filter => filter[item])
+                    )
+                    .map((item: FireBasePost, index: number) => (
+                      <GridItem
+                        key={index}
+                        usingMyOwnDB={true}
+                        createdAt={item?.createdAt?.seconds}
+                        isSeasonal={item?.isSeasonal}
+                        auth={item?.auth}
+                        imgSrc={
+                          item?.downloadURL
+                            ? item.downloadURL
+                            : `https://unsplash.it/id/${index}/200/200`
+                        }
+                      />
+                    ))
+                : myDbData?.map((item: FireBasePost, index: number) => (
+                    <GridItem
+                      key={index}
+                      usingMyOwnDB={true}
+                      createdAt={item?.createdAt?.seconds}
+                      isSeasonal={item?.isSeasonal}
+                      auth={item?.auth}
+                      imgSrc={
+                        item?.downloadURL
+                          ? item.downloadURL
+                          : `https://unsplash.it/id/${index}/200/200`
+                      }
+                    />
+                  ))}
             </View>
           </View>
 
@@ -387,6 +444,7 @@ const Feed = () => {
           enablePanDownToClose={true}
           onChange={handleSheetChanges}
         >
+          <Text>Sort by</Text>
           {sortLabelsObj
             .filter(x => x.displayName !== null)
             .map((label, index: number) => (
@@ -419,7 +477,30 @@ const Feed = () => {
                 onPress={() => getDataSortedBy(label.varName)}
               />
             ))}
-          <Button mode='outlined' onPress={() => getDataSortedBy(null)}>
+          <Text>Filter</Text>
+          <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap' }}>
+            {sortLabelsObj
+              .filter(x => x.displayName !== null)
+              .map((label, index: number) => (
+                <Chip
+                  key={index}
+                  style={{ margin: 5 }}
+                  // icon='information'
+                  onPress={() => handleFilterPress(label.varName)}
+                  // selected={selectedFilters?.includes(label.varName)}
+                  mode={
+                    selectedFilters?.includes(label.varName)
+                      ? 'flat'
+                      : 'outlined'
+                  }
+                  showSelectedOverlay={true}
+                >
+                  {label.displayName}
+                </Chip>
+              ))}
+          </View>
+
+          <Button mode='outlined' onPress={handleReset}>
             RESET
           </Button>
         </BottomSheetModal>

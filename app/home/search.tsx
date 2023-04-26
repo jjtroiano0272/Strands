@@ -1,3 +1,6 @@
+import { createAvatar } from '@dicebear/core';
+import { lorelei } from '@dicebear/collection';
+import { SvgXml } from 'react-native-svg';
 import { useCallback, useEffect, useState } from 'react';
 import { RefreshControl, StyleSheet } from 'react-native';
 import { Text } from '../../components/Themed';
@@ -100,6 +103,14 @@ const Search = () => {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
+  const dicebearAvatar = createAvatar(lorelei, {
+    seed: 'Kitty',
+    backgroundColor: ['662C91', '17A398', '17A398', 'EE6C4D', 'F38D68'],
+    radius: 50,
+    size: 30,
+    // ... other options
+  }).toString();
+
   return (
     <>
       <TextInput
@@ -133,10 +144,11 @@ const Search = () => {
                 icon={
                   true
                     ? () => (
-                        <Avatar.Image
-                          size={24}
-                          source={{ uri: 'https://unsplash.it/100/100' }}
-                        />
+                        // <Avatar.Image
+                        //   size={24}
+                        //   source={{ uri: 'https://unsplash.it/100/100' }}
+                        // />
+                        <SvgXml xml={dicebearAvatar} />
                       )
                     : 'folder'
                 }

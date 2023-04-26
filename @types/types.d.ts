@@ -3,6 +3,7 @@ export interface IAPIData {
   name: string,
   username: string,
   email: string,
+  profileImage?: string,
   address: {
     street: string,
     suite: string,

@@ -1,3 +1,6 @@
+import { createAvatar } from '@dicebear/core';
+import { lorelei } from '@dicebear/collection';
+import { SvgXml } from 'react-native-svg';
 import React from 'react';
 import { faker } from '@faker-js/faker';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
@@ -8,7 +11,7 @@ import useFetch from '../hooks/useFetch';
 import { ExternalLink } from '../components/ExternalLink';
 import { MonoText } from '../components/StyledText';
 import {
-  Avatar,
+  Avatar as PaperAvatar,
   Button,
   Card,
   Title,
@@ -16,11 +19,13 @@ import {
   MD3DarkTheme,
   MD3LightTheme,
   Badge,
+  useTheme as usePaperTheme,
 } from 'react-native-paper';
 import { Text, View } from '../components/Themed';
 import { Link } from 'expo-router';
 import { DarkTheme, useTheme } from '@react-navigation/native';
 import { Timestamp } from 'firebase/firestore';
+import Avatar from 'boring-avatars';
 
 export default function GridItem({
   usingMyOwnDB,
@@ -28,29 +33,79 @@ export default function GridItem({
   index,
   imgSrc,
   auth,
+  clientName,
   comments,
   createdAt,
   isSeasonal,
   productsUsed,
   rating,
+  ...props
 }: {
   usingMyOwnDB?: boolean;
   user?: IAPIData;
   index?: number;
   imgSrc?: string;
-
   auth?: {
     displayName?: string;
     uid?: string;
+    profileImage: string;
   };
+  clientName?: string;
   comments?: string;
-  createdAt?: Timestamp;
+  createdAt?: number;
   isSeasonal?: boolean;
   productsUsed?: [label: string, value: string];
   rating?: number;
 }) {
   const theme = useTheme();
+  const paperTheme = usePaperTheme();
   const dummyPhoneNumber = faker.phone.number();
+
+  const getElapsedTime = (
+    time1: number,
+    time2: number = Date.now(),
+    format?: 'string'
+  ) => {
+    const createdAtTimestamp = time1 * 1000;
+
+    const elapsedTimeInSeconds = Math.abs(
+      Math.round((createdAtTimestamp - time2) / 1000)
+    );
+    const elapsedTimeInMinutes = Math.abs(
+      Math.round(elapsedTimeInSeconds / 60)
+    );
+    const elapsedTimeInHours = Math.abs(Math.round(elapsedTimeInMinutes / 60));
+    const elapsedTimeInDays = Math.abs(Math.round(elapsedTimeInHours / 24));
+    const elapsedTimeInWeeks = Math.abs(
+      Math.round(elapsedTimeInSeconds / 604800)
+    ); // 604800 seconds in a week
+
+    // If it has been longer than 60 seconds, use elapseTimeinMinutes
+    // let result: { number: number; unit: string };
+    let result;
+    if (elapsedTimeInSeconds >= 60) {
+      result = { number: elapsedTimeInMinutes, unit: 'minutes' };
+    }
+    if (elapsedTimeInMinutes >= 60) {
+      result = { number: elapsedTimeInHours, unit: 'hours' };
+    }
+    if (elapsedTimeInHours >= 24) {
+      result = { number: elapsedTimeInDays, unit: 'days' };
+    }
+    if (elapsedTimeInDays >= 7) {
+      result = { number: elapsedTimeInWeeks, unit: 'weeks' };
+    }
+
+    return result;
+  };
+
+  // const dicebearAvatar = createAvatar(lorelei, {
+  //   seed: 'Kitty',
+  //   backgroundColor: ['662C91', '17A398', '17A398', 'EE6C4D', 'F38D68'],
+  //   radius: 50,
+  //   size: 36,
+  //   // ... other options
+  // }).toString();
 
   if (!usingMyOwnDB) {
     return (
@@ -79,7 +134,7 @@ export default function GridItem({
               color: theme.colors.text,
             }}
             left={props => (
-              <Avatar.Icon
+              <PaperAvatar.Icon
                 {...props}
                 size={30}
                 icon={
@@ -130,17 +185,52 @@ export default function GridItem({
           theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         >
           <Card.Title
-            title={auth?.displayName ? auth?.displayName : auth?.uid}
-            titleStyle={{
-              color: theme.colors.text,
-            }}
-            subtitle={auth?.displayName ? auth?.displayName : auth?.uid}
-            subtitleStyle={{
-              color: theme.colors.text,
-            }}
-            left={props =>
+            title={clientName ?? 'Client'}
+            titleStyle={{ color: theme.colors.text }}
+            subtitle={
+              <>
+                <View style={{ backgroundColor: 'transparent' }}>
+                  <Text
+                    style={{
+                      color: auth?.displayName
+                        ? theme.colors.text
+                        : paperTheme.colors.secondary,
+                    }}
+                  >
+                    {auth?.displayName ?? 'anonymous'}
+                  </Text>
+                  {/* User who posted it */}
+                  <Text style={{ color: theme.colors.text }}>
+                    {createdAt &&
+                      `${getElapsedTime(createdAt)?.number} ${
+                        getElapsedTime(createdAt)?.unit
+                      } ago`}
+                  </Text>
+                </View>
+              </>
+            }
+            // TODO: This doesn't exist in DB structure yet...so wil always default
+            left={props => (
+              <PaperAvatar.Image
+                {...props}
+                size={36}
+                source={{
+                  uri:
+                    auth?.profileImage ??
+                    `https://api.dicebear.com/6.x/lorelei/png/seed=${auth?.uid}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
+                }}
+              />
+            )}
+            right={props =>
+              // TODO Make a banner, not a button
               isSeasonal && (
-                <Avatar.Icon {...props} size={30} icon={'airplane'} />
+                <PaperAvatar.Icon
+                  {...props}
+                  size={20}
+                  icon='airplane'
+                  color={theme.colors.primary}
+                  style={{ backgroundColor: 'transparent' }}
+                />
               )
             }
           />

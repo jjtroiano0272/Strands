@@ -1,3 +1,5 @@
+### STRANDS: The Yelp for Hairstylists
+
 > > [ ] Why export default over just export const? one extra line
 > > [ ] Chromatic aberration effect stuff under the status bars (top and bottom of screen)
 > > [ ] Do NOT show 'save' tab on bottom
@@ -150,16 +152,54 @@
 > > [ ] rbf read
 > > [ ] guerilla watch
 > > [ ] picture of shorts to pick up?
-> > [ ] Altering jacket?  
+> > [ ] Altering jacket?
+> >
+> > 22APR2023
+> >
+> > 23APR023
+> > [x] Correctly removing a filter from list
+> > [ ] CLEAR FUCKING BROWSER
+> >
+> > 24APR2023
+> > < > rbf reading
+> > < > update pump
+> > [ ] CLEAR FUCKING BROWSER
+> > [ ] js chalk, quokka
+> > [x] Elapsed time
+> >
+> > 25APR2023
+> > [x] Gravatar profile image as fallback default?
+> > [ ] placeholder avatar color generators
+> > [o] Organize DB Data & test having posts from different users (for checking types of avatars)
+> > [ ] Search tab default show a list of users or at least most recent searches
+> > < > Jacket alter
+> > [ ] Hooking into some API to check products used/auto-complete
+> > [ ] PROPOSED DATA STRUCTURE CHANGE:
+> > [ ] Geolocation
+> > [x] Add some 'secondary' field or something to colors
 
 PLANNING:
 Posts should have the structure
 
 Users should have the structure
 
-> uid
-> avatar (string: URL)
-> displayName
+auth: {
+----uid,
+----avatar (string: URL),
+----displayName
+},
+profile: {
+
+},
+clientName: string,
+comments: string,
+createdAt: Date
+isSeasonal: boolean,
+productsUsed: [
+----{ label: string,
+------value: string,
+----}
+]
 
 Notes:
 
