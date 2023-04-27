@@ -8,8 +8,8 @@ import { IAPIData } from '../@types/types';
 import { Badge as RNEBadge } from 'react-native-elements';
 import Colors from '../constants/Colors';
 import useFetch from '../hooks/useFetch';
-import { ExternalLink } from '../components/ExternalLink';
-import { MonoText } from '../components/StyledText';
+import { ExternalLink } from './ExternalLink';
+import { MonoText } from './StyledText';
 import {
   Avatar as PaperAvatar,
   Button,
@@ -21,7 +21,7 @@ import {
   Badge,
   useTheme as usePaperTheme,
 } from 'react-native-paper';
-import { Text, View } from '../components/Themed';
+import { Text, View } from './Themed';
 import { Link } from 'expo-router';
 import { DarkTheme, useTheme } from '@react-navigation/native';
 import { Timestamp } from 'firebase/firestore';

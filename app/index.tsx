@@ -17,7 +17,7 @@ import {
 import { Text, View } from '../components/Themed';
 import { Link, Redirect, Stack } from 'expo-router';
 import { DarkTheme, useTheme } from '@react-navigation/native';
-import GridItem from '../components/GridItem';
+import GridItem from '../components/Post';
 import { UserContext } from '../context/UserContext';
 
 export default function Page() {

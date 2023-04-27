@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import BottomSheet, {
   BottomSheetModal,
   BottomSheetModalProvider,
@@ -12,7 +13,7 @@ import React from 'react';
 import { ScrollView } from 'react-native';
 import { FireBasePost } from '../../@types/types';
 import useFetch from '../../hooks/useFetch';
-import GridItem from '../../components/GridItem';
+import Post from '../../components/Post';
 import { Stack } from 'expo-router';
 import {
   DocumentData,
@@ -44,13 +45,14 @@ import {
   springConfig,
 } from '../../constants/constants';
 import { FirebaseError } from 'firebase/app';
+import { faker } from '@faker-js/faker';
 
 type RedditAPIData = {
   data: [
     {
       data: {
         title: string;
-        thumbnail: 'default' | 'self' | 'nsfw';
+        thumbnail: 'default' | 'self' | 'nsfw' | any;
         url_overridden_by_dest: string;
         author: string;
       };
@@ -73,6 +75,17 @@ const Feed = () => {
   const [refreshing, setRefreshing] = useState(false);
   const dimensions = useWindowDimensions();
   const top = useSharedValue(dimensions.height / 1.5);
+  // TODO These set the height of the modal but I need some  way to grab the dynamic height of it based on what data is being shown
+  const snapPoints = useMemo(() => ['75%'], []);
+  const [dataIsCurrentlySortedBy, setdataIsCurrentlySortedBy] = useState<{
+    var: string | boolean | number;
+    sortAsc: boolean | null;
+  } | null>(null);
+  const [selectedFilters, setSelectedFilters] = useState<string[] | null>(null);
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+
+  const [pressed, setPressed] = useState<boolean | null>(null);
   const [finalData, setFinalData] = useState<unknown[] | null>(null);
   const currentUser = getAuth().currentUser;
   const userID = getAuth().currentUser?.uid;
@@ -226,7 +239,7 @@ const Feed = () => {
     // It's the same effect--no data has changed.
     return data;
   };
-  const [pressed, setPressed] = useState<boolean | null>(null);
+
   const getDataSortedBy = (
     varName: string | null
   ): FireBasePost[] | undefined | void => {
@@ -270,48 +283,10 @@ const Feed = () => {
     setMyDbData(result);
   };
 
-  const [dataIsCurrentlySortedBy, setdataIsCurrentlySortedBy] = useState<{
-    var: string | boolean | number;
-    sortAsc: boolean | null;
-  } | null>(null);
-  // rename to activeFilters
-  const [selectedFilters, setSelectedFilters] = useState<string[] | null>(null);
-
-  useEffect(() => {
-    fetchMyData();
-  }, [!myDbData]);
-
-  useEffect(() => {
-    // console.log(`\x1b[32m${JSON.stringify(myDbData, null, 2)}`);
-    console.log(
-      `Sort direction: ${
-        dataIsCurrentlySortedBy?.sortAsc ? 'asc' : 'desc' ? 'null' : 'no'
-      }`
-    );
-  }, [dataIsCurrentlySortedBy?.sortAsc]);
-
-  useEffect(() => {
-    console.log(`selectedFilter: ${JSON.stringify(selectedFilters, null, 2)}`);
-  }, [selectedFilters]);
-
-  useEffect(() => {
-    // myDbData.map((item: FireBasePost, index: number) => (
-
-    console.log(`myDbData: ${JSON.stringify(myDbData, null, 2)}`);
-  }, [myDbData]);
-
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-
-  // variables
-  // TODO These set the height of the modal but I need some  way to grab the dynamic height of it based on what data is being shown
-  const snapPoints = useMemo(() => ['75%'], []);
-
-  // callbacks
   const handlePresentModalPress = useCallback(() => {
     bottomSheetModalRef?.current?.present();
   }, []);
-  9;
+
   const handleSheetChanges = useCallback((index: number) => {
     // console.log('handleSheetChanges', index);
   }, []);
@@ -338,21 +313,9 @@ const Feed = () => {
       // return setMyDbData(initialDbData);
     }
 
-    console.log(
-      `${filterName}: ${!selectedFilters?.includes(filterName) ? 'ON' : 'OFF'}`
-    );
-
     // TODO: Might need some catches in here just for data type mismatches
     const result = myDbData?.filter(item => item[filterName]);
     setMyDbData(result);
-
-    console.log(
-      `selectedFilters after pressing: ${JSON.stringify(
-        selectedFilters,
-        null,
-        2
-      )}`
-    );
   };
 
   const handleReset = () => {
@@ -367,8 +330,185 @@ const Feed = () => {
     : myDbData;
 
   useEffect(() => {
-    console.log(`filteredData: ${filteredData ? true : false}`);
+    // console.log(`filteredData: ${filteredData ? true : false}`);
   }, [filteredData]);
+
+  useEffect(() => {
+    console.log(`selectedFilter: ${JSON.stringify(selectedFilters, null, 2)}`);
+  }, [selectedFilters]);
+
+  useEffect(() => {
+    // myDbData.map((item: FireBasePost, index: number) => (
+    // console.log(`myDbData: ${JSON.stringify(myDbData, null, 2)}`);
+  }, [myDbData]);
+
+  useEffect(() => {
+    fetchMyData();
+  }, [!myDbData]);
+
+  useEffect(() => {
+    // console.log(`\x1b[32m${JSON.stringify(myDbData, null, 2)}`);
+    console.log(
+      `Sort direction: ${
+        dataIsCurrentlySortedBy?.sortAsc ? 'asc' : 'desc' ? 'null' : 'no'
+      }`
+    );
+  }, [dataIsCurrentlySortedBy?.sortAsc]);
+
+  let dummyRecords: unknown[] = [];
+  const fillDbWithDummyData = () => {
+    while (dummyRecords.length < 100) {
+      let seedData;
+      let randRedditImg;
+
+      const randThumbnails = [
+        'https://b.thumbs.redditmedia.com/NqLXMy-LezhItv_nk76GXeMZ_grIjctWaqiy42eD2dE.jpg',
+        'https://b.thumbs.redditmedia.com/mx-3LueuSoQDtldaNTbkTjxly6bcEfbJ8d4DXzpPleM.jpg',
+        'https://b.thumbs.redditmedia.com/VEfHMZRmk8uWYzuqKaEnQafm80C0Kch8EeCCeBY_yUs.jpg',
+        'https://b.thumbs.redditmedia.com/tsgp1dMOhyLAsOigd2xqPCx3gWWt41FV9Ngg1bnzBac.jpg',
+        'https://b.thumbs.redditmedia.com/D3R1TvQ8jCvDp_HKsmvQD009pW5RfXdrPoW3eXJvQfg.jpg',
+        'https://a.thumbs.redditmedia.com/kM9vASDtXw-XIRzkCIJ5X2Hp67mGY2VtobjwdMo97k0.jpg',
+        'https://b.thumbs.redditmedia.com/xs_u4kMf82sA_jXAUNfQNEkyEaaM2vZ5Vnl0HwJJWgE.jpg',
+        'https://a.thumbs.redditmedia.com/Usr6E3JlyQrAQefPcn-g5PvWRgsuxBm1sr9vD0mfzA0.jpg',
+        'https://b.thumbs.redditmedia.com/2CWGtte5_zRsAsmx5Y2A5T8FbidtNw4-2WTjOmL48yM.jpg',
+        'https://b.thumbs.redditmedia.com/MuRxY5udIDjocQPrCRlplg8Rvb0aMSfZuPDOBJLxcoc.jpg',
+        'https://b.thumbs.redditmedia.com/HneKNUdDirVSIR4yUZiOPwLvxDSxgqwEt6_TRKB960s.jpg',
+        'https://b.thumbs.redditmedia.com/9xf8MHx58yYuGA7CtTizqhjbmLs8az2922xv3CLm3jI.jpg',
+        'https://b.thumbs.redditmedia.com/TbEt1N0UWN9diuuU8Gv4dr03EiAomc4E4T6Cm5V7rLY.jpg',
+        'https://b.thumbs.redditmedia.com/5wnyKRdZmjgABfQHOThAXVLVILl2k3Kg7o7RJzvlVKc.jpg',
+        'https://b.thumbs.redditmedia.com/RRtdKL6l1z23OgSptLZQoN7KWCHZk2O_k0I2UaFXOXQ.jpg',
+        'https://external-preview.redd.it/_hfQa7epHqDSk1nqUcrwAZMp6kc8mOvUPlFg4xmEoPg.png?width=140&amp;height=140&amp;crop=140:140,smart&amp;format=jpg&amp;v=enabled&amp;lthumb=true&amp;s=978946c011fdcc126fa381815a9a6739463512f8',
+        'https://b.thumbs.redditmedia.com/6R4t73YgPegw8jmll8gEj3OYGHGkyKEiq_h8xwCL7WE.jpg',
+        'https://b.thumbs.redditmedia.com/NqLXMy-LezhItv_nk76GXeMZ_grIjctWaqiy42eD2dE.jpg',
+        'https://b.thumbs.redditmedia.com/mx-3LueuSoQDtldaNTbkTjxly6bcEfbJ8d4DXzpPleM.jpg',
+        'https://b.thumbs.redditmedia.com/VEfHMZRmk8uWYzuqKaEnQafm80C0Kch8EeCCeBY_yUs.jpg',
+        'https://b.thumbs.redditmedia.com/tsgp1dMOhyLAsOigd2xqPCx3gWWt41FV9Ngg1bnzBac.jpg',
+        'https://b.thumbs.redditmedia.com/D3R1TvQ8jCvDp_HKsmvQD009pW5RfXdrPoW3eXJvQfg.jpg',
+        'https://a.thumbs.redditmedia.com/kM9vASDtXw-XIRzkCIJ5X2Hp67mGY2VtobjwdMo97k0.jpg',
+        'https://b.thumbs.redditmedia.com/xs_u4kMf82sA_jXAUNfQNEkyEaaM2vZ5Vnl0HwJJWgE.jpg',
+        'https://a.thumbs.redditmedia.com/Usr6E3JlyQrAQefPcn-g5PvWRgsuxBm1sr9vD0mfzA0.jpg',
+        'https://b.thumbs.redditmedia.com/2CWGtte5_zRsAsmx5Y2A5T8FbidtNw4-2WTjOmL48yM.jpg',
+        'https://b.thumbs.redditmedia.com/MuRxY5udIDjocQPrCRlplg8Rvb0aMSfZuPDOBJLxcoc.jpg',
+        'https://b.thumbs.redditmedia.com/HneKNUdDirVSIR4yUZiOPwLvxDSxgqwEt6_TRKB960s.jpg',
+        'https://b.thumbs.redditmedia.com/9xf8MHx58yYuGA7CtTizqhjbmLs8az2922xv3CLm3jI.jpg',
+        'https://b.thumbs.redditmedia.com/TbEt1N0UWN9diuuU8Gv4dr03EiAomc4E4T6Cm5V7rLY.jpg',
+        'https://b.thumbs.redditmedia.com/5wnyKRdZmjgABfQHOThAXVLVILl2k3Kg7o7RJzvlVKc.jpg',
+        'https://b.thumbs.redditmedia.com/RRtdKL6l1z23OgSptLZQoN7KWCHZk2O_k0I2UaFXOXQ.jpg',
+        'https://external-preview.redd.it/_hfQa7epHqDSk1nqUcrwAZMp6kc8mOvUPlFg4xmEoPg.png?width=140&amp;height=140&amp;crop=140:140,smart&amp;format=jpg&amp;v=enabled&amp;lthumb=true&amp;s=978946c011fdcc126fa381815a9a6739463512f8',
+        'https://b.thumbs.redditmedia.com/6R4t73YgPegw8jmll8gEj3OYGHGkyKEiq_h8xwCL7WE.jpg',
+        'https://b.thumbs.redditmedia.com/NqLXMy-LezhItv_nk76GXeMZ_grIjctWaqiy42eD2dE.jpg',
+        'https://b.thumbs.redditmedia.com/mx-3LueuSoQDtldaNTbkTjxly6bcEfbJ8d4DXzpPleM.jpg',
+        'https://b.thumbs.redditmedia.com/VEfHMZRmk8uWYzuqKaEnQafm80C0Kch8EeCCeBY_yUs.jpg',
+        'https://b.thumbs.redditmedia.com/tsgp1dMOhyLAsOigd2xqPCx3gWWt41FV9Ngg1bnzBac.jpg',
+        'https://b.thumbs.redditmedia.com/D3R1TvQ8jCvDp_HKsmvQD009pW5RfXdrPoW3eXJvQfg.jpg',
+        'https://a.thumbs.redditmedia.com/kM9vASDtXw-XIRzkCIJ5X2Hp67mGY2VtobjwdMo97k0.jpg',
+        'https://b.thumbs.redditmedia.com/xs_u4kMf82sA_jXAUNfQNEkyEaaM2vZ5Vnl0HwJJWgE.jpg',
+        'https://a.thumbs.redditmedia.com/Usr6E3JlyQrAQefPcn-g5PvWRgsuxBm1sr9vD0mfzA0.jpg',
+        'https://b.thumbs.redditmedia.com/2CWGtte5_zRsAsmx5Y2A5T8FbidtNw4-2WTjOmL48yM.jpg',
+        'https://b.thumbs.redditmedia.com/MuRxY5udIDjocQPrCRlplg8Rvb0aMSfZuPDOBJLxcoc.jpg',
+        'https://b.thumbs.redditmedia.com/HneKNUdDirVSIR4yUZiOPwLvxDSxgqwEt6_TRKB960s.jpg',
+        'https://b.thumbs.redditmedia.com/9xf8MHx58yYuGA7CtTizqhjbmLs8az2922xv3CLm3jI.jpg',
+        'https://b.thumbs.redditmedia.com/TbEt1N0UWN9diuuU8Gv4dr03EiAomc4E4T6Cm5V7rLY.jpg',
+        'https://b.thumbs.redditmedia.com/5wnyKRdZmjgABfQHOThAXVLVILl2k3Kg7o7RJzvlVKc.jpg',
+        'https://b.thumbs.redditmedia.com/RRtdKL6l1z23OgSptLZQoN7KWCHZk2O_k0I2UaFXOXQ.jpg',
+        'https://external-preview.redd.it/_hfQa7epHqDSk1nqUcrwAZMp6kc8mOvUPlFg4xmEoPg.png?width=140&amp;height=140&amp;crop=140:140,smart&amp;format=jpg&amp;v=enabled&amp;lthumb=true&amp;s=978946c011fdcc126fa381815a9a6739463512f8',
+        'https://b.thumbs.redditmedia.com/6R4t73YgPegw8jmll8gEj3OYGHGkyKEiq_h8xwCL7WE.jpg',
+        'https://b.thumbs.redditmedia.com/NqLXMy-LezhItv_nk76GXeMZ_grIjctWaqiy42eD2dE.jpg',
+        'https://b.thumbs.redditmedia.com/mx-3LueuSoQDtldaNTbkTjxly6bcEfbJ8d4DXzpPleM.jpg',
+        'https://b.thumbs.redditmedia.com/VEfHMZRmk8uWYzuqKaEnQafm80C0Kch8EeCCeBY_yUs.jpg',
+        'https://b.thumbs.redditmedia.com/tsgp1dMOhyLAsOigd2xqPCx3gWWt41FV9Ngg1bnzBac.jpg',
+        'https://b.thumbs.redditmedia.com/D3R1TvQ8jCvDp_HKsmvQD009pW5RfXdrPoW3eXJvQfg.jpg',
+        'https://a.thumbs.redditmedia.com/kM9vASDtXw-XIRzkCIJ5X2Hp67mGY2VtobjwdMo97k0.jpg',
+        'https://b.thumbs.redditmedia.com/xs_u4kMf82sA_jXAUNfQNEkyEaaM2vZ5Vnl0HwJJWgE.jpg',
+        'https://a.thumbs.redditmedia.com/Usr6E3JlyQrAQefPcn-g5PvWRgsuxBm1sr9vD0mfzA0.jpg',
+        'https://b.thumbs.redditmedia.com/2CWGtte5_zRsAsmx5Y2A5T8FbidtNw4-2WTjOmL48yM.jpg',
+        'https://b.thumbs.redditmedia.com/MuRxY5udIDjocQPrCRlplg8Rvb0aMSfZuPDOBJLxcoc.jpg',
+        'https://b.thumbs.redditmedia.com/HneKNUdDirVSIR4yUZiOPwLvxDSxgqwEt6_TRKB960s.jpg',
+        'https://b.thumbs.redditmedia.com/9xf8MHx58yYuGA7CtTizqhjbmLs8az2922xv3CLm3jI.jpg',
+        'https://b.thumbs.redditmedia.com/TbEt1N0UWN9diuuU8Gv4dr03EiAomc4E4T6Cm5V7rLY.jpg',
+        'https://b.thumbs.redditmedia.com/5wnyKRdZmjgABfQHOThAXVLVILl2k3Kg7o7RJzvlVKc.jpg',
+        'https://b.thumbs.redditmedia.com/RRtdKL6l1z23OgSptLZQoN7KWCHZk2O_k0I2UaFXOXQ.jpg',
+        'https://external-preview.redd.it/_hfQa7epHqDSk1nqUcrwAZMp6kc8mOvUPlFg4xmEoPg.png?width=140&amp;height=140&amp;crop=140:140,smart&amp;format=jpg&amp;v=enabled&amp;lthumb=true&amp;s=978946c011fdcc126fa381815a9a6739463512f8',
+        'https://b.thumbs.redditmedia.com/6R4t73YgPegw8jmll8gEj3OYGHGkyKEiq_h8xwCL7WE.jpg',
+        'https://b.thumbs.redditmedia.com/NqLXMy-LezhItv_nk76GXeMZ_grIjctWaqiy42eD2dE.jpg',
+        'https://b.thumbs.redditmedia.com/mx-3LueuSoQDtldaNTbkTjxly6bcEfbJ8d4DXzpPleM.jpg',
+        'https://b.thumbs.redditmedia.com/VEfHMZRmk8uWYzuqKaEnQafm80C0Kch8EeCCeBY_yUs.jpg',
+        'https://b.thumbs.redditmedia.com/tsgp1dMOhyLAsOigd2xqPCx3gWWt41FV9Ngg1bnzBac.jpg',
+        'https://b.thumbs.redditmedia.com/D3R1TvQ8jCvDp_HKsmvQD009pW5RfXdrPoW3eXJvQfg.jpg',
+        'https://a.thumbs.redditmedia.com/kM9vASDtXw-XIRzkCIJ5X2Hp67mGY2VtobjwdMo97k0.jpg',
+        'https://b.thumbs.redditmedia.com/xs_u4kMf82sA_jXAUNfQNEkyEaaM2vZ5Vnl0HwJJWgE.jpg',
+        'https://a.thumbs.redditmedia.com/Usr6E3JlyQrAQefPcn-g5PvWRgsuxBm1sr9vD0mfzA0.jpg',
+        'https://b.thumbs.redditmedia.com/2CWGtte5_zRsAsmx5Y2A5T8FbidtNw4-2WTjOmL48yM.jpg',
+        'https://b.thumbs.redditmedia.com/MuRxY5udIDjocQPrCRlplg8Rvb0aMSfZuPDOBJLxcoc.jpg',
+        'https://b.thumbs.redditmedia.com/HneKNUdDirVSIR4yUZiOPwLvxDSxgqwEt6_TRKB960s.jpg',
+        'https://b.thumbs.redditmedia.com/9xf8MHx58yYuGA7CtTizqhjbmLs8az2922xv3CLm3jI.jpg',
+        'https://b.thumbs.redditmedia.com/TbEt1N0UWN9diuuU8Gv4dr03EiAomc4E4T6Cm5V7rLY.jpg',
+        'https://b.thumbs.redditmedia.com/5wnyKRdZmjgABfQHOThAXVLVILl2k3Kg7o7RJzvlVKc.jpg',
+        'https://b.thumbs.redditmedia.com/RRtdKL6l1z23OgSptLZQoN7KWCHZk2O_k0I2UaFXOXQ.jpg',
+        'https://external-preview.redd.it/_hfQa7epHqDSk1nqUcrwAZMp6kc8mOvUPlFg4xmEoPg.png?width=140&amp;height=140&amp;crop=140:140,smart&amp;format=jpg&amp;v=enabled&amp;lthumb=true&amp;s=978946c011fdcc126fa381815a9a6739463512f8',
+        'https://b.thumbs.redditmedia.com/6R4t73YgPegw8jmll8gEj3OYGHGkyKEiq_h8xwCL7WE.jpg',
+        'https://b.thumbs.redditmedia.com/NqLXMy-LezhItv_nk76GXeMZ_grIjctWaqiy42eD2dE.jpg',
+        'https://b.thumbs.redditmedia.com/mx-3LueuSoQDtldaNTbkTjxly6bcEfbJ8d4DXzpPleM.jpg',
+        'https://b.thumbs.redditmedia.com/VEfHMZRmk8uWYzuqKaEnQafm80C0Kch8EeCCeBY_yUs.jpg',
+        'https://b.thumbs.redditmedia.com/tsgp1dMOhyLAsOigd2xqPCx3gWWt41FV9Ngg1bnzBac.jpg',
+        'https://b.thumbs.redditmedia.com/D3R1TvQ8jCvDp_HKsmvQD009pW5RfXdrPoW3eXJvQfg.jpg',
+        'https://a.thumbs.redditmedia.com/kM9vASDtXw-XIRzkCIJ5X2Hp67mGY2VtobjwdMo97k0.jpg',
+        'https://b.thumbs.redditmedia.com/xs_u4kMf82sA_jXAUNfQNEkyEaaM2vZ5Vnl0HwJJWgE.jpg',
+      ];
+
+      const getRandElementFromArray = (
+        arr?: number[] | string[],
+        length?: number
+      ): number | string | undefined => {
+        if (arr) {
+          return arr[Math.floor(Math.random() * arr.length)];
+        } else if (length) {
+          return Array.from({ length }, (_, index) => index + 1)[
+            Math.floor(Math.random() * length)
+          ];
+        }
+        // If neither parameter is provided, return undefined
+        return undefined;
+      };
+
+      const randUid = faker.random.alphaNumeric(28);
+      const randRecord = {
+        auth: {
+          displayName: faker.name.firstName(),
+          profileImage:
+            Math.random() < 0.2
+              ? `https://api.dicebear.com/6.x/lorelei/png/seed=${randUid}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`
+              : getRandElementFromArray(randThumbnails),
+          uid: randUid, //28 character alphanumeric string
+        },
+        clientName: faker.name.firstName(),
+        downloadURL: randRedditImg,
+        comments: faker.lorem.paragraphs(
+          getRandElementFromArray(undefined, 3) as number
+        ),
+        createdAt: faker.date.recent(30),
+        isSeasonal: Math.random() < 0.5,
+        rating: getRandElementFromArray(undefined, 5),
+      };
+
+      dummyRecords.push(randRecord);
+    }
+  };
+
+  /*
+  auth:
+  { displayName: Carey,
+    profileImage: https://b.thumbs.redditmedia.com/xs_u4kMf82sA_jXAUNfQNEkyEaaM2vZ5Vnl0HwJJWgE.jpg,vow4quwogkw3mgewnh99ibyh6nt2,
+    uid 
+  },
+  clientName: Tristian,
+  comments: "Veniam odit quas vero repellendus quos reprehenderit eius rerum maiores. Suscipit laborum id. Excepturi provident repudiandae vel. Delectus dolores quos dolor aliquid assumenda ut non corporis. Ratione soluta vel neque dolor eaque dolor rem.
+Modi debitis fuga commodi beatae ad dolorum consequuntur. Perspiciatis sequi alias omnis. Debitis dignissimos officia. Similique quo repellat recusandae quisquam deleniti facere hic qui eligendi. Enim atque ea vitae vitae quae voluptatem velit.
+Cupiditate aut rem corporis nisi eligendi nisi repellat. Sed fugiat saepe totam. Quam dolorem inventore placeat voluptate aspernatur commodi voluptate aliquid molestiae. Inventore et aperiam atque aspernatur sit dolorum consequatur quos amet. Quia quidem eum dolore consequuntur veritatis tenetur illum.",
+  createdAt: 2023-04-06T12:34:20.788Z,
+  isSeasonal: true,
+  rating: 2
+  */
 
   return (
     <>
@@ -396,12 +536,13 @@ const Feed = () => {
                       selectedFilters?.every(filter => filter[item])
                     )
                     .map((item: FireBasePost, index: number) => (
-                      <GridItem
+                      <Post
                         key={index}
                         usingMyOwnDB={true}
                         createdAt={item?.createdAt?.seconds}
                         isSeasonal={item?.isSeasonal}
                         auth={item?.auth}
+                        clientName={item?.clientName}
                         imgSrc={
                           item?.downloadURL
                             ? item.downloadURL
@@ -410,12 +551,13 @@ const Feed = () => {
                       />
                     ))
                 : myDbData?.map((item: FireBasePost, index: number) => (
-                    <GridItem
+                    <Post
                       key={index}
                       usingMyOwnDB={true}
                       createdAt={item?.createdAt?.seconds}
                       isSeasonal={item?.isSeasonal}
                       auth={item?.auth}
+                      clientName={item?.clientName}
                       imgSrc={
                         item?.downloadURL
                           ? item.downloadURL

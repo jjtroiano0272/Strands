@@ -177,6 +177,18 @@
 > > [ ] PROPOSED DATA STRUCTURE CHANGE:
 > > [ ] Geolocation
 > > [x] Add some 'secondary' field or something to colors
+> >
+> > 26APR2023
+> > [ ] Code organize
+> > [ ] Able to reset password through Firebase
+> >
+> > 27APR2023
+> > ! https://firebase.google.com/codelabs/firestore-ios#0
+> > ! https://firebase.google.com/docs/firestore/query-data/get-data?hl=en#get_all_documents_in_a_collection [setting data listener]
+> > < > Vyvanse discount
+> > [ ] Seeding data
+> > [ ] https://www.npmjs.com/package/react-native-google-places-autocomplete
+> > [ ] For fixing problems with accessing avatar API: https://stackoverflow.com/questions/75363471/my-requests-are-working-in-insomnia-but-not-in-my-react-app-what-does-the-way
 
 PLANNING:
 Posts should have the structure
