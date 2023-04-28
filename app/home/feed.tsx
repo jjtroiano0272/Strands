@@ -159,20 +159,24 @@ const Feed = () => {
 
     // FIREBASE 9 METHODOLOGY
     // const db = getFirestore();
-    const q = query(
-      collection(db, 'postNew'),
-      where('clientName', '>=', search)
-    );
+    try {
+      const q = query(
+        collection(db, 'postNew'),
+        where('clientName', '>=', search)
+      );
 
-    const snapshot = await getDocs(q);
+      const snapshot = await getDocs(q);
 
-    let localUsers = snapshot.docs.map(doc => {
-      const data = doc.data();
-      const id = doc.id;
-      return { id, ...data };
-    });
+      let localUsers = snapshot.docs.map(doc => {
+        const data = doc.data();
+        const id = doc.id;
+        return { id, ...data };
+      });
 
-    console.log(`users: ${JSON.stringify(localUsers)}`);
+      // console.log(`users: ${JSON.stringify(localUsers)}`);
+    } catch (err) {
+      console.error(`Error with collection query for users: ${err}`);
+    }
   };
 
   const handleRefresh = useCallback(() => {
@@ -495,21 +499,6 @@ const Feed = () => {
     }
   };
 
-  /*
-  auth:
-  { displayName: Carey,
-    profileImage: https://b.thumbs.redditmedia.com/xs_u4kMf82sA_jXAUNfQNEkyEaaM2vZ5Vnl0HwJJWgE.jpg,vow4quwogkw3mgewnh99ibyh6nt2,
-    uid 
-  },
-  clientName: Tristian,
-  comments: "Veniam odit quas vero repellendus quos reprehenderit eius rerum maiores. Suscipit laborum id. Excepturi provident repudiandae vel. Delectus dolores quos dolor aliquid assumenda ut non corporis. Ratione soluta vel neque dolor eaque dolor rem.
-Modi debitis fuga commodi beatae ad dolorum consequuntur. Perspiciatis sequi alias omnis. Debitis dignissimos officia. Similique quo repellat recusandae quisquam deleniti facere hic qui eligendi. Enim atque ea vitae vitae quae voluptatem velit.
-Cupiditate aut rem corporis nisi eligendi nisi repellat. Sed fugiat saepe totam. Quam dolorem inventore placeat voluptate aspernatur commodi voluptate aliquid molestiae. Inventore et aperiam atque aspernatur sit dolorum consequatur quos amet. Quia quidem eum dolore consequuntur veritatis tenetur illum.",
-  createdAt: 2023-04-06T12:34:20.788Z,
-  isSeasonal: true,
-  rating: 2
-  */
-
   return (
     <>
       <BottomSheetModalProvider>
@@ -530,41 +519,27 @@ Cupiditate aut rem corporis nisi eligendi nisi repellat. Sed fugiat saepe totam.
             {/* TODO Offload to custom component with only the needed text, standardized format */}
 
             <View style={styles.cardsContainer}>
-              {selectedFilters?.length
-                ? myDbData
-                    ?.filter((item: FireBasePost | any) =>
-                      selectedFilters?.every(filter => filter[item])
-                    )
-                    .map((item: FireBasePost, index: number) => (
-                      <Post
-                        key={index}
-                        usingMyOwnDB={true}
-                        createdAt={item?.createdAt?.seconds}
-                        isSeasonal={item?.isSeasonal}
-                        auth={item?.auth}
-                        clientName={item?.clientName}
-                        imgSrc={
-                          item?.downloadURL
-                            ? item.downloadURL
-                            : `https://unsplash.it/id/${index}/200/200`
-                        }
-                      />
-                    ))
-                : myDbData?.map((item: FireBasePost, index: number) => (
-                    <Post
-                      key={index}
-                      usingMyOwnDB={true}
-                      createdAt={item?.createdAt?.seconds}
-                      isSeasonal={item?.isSeasonal}
-                      auth={item?.auth}
-                      clientName={item?.clientName}
-                      imgSrc={
-                        item?.downloadURL
-                          ? item.downloadURL
-                          : `https://unsplash.it/id/${index}/200/200`
-                      }
-                    />
-                  ))}
+              {myDbData
+                ?.filter(
+                  // TODO Narrow down the type checking
+                  (item: any) =>
+                    !selectedFilters?.length ||
+                    selectedFilters.every(filter => filter[item])
+                )
+                .map((item: FireBasePost, index: number) => (
+                  <Post
+                    key={index}
+                    createdAt={item?.createdAt?.seconds}
+                    isSeasonal={item?.isSeasonal}
+                    auth={item?.auth}
+                    clientName={item?.clientName}
+                    imgSrc={
+                      item?.downloadURL
+                        ? item.downloadURL
+                        : `https://unsplash.it/id/${index}/200/200`
+                    }
+                  />
+                ))}
             </View>
           </View>
 

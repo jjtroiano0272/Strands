@@ -27,7 +27,7 @@ import { createStoreHook } from 'react-redux';
 import rootReducer from '../redux/reducers';
 import { Provider as AuthProvider } from '../context/auth';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-import { IconButton } from 'react-native-paper';
+import { Avatar, IconButton } from 'react-native-paper';
 // import thunk from 'redux-thunk';
 
 // const store = createStoreHook(rootReducer);

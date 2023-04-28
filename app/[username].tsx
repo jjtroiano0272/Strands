@@ -38,9 +38,17 @@ import { UserContext } from '../context/UserContext';
 type NewType = {
   id?: string;
   name?: string;
-  company?: string;
+  clientName?: string;
   username?: string;
   imgSrc?: string;
+  //
+  displayName?: string;
+  auth?: string;
+  comments?: string;
+  createdAt?: string;
+  isSeasonal?: string;
+  productsUsed?: string;
+  rating?: string;
 };
 
 export default function ClientProfile() {
@@ -51,10 +59,21 @@ export default function ClientProfile() {
   const [phoneNumber, setPhoneNumber] = useState<string>(
     faker.phone.number('###-###-###').toString()
   );
-  const { name, company, username, id, imgSrc }: NewType = useSearchParams();
-  const { data, error, loading } = useFetch(
-    'https://jsonplaceholder.typicode.com/users'
-  );
+
+  const {
+    name,
+    clientName,
+    username,
+    imgSrc,
+    //,
+    displayName,
+    auth,
+    comments,
+    createdAt,
+    isSeasonal,
+    productsUsed,
+    rating,
+  }: NewType = useSearchParams();
 
   // TODO These need to be replace with actual data, but will need to be engineered.
   // For example, user actually needs to come from something like the user context for the actual user.
@@ -77,16 +96,16 @@ export default function ClientProfile() {
       },
       async (index: number) => {
         // if else method
-        if (menuOptions[index] === 'Call') {
-          await Linking.openURL(`tel:${phoneNumber}`).catch(err =>
-            console.error(`Error trying to make call! ${err}`)
-          );
-        } else if (menuOptions[index] === 'Text') {
-          await Linking.openURL(`sms:${phoneNumber}?body=${messageBody}`).catch(
-            err => console.error(`Error trying to send message! ${err}`)
-          );
-        } else {
-          return;
+        try {
+          if (menuOptions[index] === 'Call') {
+            await Linking.openURL(`tel:${phoneNumber}`);
+          } else if (menuOptions[index] === 'Text') {
+            await Linking.openURL(`sms:${phoneNumber}?body=${messageBody}`);
+          } else {
+            return;
+          }
+        } catch (err) {
+          console.error(`menu option error: ${err}`);
         }
       }
     );
@@ -108,13 +127,14 @@ export default function ClientProfile() {
       >
         <Card.Title
           theme={MD3DarkTheme}
-          title={name}
+          // Client's name
+          title={clientName}
           titleStyle={{
             color: theme.colors.text,
             fontSize: 42,
             paddingTop: 30,
           }}
-          subtitle={`${company}`}
+          subtitle={`${displayName}`}
           subtitleStyle={{
             color: theme.colors.text,
             fontSize: 14,
@@ -156,14 +176,7 @@ export default function ClientProfile() {
           <Subheading style={[styles.subtitle, { color: theme.colors.text }]}>
             Comments
           </Subheading>
-          <Paragraph style={{ color: theme.colors.text }}>
-            Code in an ideal world, for deep dive we have to leverage up the
-            messaging it just needs more cowbell, but deliverables, yet this
-            proposal is a win-win situation which will cause a stellar paradigm
-            shift, and produce a multi-fold increase in deliverables. Clear blue
-            water (let's not try to) boil the ocean (here/there/everywhere).
-            {imgSrc}
-          </Paragraph>
+          <Paragraph style={{ color: theme.colors.text }}>{comments}</Paragraph>
         </Card.Content>
       </Card>
 

@@ -58,6 +58,7 @@ import {
   hairTypeImages as hairTypeImagesConst,
 } from '../../../constants/Labels';
 import { FireBasePost } from '../../../@types/types';
+import { useGeoLocation } from '../../../hooks/useGeolocation';
 
 type RouteParams = {
   imgUris: string;
@@ -112,6 +113,7 @@ export default function save() {
   const [items, setItems] = useState(labelObjs);
   const [blobArr, setBlobArr] = useState<any>(null);
   const [formData, setFormData] = useState<FireBasePost | null>(null);
+  const [lat, lng] = useGeoLocation();
 
   const handleImageUpload = async () => {
     setLoading(true);
@@ -197,6 +199,11 @@ export default function save() {
         isSeasonal: isSeasonal,
         productsUsed: productsDropdownValue,
         downloadURL: downloadURL,
+        // Only include if location services are permitted?
+        geolocation: {
+          lat: lat,
+          lng: lng,
+        },
       })
         .then(res => {
           setSnackbarMessage(`Posted successfully!`);

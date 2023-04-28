@@ -183,12 +183,19 @@
 > > [ ] Able to reset password through Firebase
 > >
 > > 27APR2023
+> > [ ] ! https://www.youtube.com/watch?v=Xp0q8ZDOeyE&t=70s Follow this
 > > ! https://firebase.google.com/codelabs/firestore-ios#0
 > > ! https://firebase.google.com/docs/firestore/query-data/get-data?hl=en#get_all_documents_in_a_collection [setting data listener]
 > > < > Vyvanse discount
 > > [ ] Seeding data
-> > [ ] https://www.npmjs.com/package/react-native-google-places-autocomplete
-> > [ ] For fixing problems with accessing avatar API: https://stackoverflow.com/questions/75363471/my-requests-are-working-in-insomnia-but-not-in-my-react-app-what-does-the-way
+> > [ ] https://www.npmjs.com/package/react-native-google-places-autocomplete > > [ ] For fixing problems with accessing avatar API: https://stackoverflow.com/questions/75363471/my-requests-are-working-in-insomnia-but-not-in-my-react-app-what-does-the-way > > [ ] Better writing of Post.tsx (the data it gets passed)
+> > [ ] change Post prop auth to user
+> > [ ] Linking through to post
+> > [ ] Data displayed as most recent by default
+> >
+> > 28APR2023
+> > [ ] How to login without then pressing the login button after ding Face ID or ID autocomplete
+> > [ ] Modal icon button at top right replaced by user's profileImage/autogen avatar
 
 PLANNING:
 Posts should have the structure

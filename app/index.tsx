@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, ErrorUtils } from 'react-native';
 import { IAPIData } from '../@types/types';
 import Colors from '../constants/Colors';
 import useFetch from '../hooks/useFetch';
@@ -24,6 +24,17 @@ export default function Page() {
   const theme = useTheme();
   const userCtx = useContext(UserContext);
   const [isAuth, setIsAuth] = useState(false);
+
+  // ErrorUtils.setGlobalHandler((error, isFatal) => {
+  //   // Log the error message and stack trace
+  //   console.error(error);
+  //   console.error(error.stack);
+
+  //   // Display an error message to the user if necessary
+  //   if (isFatal) {
+  //     // display an error message to the user
+  //   }
+  // });
 
   if (userCtx?.isLoggedIn) {
     return <Redirect href='login' />;

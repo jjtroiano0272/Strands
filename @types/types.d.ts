@@ -34,6 +34,7 @@ export type FireBasePost = {
   [key: string]: string | number | boolean;
   auth?: {
     displayName?: string;
+    profileImage?: string;
     uid?: string;
   };
   rating?: number;

@@ -1,9 +1,15 @@
+import * as Haptics from 'expo-haptics';
 import { createAvatar } from '@dicebear/core';
 import { lorelei } from '@dicebear/collection';
 import { SvgXml } from 'react-native-svg';
 import React from 'react';
 import { faker } from '@faker-js/faker';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import {
+  ActionSheetIOS,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
 import { IAPIData } from '../@types/types';
 import { Badge as RNEBadge } from 'react-native-elements';
 import Colors from '../constants/Colors';
@@ -28,9 +34,6 @@ import { Timestamp } from 'firebase/firestore';
 import Avatar from 'boring-avatars';
 
 export default function GridItem({
-  usingMyOwnDB,
-  user,
-  index,
   imgSrc,
   auth,
   clientName,
@@ -41,18 +44,16 @@ export default function GridItem({
   rating,
   ...props
 }: {
-  usingMyOwnDB?: boolean;
-  user?: IAPIData;
-  index?: number;
   imgSrc?: string;
+
   auth?: {
     displayName?: string;
     uid?: string;
-    profileImage: string;
+    profileImage?: string;
   };
   clientName?: string;
   comments?: string;
-  createdAt?: number;
+  createdAt?: number | Timestamp | string;
   isSeasonal?: boolean;
   productsUsed?: [label: string, value: string];
   rating?: number;
@@ -99,151 +100,113 @@ export default function GridItem({
     return result;
   };
 
-  // const dicebearAvatar = createAvatar(lorelei, {
-  //   seed: 'Kitty',
-  //   backgroundColor: ['662C91', '17A398', '17A398', 'EE6C4D', 'F38D68'],
-  //   radius: 50,
-  //   size: 36,
-  //   // ... other options
-  // }).toString();
+  const showActionSheet = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-  if (!usingMyOwnDB) {
-    return (
-      <Link
-        href={{
-          pathname: `/${user?.username}`,
-          params: {
-            name: user?.name,
-            company: user?.company.name,
-            username: user?.username,
-            // imgSrc: imgSrc,
-          },
-        }}
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: [
+          'Cancel',
+          'Save Post',
+          `View Profile for ${auth?.displayName}`,
+        ],
+        // destructiveButtonIndex: 2,
+        cancelButtonIndex: 0,
+        userInterfaceStyle: 'dark',
+      },
+      buttonIndex => {
+        if (buttonIndex === 0) {
+          // cancel action
+        } else if (buttonIndex === 1) {
+          console.warn(`Placeholder for saving post`);
+        } else if (buttonIndex === 2) {
+          console.warn(`Placeholder for viewing stylist`);
+        }
+      }
+    );
+  };
+
+  return (
+    <Link
+      href={{
+        pathname: `/${auth?.displayName}`,
+        params: {
+          displayName: auth?.displayName,
+          clientName: clientName,
+          username: auth?.displayName ?? auth?.uid,
+          //
+          imgSrc,
+          auth,
+          // clientName,
+          comments,
+          createdAt,
+          isSeasonal,
+          productsUsed,
+          rating,
+        },
+      }}
+      onLongPress={showActionSheet}
+    >
+      <Card
+        style={styles.card}
+        theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
       >
-        <Card
-          style={styles.card}
-          theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-        >
-          <Card.Title
-            title={user?.name}
-            titleStyle={{
-              color: theme.colors.text,
-            }}
-            subtitle={user?.company.name}
-            subtitleStyle={{
-              color: theme.colors.text,
-            }}
-            left={props => (
-              <PaperAvatar.Icon
-                {...props}
-                size={30}
-                icon={
-                  isSeasonal
-                    ? 'airplane'
-                    : dummyPhoneNumber.startsWith('1')
-                    ? 'airplane'
-                    : 'star'
-                }
-                style={{
-                  backgroundColor: dummyPhoneNumber.startsWith('1')
-                    ? theme.colors.primary
-                    : theme.colors.text,
-                }}
-              />
-            )}
-          />
-
-          <Card.Cover
-            source={{
-              uri: imgSrc,
-            }}
-          />
-          {dummyPhoneNumber.startsWith('1') && (
-            <RNEBadge
-              value='Seasonal'
-              status='primary'
-              containerStyle={{ position: 'absolute', top: -4, right: -4 }}
+        <Card.Title
+          title={clientName}
+          titleStyle={{ color: theme.colors.text }}
+          subtitle={
+            <>
+              <View style={{ backgroundColor: 'transparent' }}>
+                <Text
+                  style={{
+                    color: paperTheme.colors.secondary,
+                  }}
+                >
+                  ⟩⟩ {auth?.displayName}
+                </Text>
+                <Text style={{ color: theme.colors.text }}>
+                  {createdAt &&
+                    `${getElapsedTime(createdAt as number)?.number} ${
+                      getElapsedTime(createdAt as number)?.unit
+                    } ago`}
+                </Text>
+              </View>
+            </>
+          }
+          // TODO: Have the DB autogenerate the image if the user doesn't have profileimage
+          left={props => (
+            <PaperAvatar.Image
+              {...props}
+              size={36}
+              source={{
+                uri:
+                  auth?.profileImage ??
+                  `https://api.dicebear.com/6.x/lorelei/png/seed=${auth?.uid}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
+              }}
             />
           )}
-        </Card>
-      </Link>
-    );
-  } else {
-    return (
-      <Link
-        href={{
-          pathname: `/${auth?.displayName ? auth?.displayName : auth?.uid}`,
-          params: {
-            name: auth?.displayName ? auth?.displayName : auth?.uid,
-            company: auth?.displayName ? auth?.displayName : auth?.uid,
-            username: auth?.displayName ? auth?.displayName : auth?.uid,
-          },
-        }}
-      >
-        <Card
-          style={styles.card}
-          theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-        >
-          <Card.Title
-            title={clientName ?? 'Client'}
-            titleStyle={{ color: theme.colors.text }}
-            subtitle={
-              <>
-                <View style={{ backgroundColor: 'transparent' }}>
-                  <Text
-                    style={{
-                      color: auth?.displayName
-                        ? theme.colors.text
-                        : paperTheme.colors.secondary,
-                    }}
-                  >
-                    {auth?.displayName ?? 'anonymous'}
-                  </Text>
-                  {/* User who posted it */}
-                  <Text style={{ color: theme.colors.text }}>
-                    {createdAt &&
-                      `${getElapsedTime(createdAt)?.number} ${
-                        getElapsedTime(createdAt)?.unit
-                      } ago`}
-                  </Text>
-                </View>
-              </>
-            }
-            // TODO: This doesn't exist in DB structure yet...so wil always default
-            left={props => (
-              <PaperAvatar.Image
+          right={props =>
+            // TODO Make a banner, not a button
+            isSeasonal && (
+              <PaperAvatar.Icon
                 {...props}
-                size={36}
-                source={{
-                  uri:
-                    auth?.profileImage ??
-                    `https://api.dicebear.com/6.x/lorelei/png/seed=${auth?.uid}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
-                }}
+                size={20}
+                icon='airplane'
+                color={theme.colors.primary}
+                style={{ backgroundColor: 'transparent' }}
               />
-            )}
-            right={props =>
-              // TODO Make a banner, not a button
-              isSeasonal && (
-                <PaperAvatar.Icon
-                  {...props}
-                  size={20}
-                  icon='airplane'
-                  color={theme.colors.primary}
-                  style={{ backgroundColor: 'transparent' }}
-                />
-              )
-            }
-          />
+            )
+          }
+        />
 
-          <Card.Cover
-            source={{
-              uri: imgSrc,
-            }}
-          />
-        </Card>
-      </Link>
-    );
-  }
+        <Card.Cover
+          source={{
+            uri: imgSrc,
+          }}
+        />
+      </Card>
+    </Link>
+  );
 }
 
 const styles = StyleSheet.create({
