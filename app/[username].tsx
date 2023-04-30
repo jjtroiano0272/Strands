@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import { faker } from '@faker-js/faker';
 import React, { useContext, useEffect, useState } from 'react';
 import {
@@ -33,6 +34,7 @@ import { Link, Stack, useRouter, useSearchParams } from 'expo-router';
 import { useTheme } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { UserContext } from '../context/UserContext';
+import Swiper from 'react-native-swiper';
 
 // TODO Offload to types file
 type NewType = {
@@ -57,7 +59,7 @@ export default function ClientProfile() {
   const theme = useTheme();
   const [phoneModalVisible, setPhoneModalVisible] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState<string>(
-    faker.phone.number('###-###-###').toString()
+    faker.phone.number('(###) ###-###').toString()
   );
 
   const {
@@ -118,7 +120,7 @@ export default function ClientProfile() {
 
   return (
     <ScrollView style={styles.getStartedContainer}>
-      <Stack.Screen options={{ title: `@${name}` }} />
+      <Stack.Screen options={{ title: `${clientName}` }} />
 
       {/* TODO Offload to custom component with only the needed text, standardized format */}
       <Card
@@ -128,13 +130,13 @@ export default function ClientProfile() {
         <Card.Title
           theme={MD3DarkTheme}
           // Client's name
-          title={clientName}
+          title={null}
           titleStyle={{
             color: theme.colors.text,
             fontSize: 42,
             paddingTop: 30,
           }}
-          subtitle={`${displayName}`}
+          subtitle={`Review submitted by ${username}`}
           subtitleStyle={{
             color: theme.colors.text,
             fontSize: 14,
@@ -142,11 +144,29 @@ export default function ClientProfile() {
           }}
         />
         <Card.Content>
-          <Card.Cover
+          {/* <Card.Cover
             source={{
               uri: imgSrc,
             }}
-          />
+          /> */}
+          <Swiper
+            // containerStyle={{ flex: 1 }}
+            containerStyle={{ height: 300, width: '100%', borderRadius: 30 }}
+            onIndexChanged={() => Haptics.ImpactFeedbackStyle.Light}
+          >
+            {/* {imgUris.map((uri, index) => ( */}
+            {[
+              'https://unsplash.it/300/300',
+              'https://unsplash.it/300/300',
+              'https://unsplash.it/300/300',
+            ].map((uri, index) => (
+              <Image
+                key={index}
+                source={{ uri: uri }}
+                style={{ width: '100%', height: '100%' }}
+              />
+            ))}
+          </Swiper>
           {/* TWO COLUMNS of list items */}
           {/* Recent reviews, listed in order of submission and saying who wrote what, and their own rating */}
 

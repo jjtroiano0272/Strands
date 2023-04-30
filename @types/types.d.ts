@@ -52,6 +52,10 @@ export type FireBasePost = {
       value?: string;
     }];
   downloadURL?: string;
+  media?: {
+    image: string[] | null;
+    video: string[];
+  };
 };
 
 declare module "react-particle-backgrounds" {

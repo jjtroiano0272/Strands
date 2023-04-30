@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { RefreshControl, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { useTheme } from '@react-navigation/native';
-
+import { comments, images as dummyImages } from '../../constants/dummyData';
 import React from 'react';
 import { ScrollView } from 'react-native';
 import { FireBasePost } from '../../@types/types';
@@ -46,6 +46,7 @@ import {
 } from '../../constants/constants';
 import { FirebaseError } from 'firebase/app';
 import { faker } from '@faker-js/faker';
+import axios from 'axios';
 
 type RedditAPIData = {
   data: [
@@ -359,8 +360,8 @@ const Feed = () => {
     );
   }, [dataIsCurrentlySortedBy?.sortAsc]);
 
-  let dummyRecords: unknown[] = [];
   const fillDbWithDummyData = () => {
+    let dummyRecords: unknown[] = [];
     while (dummyRecords.length < 100) {
       let seedData;
       let randRedditImg;
@@ -475,6 +476,40 @@ const Feed = () => {
         return undefined;
       };
 
+      const arrayFoo = new Array(Math.ceil(Math.random() * 5));
+
+      (async () => {
+        try {
+          for (let i = 0; i < arrayFoo.length; i++) {
+            const responseImg = await axios.get(
+              'https://loremflickr.com/320/320/hair,stylist/all'
+            );
+
+            if (responseImg.request.responseURL) {
+              // console.log(
+              //   `\x1b[34mUnfiltered version: ${JSON.stringify(
+              //     responseImg.request.responseURL,
+              //     null,
+              //     2
+              //   )}`
+              // );
+
+              arrayFoo.push(responseImg.request.responseURL);
+            }
+          }
+        } catch (err) {
+          // console.error(err);
+        }
+      })();
+      // console.log(`\x1b[32m${JSON.stringify(arrayFoo, null, 2)}`);
+
+      const randomIndex = Math.floor(Math.random() * dummyImages.length); // generate a random index within the range of the array length
+      const randomLength = Math.floor(Math.random() * 5) + 1; // generate a random length between 1 and 5
+      const mySlice = dummyImages.slice(
+        randomIndex,
+        randomIndex + randomLength
+      ); // extract a slice of the array with the random index and length
+
       const randUid = faker.random.alphaNumeric(28);
       const randRecord = {
         auth: {
@@ -487,17 +522,24 @@ const Feed = () => {
         },
         clientName: faker.name.firstName(),
         downloadURL: randRedditImg,
-        comments: faker.lorem.paragraphs(
-          getRandElementFromArray(undefined, 3) as number
-        ),
+        comments: comments[Math.floor(Math.random() * comments.length)],
         createdAt: faker.date.recent(30),
         isSeasonal: Math.random() < 0.5,
         rating: getRandElementFromArray(undefined, 5),
+        media: {
+          image: mySlice,
+          video: [],
+        },
       };
 
       dummyRecords.push(randRecord);
     }
+
+    return dummyRecords;
   };
+  useEffect(() => {
+    // console.log(JSON.stringify(fillDbWithDummyData(), null, 2));
+  }, []);
 
   return (
     <>
@@ -519,7 +561,7 @@ const Feed = () => {
             {/* TODO Offload to custom component with only the needed text, standardized format */}
 
             <View style={styles.cardsContainer}>
-              {myDbData
+              {sortByProperty('createdAt', myDbData, false)
                 ?.filter(
                   // TODO Narrow down the type checking
                   (item: any) =>
@@ -533,11 +575,9 @@ const Feed = () => {
                     isSeasonal={item?.isSeasonal}
                     auth={item?.auth}
                     clientName={item?.clientName}
-                    imgSrc={
-                      item?.downloadURL
-                        ? item.downloadURL
-                        : `https://unsplash.it/id/${index}/200/200`
-                    }
+                    comments={item?.comments}
+                    rating={item?.rating}
+                    imgSrc={item?.media?.image ?? null}
                   />
                 ))}
             </View>
@@ -552,6 +592,7 @@ const Feed = () => {
           </Button>
         </ScrollView>
 
+        {/* TODO This should probably be in its own file to offload rendering logic */}
         <BottomSheetModal
           backgroundStyle={{ backgroundColor: theme.colors.background }}
           handleIndicatorStyle={{ backgroundColor: theme.colors.text }}

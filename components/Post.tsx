@@ -9,6 +9,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { IAPIData } from '../@types/types';
 import { Badge as RNEBadge } from 'react-native-elements';
@@ -32,10 +33,28 @@ import { Link } from 'expo-router';
 import { DarkTheme, useTheme } from '@react-navigation/native';
 import { Timestamp } from 'firebase/firestore';
 import Avatar from 'boring-avatars';
+import Swiper from 'react-native-swiper';
 
-export default function GridItem({
+interface Auth {
+  displayName?: string;
+  uid?: string;
+  profileImage?: string;
+}
+
+interface PostProps {
+  imgSrc?: string[] | null;
+  auth?: Auth;
+  clientName?: string;
+  comments?: string;
+  createdAt?: number | Timestamp | string;
+  isSeasonal?: boolean;
+  productsUsed?: [label: string, value: string];
+  rating?: number;
+}
+
+export default function Post({
   imgSrc,
-  auth,
+  auth: { displayName: username, uid, profileImage } = {},
   clientName,
   comments,
   createdAt,
@@ -43,21 +62,7 @@ export default function GridItem({
   productsUsed,
   rating,
   ...props
-}: {
-  imgSrc?: string;
-
-  auth?: {
-    displayName?: string;
-    uid?: string;
-    profileImage?: string;
-  };
-  clientName?: string;
-  comments?: string;
-  createdAt?: number | Timestamp | string;
-  isSeasonal?: boolean;
-  productsUsed?: [label: string, value: string];
-  rating?: number;
-}) {
+}: PostProps) {
   const theme = useTheme();
   const paperTheme = usePaperTheme();
   const dummyPhoneNumber = faker.phone.number();
@@ -105,11 +110,7 @@ export default function GridItem({
 
     ActionSheetIOS.showActionSheetWithOptions(
       {
-        options: [
-          'Cancel',
-          'Save Post',
-          `View Profile for ${auth?.displayName}`,
-        ],
+        options: ['Cancel', 'Save Post', `View Profile for ${username}`],
         // destructiveButtonIndex: 2,
         cancelButtonIndex: 0,
         userInterfaceStyle: 'dark',
@@ -126,23 +127,58 @@ export default function GridItem({
     );
   };
 
+  const CoverImage = () => {
+    if (imgSrc?.length! > 1 && Array.isArray(imgSrc)) {
+      return (
+        <Swiper
+          containerStyle={{
+            height: 300,
+            width: 300,
+            // borderRadius: 30,
+          }}
+          onIndexChanged={() => Haptics.ImpactFeedbackStyle.Light}
+        >
+          {imgSrc?.map((uri, index) => (
+            <Image
+              key={index}
+              source={{ uri: uri }}
+              style={{ width: '100%', height: '100%' }}
+            />
+          ))}
+        </Swiper>
+      );
+    } else {
+      return (
+        <Card.Cover
+          source={{
+            uri: imgSrc![0],
+          }}
+        />
+      );
+    }
+  };
+
   return (
     <Link
       href={{
-        pathname: `/${auth?.displayName}`,
+        pathname: `/${username}`,
+        // params: {
+        //   displayName: username,
+        //   clientName: clientName,
+        //   username: username ?? uid,
+        //   //
+        //   imgSrc,
+        //   // auth,
+        //   comments,
+        //   createdAt,
+        //   isSeasonal,
+        //   productsUsed,
+        //   rating,
+        // },
         params: {
-          displayName: auth?.displayName,
-          clientName: clientName,
-          username: auth?.displayName ?? auth?.uid,
-          //
-          imgSrc,
-          auth,
-          // clientName,
           comments,
-          createdAt,
-          isSeasonal,
-          productsUsed,
-          rating,
+          clientName,
+          imgSrc,
         },
       }}
       onLongPress={showActionSheet}
@@ -162,7 +198,7 @@ export default function GridItem({
                     color: paperTheme.colors.secondary,
                   }}
                 >
-                  ⟩⟩ {auth?.displayName}
+                  ⟩⟩ {username}
                 </Text>
                 <Text style={{ color: theme.colors.text }}>
                   {createdAt &&
@@ -180,8 +216,8 @@ export default function GridItem({
               size={36}
               source={{
                 uri:
-                  auth?.profileImage ??
-                  `https://api.dicebear.com/6.x/lorelei/png/seed=${auth?.uid}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
+                  profileImage ??
+                  `https://api.dicebear.com/6.x/lorelei/png/seed=${uid}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
               }}
             />
           )}
@@ -199,11 +235,7 @@ export default function GridItem({
           }
         />
 
-        <Card.Cover
-          source={{
-            uri: imgSrc,
-          }}
-        />
+        <CoverImage />
       </Card>
     </Link>
   );

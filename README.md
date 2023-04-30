@@ -190,12 +190,21 @@
 > > [ ] Seeding data
 > > [ ] https://www.npmjs.com/package/react-native-google-places-autocomplete > > [ ] For fixing problems with accessing avatar API: https://stackoverflow.com/questions/75363471/my-requests-are-working-in-insomnia-but-not-in-my-react-app-what-does-the-way > > [ ] Better writing of Post.tsx (the data it gets passed)
 > > [ ] change Post prop auth to user
-> > [ ] Linking through to post
+> > [x] Linking through to post
 > > [ ] Data displayed as most recent by default
 > >
 > > 28APR2023
+> > [x] Linking through to post
 > > [ ] How to login without then pressing the login button after ding Face ID or ID autocomplete
 > > [ ] Modal icon button at top right replaced by user's profileImage/autogen avatar
+> > <x> Call Brent
+> > <o> Call David at Hyundai
+> > <x> Call legalshield for help on paying NCH bill?
+> >
+> > 29APR2023
+> > [ ] Styles to its own offloaded file
+> > [ ] Seed DB data
+> > [ ] Swiper on feed
 
 PLANNING:
 Posts should have the structure
@@ -254,7 +263,7 @@ SEARCH PAGE: with map with geolocation showing clients location by salon
 
 - Search bar on the nav header
 - What kind of products a client likes to use
-- 'Has very frizzy hair, needs something anti-frizz and hydrating'
+- Has very frizzy hair, needs something anti-frizz and hydrating
 - Ability to submit multiple photos of a client
 
 USE CASE:
@@ -266,7 +275,7 @@ COMMENTS ON CLIENT EXAMPLE:
 - Their gray is really resistant
 - Lifts warm
 - Prefers cool tones
-- PReferer neutrals, warms
+- Preferer neutrals, warms
 - Wants natural results
 - Wants obvious dimension
 - Wants chunky highlights
@@ -280,3 +289,27 @@ Potential fields to add for save.tsx:
   - Responds well to
   - Responds poorly to
   - Comments
+
+NEW INFO FROM MONICA (28APR2023):
+I cannot physically lost every single high end
+formula they would just have to have a text box
+dedicated to typing in whatever brand they use.
+Then there should just be a text box where you can
+put the formula and a text box for what type of
+developer you use
+And a text box for how long the processing time
+Make it generic
+Also a slide for cutting
+And a slide for styling
+Like for cutting if they have long layers and face
+framing
+Or a shot bob and bangs
+Or a pixie cut
+Or a gentlemen uses a clipper size 2 guard
+Then the styling part would be suggestions on
+products and how they like it styled example they
+have frizzy hair and wants it styled slick so they
+should use frizz free priducts
+Or have fine limo hair and want volume use
+volumizing products
+Like that
