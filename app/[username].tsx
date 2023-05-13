@@ -151,12 +151,14 @@ export default function ClientProfile() {
           titleStyle={[{ color: theme.colors.text }, styles.cardTitle]}
           // TODO: Make username URL
           subtitle={
-            <Text>
-              Seen by{' '}
-              <View hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}>
-                <Link href={`/${postedBy}`}>{postedBy}</Link>
-              </View>
-            </Text>
+            <View>
+              <Text>
+                Seen by{' '}
+                <View hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}>
+                  <Link href={`/${postedBy}`}>{postedBy}</Link>
+                </View>
+              </Text>
+            </View>
           }
           subtitleStyle={[{ color: theme.colors.text }, styles.cardSubtitle]}
         />
