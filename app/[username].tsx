@@ -71,12 +71,14 @@ export default function ClientProfile() {
     imgParam,
     phoneNumber,
     postedBy,
+    comments,
   }: {
     name?: string;
     imgSrc?: { image: string[]; video: string[] };
     imgParam?: string;
     phoneNumber?: number | string;
     postedBy?: string;
+    comments?: string;
   } = useSearchParams();
 
   // TODO These need to be replace with actual data, but will need to be engineered.
@@ -148,7 +150,14 @@ export default function ClientProfile() {
           title={null} // Client's name
           titleStyle={[{ color: theme.colors.text }, styles.cardTitle]}
           // TODO: Make username URL
-          subtitle={`Seen by ${postedBy}`}
+          subtitle={
+            <Text>
+              Seen by{' '}
+              <View hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}>
+                <Link href={`/${postedBy}`}>{postedBy}</Link>
+              </View>
+            </Text>
+          }
           subtitleStyle={[{ color: theme.colors.text }, styles.cardSubtitle]}
         />
 
@@ -238,7 +247,7 @@ export default function ClientProfile() {
           <Subheading style={[styles.subtitle, { color: theme.colors.text }]}>
             Comments
           </Subheading>
-          {/* <Paragraph style={{ color: theme.colors.text }}>{comments}</Paragraph> */}
+          <Paragraph style={{ color: theme.colors.text }}>{comments}</Paragraph>
           <Paragraph style={{ color: 'red' }} onPress={onClickInstagramLink}>
             TEST LINK
           </Paragraph>

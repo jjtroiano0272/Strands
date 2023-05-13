@@ -184,6 +184,7 @@ export default function Post({
           ),
           phoneNumber: `${postData?.phoneNumber}`,
           postedBy: postData?.auth?.displayName,
+          comments: postData?.comments,
         },
       }}
       onLongPress={showActionSheet}
