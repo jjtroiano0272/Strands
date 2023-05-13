@@ -183,17 +183,101 @@
 > > [ ] Able to reset password through Firebase
 > >
 > > 27APR2023
+> > [ ] ! https://www.youtube.com/watch?v=Xp0q8ZDOeyE&t=70s Follow this
 > > ! https://firebase.google.com/codelabs/firestore-ios#0
 > > ! https://firebase.google.com/docs/firestore/query-data/get-data?hl=en#get_all_documents_in_a_collection [setting data listener]
 > > < > Vyvanse discount
 > > [ ] Seeding data
-> > [ ] https://www.npmjs.com/package/react-native-google-places-autocomplete
-> > [ ] For fixing problems with accessing avatar API: https://stackoverflow.com/questions/75363471/my-requests-are-working-in-insomnia-but-not-in-my-react-app-what-does-the-way
+> > [ ] https://www.npmjs.com/package/react-native-google-places-autocomplete > > [ ] For fixing problems with accessing avatar API: https://stackoverflow.com/questions/75363471/my-requests-are-working-in-insomnia-but-not-in-my-react-app-what-does-the-way > > [ ] Better writing of Post.tsx (the data it gets passed)
+> > [ ] change Post prop auth to user
+> > [x] Linking through to post
+> > [ ] Data displayed as most recent by default
+> >
+> > 28APR2023
+> > [x] Linking through to post
+> > [ ] How to login without then pressing the login button after ding Face ID or ID autocomplete
+> > [ ] Modal icon button at top right replaced by user's profileImage/autogen avatar
+> > <x> Call Brent
+> > <o> Call David at Hyundai
+> > <x> Call legalshield for help on paying NCH bill?
+> >
+> > 29APR2023
+> > [ ] Styles to its own offloaded file
+> > [x] Seed DB data
+> > [ ] Swiper on feed
+> >
+> > 30APR2023
+> > [ ]
+> >
+> > 01MAY2023
+> >
+> > 02MAY2023
+> > [ ] save.tsx formula input
+
+## 03MAY2023
+
+> > []
+> >
+> > ## 04MAY2023
+> >
+> > [ ]
+> >
+> > ## 07MAY2023
+> >
+> > [ ] Rename dummy files
+> > [*] Offload searchParams type to own file
+> > [ ] consolidate <Post/> props into one prop, destructure inside Post.tsx itself
+> > [ ] destructure Post props to make for better readability
+> > [ ] Post Swiper (REQUIRES EXTENDING CARD WITH SWIPER)
+> > [ ] {/_ TODO Add a filter button for like 'Show me people of x hair type within x miles of me, etc. _/}
+
+## 08MAY2023
+
+> > [ ] Algolia Search?
+> > [ ] {/_ TODO Add a filter button for like 'Show me people of x hair type within x miles of me, etc. _/}
+> > [ ] Some sort of parallax scroll?
+> > [ ] react-native-video
+
+## 09MAY2023
+
+[ ] Instead of Linked card, we'll use Swiper only inside the dynamic link (reddit does this)
+[ ] Post indicator for multiple images vs one
+[ ] Fix up github link
+[ ] THE PROBLEM WAS WITH THE USERNAME PAGE HAVING UNDEFINED VARIABLES
+
+## 10MAY2023
+
+[ ] Try my best to revert to previous setup
+
+## 11MAY2023
+
+## 12MAY2023
+
+[*] Unhandled Promise Rejection on passing img URL
+[*] Swiper in [username]
+[*] The problem seems to be because of the GET request to unsplash.it and that missing a rejection handler...
+[ ] Understanding how the fuck <Genric> Types work like Array<T>
+[*] encodeURIcomponent passing string[]
+[*] Multiple images in Swiper
+[*] Have [username] phone number come from DB data
+[ ] VirtualizedList error
+[ ] Maybe write a Medium article to help other people who find this problem as well?
+--[ ] Update data live (some firebase event listener?)
+[ ] give [username] page the user who posted it (linking)
+
+## 13MAY2023
+
+[ ] Bring git up to speed
+Advertisment consideration
 
 PLANNING:
 Posts should have the structure
 
 Users should have the structure
+
+# UI:
+
+- use react-native-animated-splash-screen
 
 auth: {
 ----uid,
@@ -247,7 +331,7 @@ SEARCH PAGE: with map with geolocation showing clients location by salon
 
 - Search bar on the nav header
 - What kind of products a client likes to use
-- 'Has very frizzy hair, needs something anti-frizz and hydrating'
+- Has very frizzy hair, needs something anti-frizz and hydrating
 - Ability to submit multiple photos of a client
 
 USE CASE:
@@ -259,7 +343,7 @@ COMMENTS ON CLIENT EXAMPLE:
 - Their gray is really resistant
 - Lifts warm
 - Prefers cool tones
-- PReferer neutrals, warms
+- Preferer neutrals, warms
 - Wants natural results
 - Wants obvious dimension
 - Wants chunky highlights
@@ -273,3 +357,81 @@ Potential fields to add for save.tsx:
   - Responds well to
   - Responds poorly to
   - Comments
+
+**_NEW INFO FROM MONICA (28APR2023)_**:
+I cannot physically lost every single high end formula they would just have to have a text box dedicated to typing in whatever brand they use.
+Then there should just be a text box where you can
+put the formula and a text box for what type of
+developer you use
+And a text box for how long the processing time
+Make it generic
+Also a slide for cutting
+And a slide for styling
+Like for cutting if they have long layers and face
+framing
+Or a shot bob and bangs
+Or a pixie cut
+Or a gentlemen uses a clipper size 2 guard
+Then the styling part would be suggestions on
+products and how they like it styled example they
+have frizzy hair and wants it styled slick so they
+should use frizz free priducts
+Or have fine limo hair and want volume use
+volumizing products
+Like that
+
+---
+
+PROTOCOL FOR IMPORTING CSV DATA:
+In Firefoo, something like
+auth: {
+displayName,
+profileImg,
+uid
+}
+
+is coded where
+
+```
+CSV Header          Field Name          Allowed Types
+auth/displayName    auth.displayName    String
+auth/profileImg     auth.profileImg     String
+auth/uid            auth.uid            String
+
+media/image/0       media.image.0       String
+media/image/1       media.image.1       String
+...
+
+media.image: Array
+```
+
+local app under jonathan.j.troiano
+pYnrom-mywgi7-fonzis
+
+# SAMPLES:
+
+Used enlightener with 20 for
+highlight
+Glazed with Demi+ 40g 7n
+with 15g dark gold tone with
+liquid 5
+Toned with demi+ 8n 40g
+a
+8g of light gold with Liquid 1
+for 5 min.
+
+Base: 30g 6n
+10g IB 8g oy
+40g 20vol
+Ends: 30g IB
+10g 7n 8g oy
+8g orange pure
+pigment 2
+grams r/o 40g
+20vol
+
+124860327
+238969799
+159059370
+343382485
+100686123
