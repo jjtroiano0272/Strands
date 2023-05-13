@@ -5,7 +5,14 @@ import BottomSheet, {
 } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { RefreshControl, StyleSheet, useWindowDimensions } from 'react-native';
+import {
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  TouchableOpacity,
+  useWindowDimensions,
+  Image,
+} from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { useTheme } from '@react-navigation/native';
 import { comments, images as dummyImages } from '../../constants/dummyData';
@@ -47,6 +54,7 @@ import {
 import { FirebaseError } from 'firebase/app';
 import { faker } from '@faker-js/faker';
 import axios from 'axios';
+import { getSeedData } from '../../utils/getSeedData';
 
 type RedditAPIData = {
   data: [
@@ -72,7 +80,7 @@ const Feed = () => {
   const [initialDbData, setInitialDbData] = useState<
     FireBasePost[] | undefined | null
   >(null);
-  const userPostsCollectionRef = collection(db, 'postNew');
+  const userPostsCollectionRef = collection(db, 'posts');
   const [refreshing, setRefreshing] = useState(false);
   const dimensions = useWindowDimensions();
   const top = useSharedValue(dimensions.height / 1.5);
@@ -162,7 +170,7 @@ const Feed = () => {
     // const db = getFirestore();
     try {
       const q = query(
-        collection(db, 'postNew'),
+        collection(db, 'posts'),
         where('clientName', '>=', search)
       );
 
@@ -360,192 +368,26 @@ const Feed = () => {
     );
   }, [dataIsCurrentlySortedBy?.sortAsc]);
 
-  const fillDbWithDummyData = () => {
-    let dummyRecords: unknown[] = [];
-    while (dummyRecords.length < 100) {
-      let seedData;
-      let randRedditImg;
-
-      const randThumbnails = [
-        'https://b.thumbs.redditmedia.com/NqLXMy-LezhItv_nk76GXeMZ_grIjctWaqiy42eD2dE.jpg',
-        'https://b.thumbs.redditmedia.com/mx-3LueuSoQDtldaNTbkTjxly6bcEfbJ8d4DXzpPleM.jpg',
-        'https://b.thumbs.redditmedia.com/VEfHMZRmk8uWYzuqKaEnQafm80C0Kch8EeCCeBY_yUs.jpg',
-        'https://b.thumbs.redditmedia.com/tsgp1dMOhyLAsOigd2xqPCx3gWWt41FV9Ngg1bnzBac.jpg',
-        'https://b.thumbs.redditmedia.com/D3R1TvQ8jCvDp_HKsmvQD009pW5RfXdrPoW3eXJvQfg.jpg',
-        'https://a.thumbs.redditmedia.com/kM9vASDtXw-XIRzkCIJ5X2Hp67mGY2VtobjwdMo97k0.jpg',
-        'https://b.thumbs.redditmedia.com/xs_u4kMf82sA_jXAUNfQNEkyEaaM2vZ5Vnl0HwJJWgE.jpg',
-        'https://a.thumbs.redditmedia.com/Usr6E3JlyQrAQefPcn-g5PvWRgsuxBm1sr9vD0mfzA0.jpg',
-        'https://b.thumbs.redditmedia.com/2CWGtte5_zRsAsmx5Y2A5T8FbidtNw4-2WTjOmL48yM.jpg',
-        'https://b.thumbs.redditmedia.com/MuRxY5udIDjocQPrCRlplg8Rvb0aMSfZuPDOBJLxcoc.jpg',
-        'https://b.thumbs.redditmedia.com/HneKNUdDirVSIR4yUZiOPwLvxDSxgqwEt6_TRKB960s.jpg',
-        'https://b.thumbs.redditmedia.com/9xf8MHx58yYuGA7CtTizqhjbmLs8az2922xv3CLm3jI.jpg',
-        'https://b.thumbs.redditmedia.com/TbEt1N0UWN9diuuU8Gv4dr03EiAomc4E4T6Cm5V7rLY.jpg',
-        'https://b.thumbs.redditmedia.com/5wnyKRdZmjgABfQHOThAXVLVILl2k3Kg7o7RJzvlVKc.jpg',
-        'https://b.thumbs.redditmedia.com/RRtdKL6l1z23OgSptLZQoN7KWCHZk2O_k0I2UaFXOXQ.jpg',
-        'https://external-preview.redd.it/_hfQa7epHqDSk1nqUcrwAZMp6kc8mOvUPlFg4xmEoPg.png?width=140&amp;height=140&amp;crop=140:140,smart&amp;format=jpg&amp;v=enabled&amp;lthumb=true&amp;s=978946c011fdcc126fa381815a9a6739463512f8',
-        'https://b.thumbs.redditmedia.com/6R4t73YgPegw8jmll8gEj3OYGHGkyKEiq_h8xwCL7WE.jpg',
-        'https://b.thumbs.redditmedia.com/NqLXMy-LezhItv_nk76GXeMZ_grIjctWaqiy42eD2dE.jpg',
-        'https://b.thumbs.redditmedia.com/mx-3LueuSoQDtldaNTbkTjxly6bcEfbJ8d4DXzpPleM.jpg',
-        'https://b.thumbs.redditmedia.com/VEfHMZRmk8uWYzuqKaEnQafm80C0Kch8EeCCeBY_yUs.jpg',
-        'https://b.thumbs.redditmedia.com/tsgp1dMOhyLAsOigd2xqPCx3gWWt41FV9Ngg1bnzBac.jpg',
-        'https://b.thumbs.redditmedia.com/D3R1TvQ8jCvDp_HKsmvQD009pW5RfXdrPoW3eXJvQfg.jpg',
-        'https://a.thumbs.redditmedia.com/kM9vASDtXw-XIRzkCIJ5X2Hp67mGY2VtobjwdMo97k0.jpg',
-        'https://b.thumbs.redditmedia.com/xs_u4kMf82sA_jXAUNfQNEkyEaaM2vZ5Vnl0HwJJWgE.jpg',
-        'https://a.thumbs.redditmedia.com/Usr6E3JlyQrAQefPcn-g5PvWRgsuxBm1sr9vD0mfzA0.jpg',
-        'https://b.thumbs.redditmedia.com/2CWGtte5_zRsAsmx5Y2A5T8FbidtNw4-2WTjOmL48yM.jpg',
-        'https://b.thumbs.redditmedia.com/MuRxY5udIDjocQPrCRlplg8Rvb0aMSfZuPDOBJLxcoc.jpg',
-        'https://b.thumbs.redditmedia.com/HneKNUdDirVSIR4yUZiOPwLvxDSxgqwEt6_TRKB960s.jpg',
-        'https://b.thumbs.redditmedia.com/9xf8MHx58yYuGA7CtTizqhjbmLs8az2922xv3CLm3jI.jpg',
-        'https://b.thumbs.redditmedia.com/TbEt1N0UWN9diuuU8Gv4dr03EiAomc4E4T6Cm5V7rLY.jpg',
-        'https://b.thumbs.redditmedia.com/5wnyKRdZmjgABfQHOThAXVLVILl2k3Kg7o7RJzvlVKc.jpg',
-        'https://b.thumbs.redditmedia.com/RRtdKL6l1z23OgSptLZQoN7KWCHZk2O_k0I2UaFXOXQ.jpg',
-        'https://external-preview.redd.it/_hfQa7epHqDSk1nqUcrwAZMp6kc8mOvUPlFg4xmEoPg.png?width=140&amp;height=140&amp;crop=140:140,smart&amp;format=jpg&amp;v=enabled&amp;lthumb=true&amp;s=978946c011fdcc126fa381815a9a6739463512f8',
-        'https://b.thumbs.redditmedia.com/6R4t73YgPegw8jmll8gEj3OYGHGkyKEiq_h8xwCL7WE.jpg',
-        'https://b.thumbs.redditmedia.com/NqLXMy-LezhItv_nk76GXeMZ_grIjctWaqiy42eD2dE.jpg',
-        'https://b.thumbs.redditmedia.com/mx-3LueuSoQDtldaNTbkTjxly6bcEfbJ8d4DXzpPleM.jpg',
-        'https://b.thumbs.redditmedia.com/VEfHMZRmk8uWYzuqKaEnQafm80C0Kch8EeCCeBY_yUs.jpg',
-        'https://b.thumbs.redditmedia.com/tsgp1dMOhyLAsOigd2xqPCx3gWWt41FV9Ngg1bnzBac.jpg',
-        'https://b.thumbs.redditmedia.com/D3R1TvQ8jCvDp_HKsmvQD009pW5RfXdrPoW3eXJvQfg.jpg',
-        'https://a.thumbs.redditmedia.com/kM9vASDtXw-XIRzkCIJ5X2Hp67mGY2VtobjwdMo97k0.jpg',
-        'https://b.thumbs.redditmedia.com/xs_u4kMf82sA_jXAUNfQNEkyEaaM2vZ5Vnl0HwJJWgE.jpg',
-        'https://a.thumbs.redditmedia.com/Usr6E3JlyQrAQefPcn-g5PvWRgsuxBm1sr9vD0mfzA0.jpg',
-        'https://b.thumbs.redditmedia.com/2CWGtte5_zRsAsmx5Y2A5T8FbidtNw4-2WTjOmL48yM.jpg',
-        'https://b.thumbs.redditmedia.com/MuRxY5udIDjocQPrCRlplg8Rvb0aMSfZuPDOBJLxcoc.jpg',
-        'https://b.thumbs.redditmedia.com/HneKNUdDirVSIR4yUZiOPwLvxDSxgqwEt6_TRKB960s.jpg',
-        'https://b.thumbs.redditmedia.com/9xf8MHx58yYuGA7CtTizqhjbmLs8az2922xv3CLm3jI.jpg',
-        'https://b.thumbs.redditmedia.com/TbEt1N0UWN9diuuU8Gv4dr03EiAomc4E4T6Cm5V7rLY.jpg',
-        'https://b.thumbs.redditmedia.com/5wnyKRdZmjgABfQHOThAXVLVILl2k3Kg7o7RJzvlVKc.jpg',
-        'https://b.thumbs.redditmedia.com/RRtdKL6l1z23OgSptLZQoN7KWCHZk2O_k0I2UaFXOXQ.jpg',
-        'https://external-preview.redd.it/_hfQa7epHqDSk1nqUcrwAZMp6kc8mOvUPlFg4xmEoPg.png?width=140&amp;height=140&amp;crop=140:140,smart&amp;format=jpg&amp;v=enabled&amp;lthumb=true&amp;s=978946c011fdcc126fa381815a9a6739463512f8',
-        'https://b.thumbs.redditmedia.com/6R4t73YgPegw8jmll8gEj3OYGHGkyKEiq_h8xwCL7WE.jpg',
-        'https://b.thumbs.redditmedia.com/NqLXMy-LezhItv_nk76GXeMZ_grIjctWaqiy42eD2dE.jpg',
-        'https://b.thumbs.redditmedia.com/mx-3LueuSoQDtldaNTbkTjxly6bcEfbJ8d4DXzpPleM.jpg',
-        'https://b.thumbs.redditmedia.com/VEfHMZRmk8uWYzuqKaEnQafm80C0Kch8EeCCeBY_yUs.jpg',
-        'https://b.thumbs.redditmedia.com/tsgp1dMOhyLAsOigd2xqPCx3gWWt41FV9Ngg1bnzBac.jpg',
-        'https://b.thumbs.redditmedia.com/D3R1TvQ8jCvDp_HKsmvQD009pW5RfXdrPoW3eXJvQfg.jpg',
-        'https://a.thumbs.redditmedia.com/kM9vASDtXw-XIRzkCIJ5X2Hp67mGY2VtobjwdMo97k0.jpg',
-        'https://b.thumbs.redditmedia.com/xs_u4kMf82sA_jXAUNfQNEkyEaaM2vZ5Vnl0HwJJWgE.jpg',
-        'https://a.thumbs.redditmedia.com/Usr6E3JlyQrAQefPcn-g5PvWRgsuxBm1sr9vD0mfzA0.jpg',
-        'https://b.thumbs.redditmedia.com/2CWGtte5_zRsAsmx5Y2A5T8FbidtNw4-2WTjOmL48yM.jpg',
-        'https://b.thumbs.redditmedia.com/MuRxY5udIDjocQPrCRlplg8Rvb0aMSfZuPDOBJLxcoc.jpg',
-        'https://b.thumbs.redditmedia.com/HneKNUdDirVSIR4yUZiOPwLvxDSxgqwEt6_TRKB960s.jpg',
-        'https://b.thumbs.redditmedia.com/9xf8MHx58yYuGA7CtTizqhjbmLs8az2922xv3CLm3jI.jpg',
-        'https://b.thumbs.redditmedia.com/TbEt1N0UWN9diuuU8Gv4dr03EiAomc4E4T6Cm5V7rLY.jpg',
-        'https://b.thumbs.redditmedia.com/5wnyKRdZmjgABfQHOThAXVLVILl2k3Kg7o7RJzvlVKc.jpg',
-        'https://b.thumbs.redditmedia.com/RRtdKL6l1z23OgSptLZQoN7KWCHZk2O_k0I2UaFXOXQ.jpg',
-        'https://external-preview.redd.it/_hfQa7epHqDSk1nqUcrwAZMp6kc8mOvUPlFg4xmEoPg.png?width=140&amp;height=140&amp;crop=140:140,smart&amp;format=jpg&amp;v=enabled&amp;lthumb=true&amp;s=978946c011fdcc126fa381815a9a6739463512f8',
-        'https://b.thumbs.redditmedia.com/6R4t73YgPegw8jmll8gEj3OYGHGkyKEiq_h8xwCL7WE.jpg',
-        'https://b.thumbs.redditmedia.com/NqLXMy-LezhItv_nk76GXeMZ_grIjctWaqiy42eD2dE.jpg',
-        'https://b.thumbs.redditmedia.com/mx-3LueuSoQDtldaNTbkTjxly6bcEfbJ8d4DXzpPleM.jpg',
-        'https://b.thumbs.redditmedia.com/VEfHMZRmk8uWYzuqKaEnQafm80C0Kch8EeCCeBY_yUs.jpg',
-        'https://b.thumbs.redditmedia.com/tsgp1dMOhyLAsOigd2xqPCx3gWWt41FV9Ngg1bnzBac.jpg',
-        'https://b.thumbs.redditmedia.com/D3R1TvQ8jCvDp_HKsmvQD009pW5RfXdrPoW3eXJvQfg.jpg',
-        'https://a.thumbs.redditmedia.com/kM9vASDtXw-XIRzkCIJ5X2Hp67mGY2VtobjwdMo97k0.jpg',
-        'https://b.thumbs.redditmedia.com/xs_u4kMf82sA_jXAUNfQNEkyEaaM2vZ5Vnl0HwJJWgE.jpg',
-        'https://a.thumbs.redditmedia.com/Usr6E3JlyQrAQefPcn-g5PvWRgsuxBm1sr9vD0mfzA0.jpg',
-        'https://b.thumbs.redditmedia.com/2CWGtte5_zRsAsmx5Y2A5T8FbidtNw4-2WTjOmL48yM.jpg',
-        'https://b.thumbs.redditmedia.com/MuRxY5udIDjocQPrCRlplg8Rvb0aMSfZuPDOBJLxcoc.jpg',
-        'https://b.thumbs.redditmedia.com/HneKNUdDirVSIR4yUZiOPwLvxDSxgqwEt6_TRKB960s.jpg',
-        'https://b.thumbs.redditmedia.com/9xf8MHx58yYuGA7CtTizqhjbmLs8az2922xv3CLm3jI.jpg',
-        'https://b.thumbs.redditmedia.com/TbEt1N0UWN9diuuU8Gv4dr03EiAomc4E4T6Cm5V7rLY.jpg',
-        'https://b.thumbs.redditmedia.com/5wnyKRdZmjgABfQHOThAXVLVILl2k3Kg7o7RJzvlVKc.jpg',
-        'https://b.thumbs.redditmedia.com/RRtdKL6l1z23OgSptLZQoN7KWCHZk2O_k0I2UaFXOXQ.jpg',
-        'https://external-preview.redd.it/_hfQa7epHqDSk1nqUcrwAZMp6kc8mOvUPlFg4xmEoPg.png?width=140&amp;height=140&amp;crop=140:140,smart&amp;format=jpg&amp;v=enabled&amp;lthumb=true&amp;s=978946c011fdcc126fa381815a9a6739463512f8',
-        'https://b.thumbs.redditmedia.com/6R4t73YgPegw8jmll8gEj3OYGHGkyKEiq_h8xwCL7WE.jpg',
-        'https://b.thumbs.redditmedia.com/NqLXMy-LezhItv_nk76GXeMZ_grIjctWaqiy42eD2dE.jpg',
-        'https://b.thumbs.redditmedia.com/mx-3LueuSoQDtldaNTbkTjxly6bcEfbJ8d4DXzpPleM.jpg',
-        'https://b.thumbs.redditmedia.com/VEfHMZRmk8uWYzuqKaEnQafm80C0Kch8EeCCeBY_yUs.jpg',
-        'https://b.thumbs.redditmedia.com/tsgp1dMOhyLAsOigd2xqPCx3gWWt41FV9Ngg1bnzBac.jpg',
-        'https://b.thumbs.redditmedia.com/D3R1TvQ8jCvDp_HKsmvQD009pW5RfXdrPoW3eXJvQfg.jpg',
-        'https://a.thumbs.redditmedia.com/kM9vASDtXw-XIRzkCIJ5X2Hp67mGY2VtobjwdMo97k0.jpg',
-        'https://b.thumbs.redditmedia.com/xs_u4kMf82sA_jXAUNfQNEkyEaaM2vZ5Vnl0HwJJWgE.jpg',
-      ];
-
-      const getRandElementFromArray = (
-        arr?: number[] | string[],
-        length?: number
-      ): number | string | undefined => {
-        if (arr) {
-          return arr[Math.floor(Math.random() * arr.length)];
-        } else if (length) {
-          return Array.from({ length }, (_, index) => index + 1)[
-            Math.floor(Math.random() * length)
-          ];
-        }
-        // If neither parameter is provided, return undefined
-        return undefined;
-      };
-
-      const arrayFoo = new Array(Math.ceil(Math.random() * 5));
-
-      (async () => {
-        try {
-          for (let i = 0; i < arrayFoo.length; i++) {
-            const responseImg = await axios.get(
-              'https://loremflickr.com/320/320/hair,stylist/all'
-            );
-
-            if (responseImg.request.responseURL) {
-              // console.log(
-              //   `\x1b[34mUnfiltered version: ${JSON.stringify(
-              //     responseImg.request.responseURL,
-              //     null,
-              //     2
-              //   )}`
-              // );
-
-              arrayFoo.push(responseImg.request.responseURL);
-            }
-          }
-        } catch (err) {
-          // console.error(err);
-        }
-      })();
-      // console.log(`\x1b[32m${JSON.stringify(arrayFoo, null, 2)}`);
-
-      const randomIndex = Math.floor(Math.random() * dummyImages.length); // generate a random index within the range of the array length
-      const randomLength = Math.floor(Math.random() * 5) + 1; // generate a random length between 1 and 5
-      const mySlice = dummyImages.slice(
-        randomIndex,
-        randomIndex + randomLength
-      ); // extract a slice of the array with the random index and length
-
-      const randUid = faker.random.alphaNumeric(28);
-      const randRecord = {
-        auth: {
-          displayName: faker.name.firstName(),
-          profileImage:
-            Math.random() < 0.2
-              ? `https://api.dicebear.com/6.x/lorelei/png/seed=${randUid}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`
-              : getRandElementFromArray(randThumbnails),
-          uid: randUid, //28 character alphanumeric string
-        },
-        clientName: faker.name.firstName(),
-        downloadURL: randRedditImg,
-        comments: comments[Math.floor(Math.random() * comments.length)],
-        createdAt: faker.date.recent(30),
-        isSeasonal: Math.random() < 0.5,
-        rating: getRandElementFromArray(undefined, 5),
-        media: {
-          image: mySlice,
-          video: [],
-        },
-      };
-
-      dummyRecords.push(randRecord);
-    }
-
-    return dummyRecords;
-  };
-  useEffect(() => {
-    // console.log(JSON.stringify(fillDbWithDummyData(), null, 2));
-  }, []);
+  // useEffect(() => {
+  //   console.log(JSON.stringify(seed, null, 2));
+  // }, []);
 
   return (
     <>
       <BottomSheetModalProvider>
         <ScrollView
-          style={styles.getStartedContainer}
+          // style={styles.getStartedContainer}
+          style={
+            {
+              // paddingTop: Constants.statusBarHeight,
+            }
+          }
+          contentContainerStyle={{
+            backgroundColor: '#ecf0f1',
+            padding: 8,
+            width: '100%',
+            justifyContent: 'space-between',
+          }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
@@ -557,31 +399,66 @@ const Feed = () => {
           />
 
           {/* TODO Add a filter button for like 'Show me people of x hair type within x miles of me, etc. */}
-          <View style={styles.container}>
-            {/* TODO Offload to custom component with only the needed text, standardized format */}
-
-            <View style={styles.cardsContainer}>
-              {sortByProperty('createdAt', myDbData, false)
+          {/* <View style={styles.container}> */}
+          {/* TODO Offload to custom component with only the needed text, standardized format */}
+          {/* <View style={styles.cardsContainer}> */}
+          {/* {sortByProperty('createdAt', myDbData, false)
                 ?.filter(
                   // TODO Narrow down the type checking
                   (item: any) =>
                     !selectedFilters?.length ||
                     selectedFilters.every(filter => filter[item])
                 )
-                .map((item: FireBasePost, index: number) => (
-                  <Post
-                    key={index}
-                    createdAt={item?.createdAt?.seconds}
-                    isSeasonal={item?.isSeasonal}
-                    auth={item?.auth}
-                    clientName={item?.clientName}
-                    comments={item?.comments}
-                    rating={item?.rating}
-                    imgSrc={item?.media?.image ?? null}
-                  />
-                ))}
-            </View>
-          </View>
+                .map((post: FireBasePost, index: number) => {
+                  return (
+                    <Post
+                      key={index}
+                      postData={post}
+                      // clientName: clientName,
+                      // comments,
+                      // displayName: username,
+                      // imgSrc,
+                      // username: username ?? uid,
+                      // createdAt={item?.createdAt?.seconds}
+                      // isSeasonal={item?.isSeasonal}
+                      // auth={item?.auth}
+                      // clientName={item?.clientName}
+                      // comments={item?.comments}
+                      // displayName={item?.auth?.displayName}
+                      // imgSrc={item?.media?.image ?? null}
+                      // username='foo'
+                      // rating={item?.rating}
+                    />
+                  );
+                })} */}
+
+          <FlatList
+            data={sortByProperty('createdAt', myDbData, false)?.filter(
+              (item: any) =>
+                !selectedFilters?.length ||
+                selectedFilters.every(filter => filter[item])
+            )}
+            // TODO: Ostensibly this should be setup to grab unique IDs from the DB structure...
+            keyExtractor={(item, index) => index.toString()}
+            numColumns={2}
+            renderItem={({ item }) => (
+              // <TouchableOpacity
+              //   style={{ flex: 1, margin: 4, aspectRatio: 1 }}
+              // >
+              //   <Image
+              //     style={{ flex: 1, resizeMode: 'cover' }}
+              //     source={{ uri: item.uri }}
+              //   />
+              // </TouchableOpacity>
+              <Post postData={item} />
+            )}
+            contentContainerStyle={{
+              paddingVertical: 8,
+              paddingHorizontal: 4,
+            }}
+          />
+          {/* </View> */}
+          {/* </View> */}
 
           <Button
             mode='outlined'
@@ -674,13 +551,28 @@ const styles = StyleSheet.create({
     // alignItems: 'center',
     // marginHorizontal: 50,
   },
-  container: { flexDirection: 'row', flexWrap: 'wrap', flex: 1, padding: 8 },
+  container: {
+    // flexDirection: 'row',
+    // flexWrap: 'wrap',
+    // flex: 1,
+    // padding: 8,
+  },
   cardsContainer: {
     // marginHorizontal: 'auto',
     // flexWrap: 'wrap',
     // flexDirection: 'row',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    //
+    // flexDirection: 'row',
+    // flexWrap: 'wrap',
+    // width: '100%',
+    // justifyContent: 'space-between',
+    // flex: 1,
+    // justifyContent: 'center',
+    // paddingTop: Constants.statusBarHeight,
+    backgroundColor: '#ecf0f1',
+    padding: 8,
+    // flexDirection: 'row', // IT'S THIS ONE
+    // flexWrap: 'wrap',
     width: '100%',
     justifyContent: 'space-between',
   },

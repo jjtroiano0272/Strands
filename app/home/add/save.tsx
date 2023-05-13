@@ -1,3 +1,4 @@
+import { Picker } from '@react-native-picker/picker';
 import * as Haptics from 'expo-haptics';
 import Swiper from 'react-native-swiper';
 import SwiperNumber from 'react-native-swiper';
@@ -9,6 +10,8 @@ import {
   FlatList,
   Pressable,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
@@ -86,10 +89,54 @@ export default function save() {
   const [postSuccess, setPostSuccess] = useState<boolean>(false);
   const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [dropdownValue, setDropdownValue] = useState<string[] | null>(null);
+  const [dropDownOpen, setDropDownOpen] = useState([
+    { id: 'products', open: false },
+  ]);
   const [productsDropdownOpen, setProductsDropdownOpen] =
     useState<boolean>(false);
+  const [formulaDropdownOpen, setFormulaDropdownOpen] = useState(false);
+
+  const [dropdownVisible, setDropdownVisible] = useState({
+    hairType: false,
+    productsUsed: false,
+    formulaType: false,
+  });
+  // const [dropdownData, setDropdownData] = useState({
+  //   hairType: {
+  //     visible: false,
+  //     items: hairTypeItems,
+  //   },
+  //   productsUsed: false,
+  //   formulaType: false,
+  // });
+
+  const [dropdownValue, setDropdownValue] = useState<string[] | null>(null);
+  const [formulaType, setFormulaType] = useState([
+    {
+      label: `AVEDA`,
+      value: `aveda`,
+    },
+    {
+      label: `Redken`,
+      value: `redken`,
+    },
+    {
+      label: `Tramesi`,
+      value: `Tramesi`,
+    },
+    {
+      label: `Goldwell`,
+      value: `Goldwell`,
+    },
+  ]);
+  const [formulaDescription, setFormulaDescription] = useState('');
+  const [formulaValue, setFormulaValue] = useState<string[] | null>(null);
+  const [fieldValue, setFieldValue] = useState<{
+    quantity?: number;
+    unit?: string | undefined;
+  }>();
   const [productsDropdownValue, setProductsDropdownValue] = useState<
     string[] | null
   >(null);
@@ -101,6 +148,7 @@ export default function save() {
     },
     { label: `Arctic Fox Coloring`, value: `Arctic Fox Coloring` },
   ]);
+
   const [modalVisible, setModalVisible] = useState(false);
   const [isSeasonal, setIsSeasonal] = useState<boolean>(false);
   const [postData, setPostData] = useState<{} | null>(null);
@@ -187,7 +235,7 @@ export default function save() {
         (err: any) => console.error(`error in getting download URL: ${err}`);
       }
 
-      const postsRef = collection(db, 'postNew');
+      const postsRef = collection(db, 'posts');
       addDoc(postsRef, {
         auth: {
           displayName: auth.currentUser?.displayName,
@@ -203,6 +251,10 @@ export default function save() {
         geolocation: {
           lat: lat,
           lng: lng,
+        },
+        formula: {
+          type: formulaValue, // e.g. AVEDA, Redken, etc.
+          description: formulaDescription, // Actual user comments about the formulation
         },
       })
         .then(res => {
@@ -291,169 +343,241 @@ export default function save() {
     }
   }, [blobArr]);
 
+  useEffect(() => {
+    console.log(`fieldValue: ${JSON.stringify(fieldValue, null, 2)}`);
+  }, [fieldValue]);
+
   return (
     <ModalProvider>
-      <ScrollView>
-        <Pressable
-          onPress={() => Keyboard.dismiss()}
-          style={{
-            flex: 1,
-            justifyContent: 'flex-start',
-            alignItems: 'center',
-            paddingVertical: 30,
-            paddingHorizontal: 10,
-          }}
-        >
-          <Stack.Screen options={{ headerShown: false }} />
-          {/* {imgUri && <Image source={{ uri: imgUri, height: 300, width: 300 }} />} */}
-          <Swiper
-            // containerStyle={{ flex: 1 }}
-            containerStyle={{ height: 300, width: '100%', borderRadius: 30 }}
-            onIndexChanged={() => Haptics.ImpactFeedbackStyle.Light}
-          >
-            {imgUris.map((uri, index) => (
-              <Image
-                key={index}
-                source={{ uri: uri }}
-                style={{ width: '100%', height: '100%' }}
-              />
-            ))}
-          </Swiper>
-          <StarRating />
-          {/* Hair type */}
-          <DropDownPicker
-            theme={!theme.dark ? 'LIGHT' : 'DARK'}
-            badgeDotColors={badgeColors}
-            items={items}
-            max={2}
-            mode='BADGE'
-            multiple={true}
-            open={dropdownOpen}
-            placeholder='Hair type'
-            setItems={setItems}
-            setOpen={setModalVisible}
-            setValue={setDropdownValue}
-            value={dropdownValue}
-          />
-          <DropDownPicker
-            style={{ marginVertical: 20 }}
-            theme={!theme.dark ? 'LIGHT' : 'DARK'}
-            badgeDotColors={badgeColors}
-            items={productsList}
-            mode='BADGE'
-            multiple={true}
-            open={productsDropdownOpen}
-            placeholder='Products used'
-            setItems={setProductsList}
-            setOpen={setProductsDropdownOpen}
-            setValue={setProductsDropdownValue}
-            value={productsDropdownValue}
-          />
-          <TextInput
-            style={{ width: '100%' }}
-            theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-            label='Salon'
-            value={salon}
-            onChangeText={text => setSalon(text)}
-            multiline={true}
-          />
-          <Portal>
-            <Modal visible={modalVisible} onDismiss={handleHideModal}>
-              <View
-                style={{
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                }}
-              >
-                {/* TODO Optimize by using aither SVG or putting Skeleton on them until loaded FULLY */}
-
-                {hairTypeImages.map(image => (
-                  <TouchableOpacity
-                    key={image.id}
-                    onPress={() => {
-                      dropdownValue === null
-                        ? setDropdownValue([image.id])
-                        : setDropdownValue([...dropdownValue, image.id]);
-                      setModalVisible(false);
-                    }}
-                  >
-                    {/* <Image key={image.id} source={{ uri: '' }} /> */}
-                    <Button
-                      mode='contained'
-                      contentStyle={{ padding: 20, margin: 10 }}
-                    >
-                      {image.id}
-                    </Button>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* TODO Images requires attribution to use! */}
-            </Modal>
-          </Portal>
-          <List.Item
-            theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-            style={{ width: '100%' }}
-            title='Client is seasonal'
-            right={props => (
-              <Switch
-                value={isSeasonal}
-                onChange={() => setIsSeasonal(!isSeasonal)}
-              />
-            )}
-          />
-
-          <TextInput
-            style={{ width: '100%' }}
-            label='Comments'
-            value={comments}
-            onChangeText={text => setComments(text)}
-            multiline={true}
-            theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-          />
-        </Pressable>
-
-        <Pressable
-          onPress={() => Keyboard.dismiss()}
-          style={{
-            paddingVertical: 30,
-            paddingHorizontal: 10,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Button
-            mode='contained'
-            onPress={handleImageUpload}
-            loading={loading}
-            style={{ borderRadius: 50, width: 150 }}
-            contentStyle={{ padding: 20 }}
-            buttonColor={postSuccess ? 'green' : undefined}
-          >
-            {!loading && !postSuccess
-              ? 'Post'
-              : !loading && postSuccess
-              ? 'Posted successfully!'
-              : null}
-          </Button>
-
-          <Snackbar
-            visible={snackbarVisible}
-            duration={3000}
-            onDismiss={onDismissSnackBar}
-            theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-            action={{
-              label: 'OK',
-              onPress: () => {
-                // Do something
-              },
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView>
+          <Pressable
+            onPress={() => Keyboard.dismiss()}
+            style={{
+              flex: 1,
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+              paddingVertical: 30,
+              paddingHorizontal: 10,
             }}
           >
-            {snackbarMessage}
-          </Snackbar>
-        </Pressable>
-      </ScrollView>
+            <Stack.Screen options={{ headerShown: false }} />
+            {/* {imgUri && <Image source={{ uri: imgUri, height: 300, width: 300 }} />} */}
+            <Swiper
+              // containerStyle={{ flex: 1 }}
+              containerStyle={{ height: 300, width: '100%', borderRadius: 30 }}
+              onIndexChanged={() => Haptics.ImpactFeedbackStyle.Light}
+            >
+              {imgUris.map((uri, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: uri }}
+                  style={{ width: '100%', height: '100%' }}
+                />
+              ))}
+            </Swiper>
+            <StarRating />
+            {/* Hair type */}
+            <DropDownPicker
+              theme={!theme.dark ? 'LIGHT' : 'DARK'}
+              badgeDotColors={badgeColors}
+              items={items}
+              max={2}
+              mode='BADGE'
+              multiple={true}
+              open={dropdownOpen}
+              placeholder='Hair type'
+              setItems={setItems}
+              setOpen={() =>
+                setDropdownVisible({ ...dropdownVisible, hairType: true })
+              }
+              setValue={setDropdownValue}
+              value={dropdownValue}
+            />
+            <DropDownPicker
+              style={{ marginVertical: 20 }}
+              theme={!theme.dark ? 'LIGHT' : 'DARK'}
+              badgeDotColors={badgeColors}
+              items={productsList}
+              mode='BADGE'
+              multiple={true}
+              open={productsDropdownOpen}
+              placeholder='Products used'
+              setItems={setProductsList}
+              setOpen={setProductsDropdownOpen}
+              setValue={setProductsDropdownValue}
+              value={productsDropdownValue}
+            />
+            {/* FORMULA
+            formulaUsed: {
+              type: 'aveda', // may also have RedKen, ... It will be selected from an array in dropdown
+              // Could be anywhere from 1-n items
+              quantities: [
+                {
+                  amount: 0, // number
+                  unit: 'g', // string
+                  product: 'productFoo', //string
+                },
+              ],
+            }
+            */}
+            {/* FORMULA A */}
+            {/* <View style={{ flexDirection: 'row' }}>
+              <TextInput
+                keyboardType='decimal-pad'
+                onChangeText={text =>
+                  // TODO If the Float comes out as having a trailing decimal but no mantissa after field is de-sele
+                  setFieldValue({ ...fieldValue, quantity: parseFloat(text) })
+                }
+              />
+              <Picker
+                style={{ width: 100 }}
+                selectedValue={fieldValue}
+                onValueChange={itemValue => {
+                  setFieldValue({ ...fieldValue, unit: itemValue });
+                  console.log(
+                    `parsing thorugh units: ${JSON.stringify(itemValue, null, 2)}`
+                  );
+                }}
+              >
+                {['grams', 'ml', 'oz'].map(element => (
+                  <Picker.Item label={element} value={element} />
+                ))}
+              </Picker>
+            </View> */}
+            {/* FORMULA Bs */}
+            {/* TODO If you press the same thing twice, it removes it from the list */}
+            <DropDownPicker
+              style={{ marginVertical: 20 }}
+              theme={!theme.dark ? 'LIGHT' : 'DARK'}
+              badgeDotColors={badgeColors}
+              items={formulaType}
+              setItems={setFormulaType}
+              value={formulaValue}
+              setValue={setFormulaValue}
+              open={formulaDropdownOpen}
+              setOpen={setFormulaDropdownOpen}
+              mode='BADGE'
+              multiple={true}
+              max={1}
+              placeholder='Type of formula'
+              onSelectItem={() => setFormulaDropdownOpen(false)}
+            />
+            <TextInput
+              style={{ width: '100%' }}
+              label={`Formula description (like 'Base: 30g 6n 10g IB 8g oy...')`}
+              keyboardType='default'
+              onChangeText={text => setFormulaDescription(text)}
+              value={formulaDescription}
+              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+              multiline={true}
+            />
+            {/* TODO Plus button here that adds another field */}
+            <TextInput
+              style={{ width: '100%' }}
+              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+              label='Salon'
+              value={salon}
+              onChangeText={text => setSalon(text)}
+              multiline={true}
+            />
+            <Portal>
+              <Modal visible={modalVisible} onDismiss={handleHideModal}>
+                <View
+                  style={{
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  {/* TODO Optimize by using aither SVG or putting Skeleton on them until loaded FULLY */}
+                  {hairTypeImages.map(image => (
+                    <TouchableOpacity
+                      key={image.id}
+                      onPress={() => {
+                        dropdownValue === null
+                          ? setDropdownValue([image.id])
+                          : setDropdownValue([...dropdownValue, image.id]);
+                        setModalVisible(false);
+                      }}
+                    >
+                      {/* <Image key={image.id} source={{ uri: '' }} /> */}
+                      <Button
+                        mode='contained'
+                        contentStyle={{ padding: 20, margin: 10 }}
+                      >
+                        {image.id}
+                      </Button>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                {/* TODO Images requires attribution to use! */}
+              </Modal>
+            </Portal>
+            {/* TODO: Maybe make its down component? */}
+            <List.Item
+              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+              style={{ width: '100%' }}
+              title='Client is seasonal'
+              right={props => (
+                <Switch
+                  value={isSeasonal}
+                  onChange={() => setIsSeasonal(!isSeasonal)}
+                />
+              )}
+            />
+            <TextInput
+              style={{ width: '100%' }}
+              label='Comments'
+              value={comments}
+              onChangeText={text => setComments(text)}
+              multiline={true}
+              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+            />
+          </Pressable>
+          <Pressable
+            onPress={() => Keyboard.dismiss()}
+            style={{
+              paddingVertical: 30,
+              paddingHorizontal: 10,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Button
+              mode='contained'
+              onPress={handleImageUpload}
+              loading={loading}
+              style={{ borderRadius: 50, width: 150 }}
+              contentStyle={{ padding: 20 }}
+              buttonColor={postSuccess ? 'green' : undefined}
+            >
+              {/* Maybe refactor with nullish coalescing */}
+              {!loading && !postSuccess
+                ? 'Post'
+                : !loading && postSuccess
+                ? 'Posted successfully!'
+                : null}
+            </Button>
+            <Snackbar
+              visible={snackbarVisible}
+              duration={3000}
+              onDismiss={onDismissSnackBar}
+              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+              action={{
+                label: 'OK',
+                onPress: () => {
+                  // Do something
+                },
+              }}
+            >
+              {snackbarMessage}
+            </Snackbar>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ModalProvider>
   );
 }

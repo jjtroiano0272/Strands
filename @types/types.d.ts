@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 export interface IAPIData {
   id: number,
   name: string,
@@ -37,25 +39,60 @@ export type FireBasePost = {
     profileImage?: string;
     uid?: string;
   };
-  rating?: number;
+
   clientName?: string;
-  createdAt?: {
-    seconds?: number,
-    nanoseconds?: number;
-  };
   comments?: string;
-  rating?: number;
+  createdAt?: string;
+  // createdAt?: {
+  //   seconds?: number,
+  //   nanoseconds?: number;
+  // };
+  downloadURL?: string;
   isSeasonal?: boolean;
+  media?: {
+    image: string[] | null;
+    video: string[];
+  };
+  phoneNumber: number;
   productsUsed?: [
     {
       label?: string,
       value?: string;
     }];
-  downloadURL?: string;
-  media?: {
-    image: string[] | null;
-    video: string[];
+  rating?: number;
+};
+
+export type SearchParams = {
+  id?: string;
+  name?: string;
+  clientName?: string;
+  username?: string;
+  imgSrc?: string[];
+  displayName?: string;
+  auth?: string;
+  comments?: string;
+  createdAt?: string;
+  isSeasonal?: string;
+  productsUsed?: string;
+  rating?: string;
+};
+
+export type PostProps = {
+  imgSrc?: string[] | null;
+  auth?: {
+    displayName?: string;
+    uid?: string;
+    profileImage?: string;
   };
+  displayName?: string;
+  username?: string | number;
+  clientName?: string;
+  comments?: string;
+  createdAt?: number | Timestamp | string;
+  isSeasonal?: boolean;
+  productsUsed?: [label: string, value: string];
+  rating?: number;
+  postData?: FireBasePost;
 };
 
 declare module "react-particle-backgrounds" {

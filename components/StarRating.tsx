@@ -3,7 +3,11 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import React, { useState } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-export default function StarRating(props: any) {
+export default function StarRating({
+  onRatingChange,
+}: {
+  onRatingChange: (rating: number | null) => void;
+}) {
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [ratingChoices, setRatingChoices] = useState([1, 2, 3, 4, 5]);
 

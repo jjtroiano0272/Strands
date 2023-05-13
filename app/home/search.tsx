@@ -60,10 +60,7 @@ const Search = () => {
   const searchUsers = async (search: string) => {
     // FIREBASE 9 METHODOLOGY
     // const db = getFirestore();
-    const q = query(
-      collection(db, 'postNew'),
-      where('clientName', '>=', search)
-    );
+    const q = query(collection(db, 'posts'), where('clientName', '>=', search));
 
     const snapshot = await getDocs(q);
 

@@ -63,6 +63,7 @@ export const comments = [
   'Has a specific hair texture or thickness that',
 ];
 
+// offload to CSV?
 export const images = [
   'https://loremflickr.com/cache/resized/7062_27046614642_ebb46df359_z_320_320_nofilter.jpg',
   'https://loremflickr.com/cache/resized/5534_14240751843_057424c9eb_320_320_nofilter.jpg',
@@ -655,3 +656,56 @@ export const images = [
   'https://loremflickr.com/cache/resized/65535_48871848807_37a88cd9f9_320_320_nofilter.jpg',
   'https://loremflickr.com/cache/resized/3909_15374358321_92659450d7_n_320_320_nofilter.jpg',
 ];
+
+export const dummyFormulas = {
+  types: ['aveda', 'redken', 'tramesi', 'goldwell'],
+  descriptions: [
+    '50g Natural Series + Pure Tone 4-10g + 50g Developer',
+    '20g N + 20g Grams + 20g CTA',
+    '40g Ash Blonde + 20g Pearl Blonde + 20g 20 Vol Developer',
+    '30g 6N + 10g 7G + 40g 20 Vol Developer',
+    '50g Dark Brown + 20g Red + 20g 30 Vol Developer',
+    '25g Light Brown + 25g Beige Blonde + 25g 10 Vol Developer',
+    '30g Medium Blonde + 10g Lightest Ash Blonde + 40g 20 Vol Developer',
+    '30g Light Golden Brown + 20g Honey Blonde + 20g 30 Vol Developer',
+    '40g Intense Red + 10g Magenta + 40g 20 Vol Developer',
+    '50g Warm Brown + 20g Medium Red + 20g 30 Vol Developer',
+    '30g Dark Chocolate + 10g',
+    '40g Light Ash Blonde + 20g Pearl Blonde + 20g 20 Vol Developer',
+    '30g Lightest Blonde + 10g Platinum Blonde + 40g 30 Vol Developer',
+    '25g Medium Ash Blonde + 25g Golden Blonde + 25g 10 Vol Developer',
+    '40g Rich Chocolate Brown + 20g Medium Red + 20g 30 Vol Developer',
+    '30g Dark Blonde + 10g Light Brown + 40g 20 Vol Developer',
+    '50g Intense Copper + 20g Light Copper + 20g 30 Vol Developer',
+    '40g Medium Brown + 10g Gold + 40g 20 Vol Developer',
+    '30g Lightest Blonde + 10g Pearl Blonde + 40g 30 Vol Developer',
+    '25g Lightest Blonde + 25g Beige Blonde + 25g 10 Vol Developer',
+    '40g Dark Red + 20g Burgundy + 20g 20 Vol Developer',
+    '50g Dark Chocolate Brown + 20g Medium Ash Brown + 20g 30 Vol Developer',
+    '30g Medium Brown + 10g Red + 40g 20 Vol Developer',
+    '40g Light Blonde + 20g Golden Blonde + 20g 20 Vol Developer',
+    '30g Dark Brown + 10g Medium Ash Brown + 40g 20 Vol Developer',
+    '50g Light Brown + 20g Warm Blonde + 20g 30 Vol Developer',
+    '40g Dark Blonde + 10g Light Ash Blonde + 40g 20 Vol Developer',
+    '30g Light Blonde + 10g Ash Blonde + 40g 30 Vol Developer',
+    '25g Light Brown + 25g Ash Blonde + 25g 10 Vol Developer',
+    '40g Warm Brown + 20g Light Blonde + 20g 20 Vol Developer',
+    '50g Medium Blonde + 20g Lightest Blonde + 20g 30 Vol Developer',
+    '30g Medium Red + 10g Dark Brown + 40g 20 Vol Developer',
+    '40g Rich Chocolate Brown + 20g Light Brown + 20g 30 Vol Developer',
+    '30g Medium Brown + 10g Warm Blonde + 40g 20 Vol Developer',
+    '50g Medium Brown + 20g Red + 20g 30 Vol Developer',
+    '40g Dark Brown + 10g Medium Red + 40g 20 Vol Developer',
+    '30g Lightest Blonde + 10g Beige Blonde + 40g 30 Vol Developer',
+    '25g Medium Brown + 25g Gold + 25g 10 Vol Developer',
+    '40g Light Brown + 20g Warm Blonde + 20g 20 Vol Developer',
+    '50g Medium Brown + 20g Golden Blonde + 20g 30 Vol Developer',
+    '30g Dark Brown + 10g Lightest Blonde + 40g 20 Vol Developer',
+    '40g Medium Ash Blonde + 20g Light Brown + 20g 30 Vol Developer',
+    '30g Medium Blonde + 10g Lightest Ash Blonde + 40g 20 Vol Developer',
+    '50g Dark Brown + 20g Ash Brown + 20g 30 Vol Developer',
+    '40g Light Blonde + 20g Pearl Blonde + 20g ',
+  ],
+};
+
+// export const newDAta =

@@ -37,6 +37,7 @@ import { SAMLAuthProvider, GoogleAuthProvider } from 'firebase/auth';
 // import { BubbleBackground } from '../../components/AnimatedBackground';
 import Particles from 'react-particles';
 import { AnimatedBackground } from '../../components/AnimatedBackground';
+import { getSeedData } from '../../utils/getSeedData';
 // import ParticleAnimation from 'react-particle-animation';
 
 export default function Login() {
