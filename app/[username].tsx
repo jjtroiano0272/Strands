@@ -151,13 +151,30 @@ export default function ClientProfile() {
           titleStyle={[{ color: theme.colors.text }, styles.cardTitle]}
           // TODO: Make username URL
           subtitle={
-            <View>
-              <Text>
-                Seen by{' '}
-                <View hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}>
-                  <Link href={`/${postedBy}`}>{postedBy}</Link>
-                </View>
-              </Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: 'transparent',
+              }}
+            >
+              <Text style={{ lineHeight: 18 }}>Seen by </Text>
+              <View
+                style={{ backgroundColor: 'transparent' }}
+                hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+              >
+                <Link
+                  // href={`/${postedBy}`}
+                  href={`/users/H5X`}
+                  style={{
+                    color: theme.colors.primary,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  {postedBy}
+                </Link>
+              </View>
             </View>
           }
           subtitleStyle={[{ color: theme.colors.text }, styles.cardSubtitle]}
@@ -170,7 +187,6 @@ export default function ClientProfile() {
               }}
             /> */}
 
-          {/* RUNTIME ERROR IS SOMEWHERE IN THIS BLOCK */}
           <Swiper
             // containerStyle={styles.swiperContainer}
             containerStyle={{ flex: 1, aspectRatio: 1, borderRadius: 30 }}
