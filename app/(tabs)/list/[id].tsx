@@ -13,10 +13,14 @@ import {
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { Button, Switch } from 'react-native-paper';
-import { useNavigation, useRouter } from 'expo-router';
+import { useNavigation, useRouter, useSearchParams } from 'expo-router';
 
-const UserProfile = () => {
+const NewsDetails = () => {
+  const { id } = useSearchParams();
+
   return (
+    <Text>NewsDetails number {id}</Text>
+
     // <SafeAreaView style={styles.container}>
     //   <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
     //     {/* Header with profile image and access to DMs and ability to change image */}
@@ -151,11 +155,10 @@ const UserProfile = () => {
     //     </View>
     //   </ScrollView>
     // </SafeAreaView>
-    <Text>You are in DYNAMIC [user]</Text>
   );
 };
 
-export default UserProfile;
+export default NewsDetails;
 
 const styles = StyleSheet.create({
   container: {
