@@ -162,19 +162,7 @@ export default function ClientProfile() {
               <View
                 style={{ backgroundColor: 'transparent' }}
                 hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-              >
-                <Link
-                  // href={`/${postedBy}`}
-                  href={`/users/H5X`}
-                  style={{
-                    color: theme.colors.primary,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  {postedBy}
-                </Link>
-              </View>
+              ></View>
             </View>
           }
           subtitleStyle={[{ color: theme.colors.text }, styles.cardSubtitle]}
@@ -269,8 +257,19 @@ export default function ClientProfile() {
           <Paragraph style={{ color: 'red' }} onPress={onClickInstagramLink}>
             TEST LINK
           </Paragraph>
+          <Link
+            href={{ pathname: 'users/123', params: { id: 123 } }}
+            style={{
+              color: theme.colors.primary,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            POSTED BY SOMEONE
+          </Link>
         </Card.Content>
       </Card>
+
       <Modal
         visible={phoneModalVisible}
         animationType='slide'

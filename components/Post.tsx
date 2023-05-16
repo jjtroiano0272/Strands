@@ -176,6 +176,7 @@ export default function Post({
 
         // For troubleshooting this Linking structure: https://www.youtube.com/live/yyGS0adZdsU?feature=share&t=2760
         pathname: `${postData?.clientName}`,
+        // pathname: `/users/h5x`,
         params: {
           name: `${postData?.clientName}`,
           // imgSrc: postData?.media,
