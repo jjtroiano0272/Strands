@@ -3,7 +3,7 @@ import React from 'react';
 import { DarkTheme, useTheme } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { List, MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
-import useFetch from '../../../hooks/useFetch';
+import useFetch from '../../hooks/useFetch';
 
 const Messages = () => {
   const theme = useTheme();

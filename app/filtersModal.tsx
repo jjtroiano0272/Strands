@@ -5,7 +5,6 @@ import { useContext, useState } from 'react';
 import { Alert, Platform, StyleSheet } from 'react-native';
 import { Button } from 'react-native-paper';
 
-import EditScreenInfo from '../components/EditScreenInfo';
 import { Text, View } from '../components/Themed';
 import { useAuth } from '../context/auth';
 import { UserContext } from '../context/UserContext';

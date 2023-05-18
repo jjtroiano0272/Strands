@@ -1,13 +1,6 @@
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-} from 'react-native';
+import { StyleSheet } from 'react-native';
 import React, { useContext, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { View, Keyboard } from 'react-native';
 import {
   Button,
   HelperText,
@@ -16,20 +9,14 @@ import {
   Snackbar,
   TextInput,
 } from 'react-native-paper';
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-} from 'firebase/auth';
-import { DarkTheme, useTheme } from '@react-navigation/native';
-import { firebaseConfig } from '../../firebaseConfig';
-import { Link, Stack } from 'expo-router';
-import { UserContext } from '../../context/UserContext';
-import { Auth as SignInWithPopupButton } from '../../components/auth/Auth';
-import { Keyboard } from 'react-native';
-import { useAuth } from '../../context/auth';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { useTheme } from '@react-navigation/native';
+import { Stack } from 'expo-router';
+import { UserContext } from '~/context/UserContext';
+import { Auth as SignInWithPopupButton } from '~/components/auth/Auth';
+import { useAuth } from '~/context/auth';
 
-export default function Register() {
+export default function RegisterPage() {
   const auth = getAuth();
   const myAuth = useAuth();
 

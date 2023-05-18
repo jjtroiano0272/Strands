@@ -6,7 +6,7 @@ export type AuthContextType = {
   signIn: () => void;
   signOut: () => void;
   user: any; // TODO Define it somehow...
-  sortFeedBy: string[]
+  sortFeedBy: string[];
 };
 
 // Property 'signOut' does not exist on type 'AuthContextType | null'.ts(2339)
@@ -24,8 +24,10 @@ function useProtectedRoute(user: any) {
   const router = useRouter();
 
   useEffect(() => {
-    const inAuthGroup: boolean = segments[0] === '(auth)';
+    // const inAuthGroup: boolean = segments[0] === '(tabs)';
+    const inAuthGroup: boolean = true;
 
+    console.log(`inAuthGroup: ${inAuthGroup}\nuser: ${user}`);
     console.log(`Path: ${segments.join(' > ')}`);
 
     if (
@@ -34,22 +36,19 @@ function useProtectedRoute(user: any) {
       !inAuthGroup
     ) {
       // Redirect to the sign-in page.
-      router.replace('/(auth)/login');
+      // router.replace('(tabs)/list');
 
       console.log(`LOGGED OUT`);
     } else if (user && inAuthGroup) {
       // Redirect away from the sign-in page.
-
-      router.replace('/home');
-
-      console.log(`LOGGED IN`);
+      router.replace('home');
     }
   }, [user, segments]);
 }
 
 export function Provider(props: any) {
   const [user, setAuth] = useState<any | null>(null);
-  const [sortFeedBy, setSortFeedBy] = useState<string[]>([''])
+  const [sortFeedBy, setSortFeedBy] = useState<string[]>(['']);
 
   const signIn = () => {
     console.log(`Signing in from provider`);
@@ -99,7 +98,7 @@ export function Provider(props: any) {
         signIn,
         signOut,
         user,
-        sortFeedBy
+        sortFeedBy,
       }}
     >
       {props.children}

@@ -14,11 +14,11 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import * as ExpoLinking from 'expo-linking';
-import { IAPIData, SearchParams } from '../@types/types';
-import Colors from '../constants/Colors';
-import useFetch from '../hooks/useFetch';
-import { ExternalLink } from '../components/ExternalLink';
-import { MonoText } from '../components/StyledText';
+import { IAPIData, SearchParams } from '../../@types/types';
+import Colors from '../../constants/Colors';
+import useFetch from '../../hooks/useFetch';
+import { ExternalLink } from '../../components/ExternalLink';
+import { MonoText } from '../../components/StyledText';
 import {
   Avatar,
   Button,
@@ -30,7 +30,7 @@ import {
   MD3DarkTheme,
   List,
 } from 'react-native-paper';
-import { Text, View } from '../components/Themed';
+import { Text, View } from '../../components/Themed';
 import {
   Link,
   Stack,
@@ -43,7 +43,7 @@ import {
 } from 'expo-router';
 import { useTheme } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { UserContext } from '../context/UserContext';
+import { UserContext } from '../../context/UserContext';
 import Swiper from 'react-native-swiper';
 
 export default function ClientProfile() {
@@ -158,7 +158,7 @@ export default function ClientProfile() {
                 backgroundColor: 'transparent',
               }}
             >
-              <Text style={{ lineHeight: 18 }}>Seen by </Text>
+              <Text style={{ lineHeight: 18 }}>Seen by {postedBy}</Text>
               <View
                 style={{ backgroundColor: 'transparent' }}
                 hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}

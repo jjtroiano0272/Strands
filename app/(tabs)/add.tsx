@@ -24,8 +24,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MediaLibraryPermissionResponse } from 'expo-image-picker';
 import { getStorage, ref, uploadBytes } from 'firebase/storage';
 import { uuidv4 } from '@firebase/util';
-import ButtonWithRipple from '../../../components/RippleButton';
-import RippleButton from '../../../components/RippleButton';
+import ButtonWithRipple from '../../components/RippleButton';
+import RippleButton from '../../components/RippleButton';
 import Swiper from 'react-native-swiper';
 
 export default function Add() {

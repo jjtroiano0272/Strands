@@ -1,15 +1,84 @@
-import { View, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Tab } from 'react-native-elements';
-import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 export default () => {
+  const iconSize = 24;
+
   return (
-    <Tabs>
-      <Tabs.Screen name='home' />
-      <Tabs.Screen name='profile' />
-      <Tabs.Screen name='list' options={{ tabBarLabel: 'News' }} />
+    <Tabs
+      screenOptions={{
+        tabBarShowLabel: true,
+        tabBarActiveTintColor: 'purple',
+      }}
+    >
+      <Tabs.Screen
+        name='feed'
+        options={{
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name='home' size={iconSize} color={color} />
+          ),
+          tabBarLabel: 'Home',
+        }}
+      />
+      <Tabs.Screen
+        name='profile'
+        options={{
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name='user-circle' size={iconSize} color={color} />
+          ),
+          tabBarLabel: 'Profile',
+        }}
+      />
+      <Tabs.Screen
+        name='list'
+        options={{
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name='newspaper-o' size={iconSize} color={color} />
+          ),
+          tabBarLabel: 'News',
+        }}
+      />
+      {/* <Tabs.Screen
+        name='search'
+        options={{
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name='search' size={iconSize} color={color} />
+          ),
+          tabBarLabel: 'Search',
+        }}
+      />
+      <Tabs.Screen
+        name='add/index'
+        options={{
+          tabBarIcon: ({ color, focused }) => (
+            <FontAwesome
+              name='plus'
+              size={iconSize}
+              color={focused ? (color = 'red') : color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name='messages/index'
+        options={{
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name='envelope' size={iconSize} color={color} />
+          ),
+          tabBarLabel: 'Messages',
+        }}
+      />
+      <Tabs.Screen
+        name='add/save'
+        options={{
+          tabBarButton: () => null,
+        }}
+      /> */}
     </Tabs>
   );
 };
+
+const styles = StyleSheet.create({});

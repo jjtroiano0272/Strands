@@ -52,16 +52,16 @@ import { getAuth, User } from 'firebase/auth';
 // import { firebaseApp } from '../_layout';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { auth, db, firebaseConfig } from '../../../firebaseConfig';
+import { auth, db, firebaseConfig } from '../../firebaseConfig';
 import { ScrollView } from 'react-native-gesture-handler';
 import { firebase } from '@react-native-firebase/auth';
-import StarRating from '../../../components/StarRating';
+import StarRating from '../../components/StarRating';
 import {
   labels as labelsConst,
   hairTypeImages as hairTypeImagesConst,
-} from '../../../constants/Labels';
-import { FireBasePost } from '../../../@types/types';
-import { useGeoLocation } from '../../../hooks/useGeolocation';
+} from '../../constants/Labels';
+import { FireBasePost } from '../../@types/types';
+import { useGeoLocation } from '../../hooks/useGeolocation';
 
 type RouteParams = {
   imgUris: string;

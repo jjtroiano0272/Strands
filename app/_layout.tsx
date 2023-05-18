@@ -1,33 +1,18 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Slot } from 'expo-router';
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
-  useRoute,
 } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Redirect, SplashScreen, Stack, Tabs, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Dimensions,
-  Pressable,
-  View,
-  useColorScheme,
-} from 'react-native';
+import { SplashScreen, Stack, useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { Dimensions, useColorScheme } from 'react-native';
 // Import the functions you need from the SDKs you need
-import { initializeApp } from 'firebase/app';
-import { getAnalytics } from 'firebase/analytics';
-import { firebaseConfig } from '../firebaseConfig';
-import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
-import { UserProvider } from '../context/UserContext';
-import { Provider as ReduxProvider } from 'react-redux';
-import { createStoreHook } from 'react-redux';
-import rootReducer from '../redux/reducers';
+import { AntDesign } from '@expo/vector-icons';
 import { Provider as AuthProvider } from '../context/auth';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-import { Avatar, IconButton } from 'react-native-paper';
+import { Button, IconButton } from 'react-native-paper';
 // import thunk from 'redux-thunk';
 
 // const store = createStoreHook(rootReducer);
@@ -68,8 +53,8 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
+  const { height } = Dimensions.get('window');
 
   if (typeof process !== 'undefined' && process.on) {
     process.on('unhandledRejection', (reason, promise) => {
@@ -77,8 +62,6 @@ function RootLayoutNav() {
       // Optionally, send this to an error tracking service like Sentry
     });
   }
-
-  const { height } = Dimensions.get('window');
 
   // const route = useRoute();
   // const showFilterButton = route.name === 'feed'; // Set to true only on the 'feed' route
@@ -118,10 +101,21 @@ function RootLayoutNav() {
           }}
         >
           <Stack.Screen
-            name='home'
-            options={{ headerShown: true, title: '' }}
+            name='index'
+            options={{ headerTitle: 'Login', headerShown: false }}
+          />
+          <Stack.Screen
+            name='register'
+            options={{
+              headerTitle: 'Create Account',
+              headerRight: () => (
+                <Button onPress={() => router.push('modal')}>Open</Button>
+              ),
+            }}
           />
           <Stack.Screen name='modal' options={{ presentation: 'modal' }} />
+          <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
+
           <Stack.Screen
             name='filtersModal'
             options={{
@@ -130,8 +124,6 @@ function RootLayoutNav() {
             }}
           />
         </Stack>
-
-        {/* <Slot /> */}
 
         {/* </UserProvider> */}
       </AuthProvider>
