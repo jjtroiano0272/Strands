@@ -13,6 +13,7 @@ import { AntDesign } from '@expo/vector-icons';
 import { Provider as AuthProvider } from '../context/auth';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { Button, IconButton } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 // import thunk from 'redux-thunk';
 
 // const store = createStoreHook(rootReducer);
@@ -98,31 +99,33 @@ function RootLayoutNav() {
                 </TouchableOpacity>
               </>
             ),
+            headerTitle: '',
           }}
         >
-          <Stack.Screen
-            name='index'
-            options={{ headerTitle: 'Login', headerShown: false }}
-          />
-          <Stack.Screen
-            name='register'
-            options={{
-              headerTitle: 'Create Account',
-              headerRight: () => (
-                <Button onPress={() => router.push('modal')}>Open</Button>
-              ),
-            }}
-          />
-          <Stack.Screen name='modal' options={{ presentation: 'modal' }} />
-          <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
-
-          <Stack.Screen
-            name='filtersModal'
-            options={{
-              presentation: 'modal',
-              contentStyle: { backgroundColor: 'red' },
-            }}
-          />
+          <SafeAreaView>
+            <Stack.Screen
+              name='login'
+              options={{ headerTitle: 'Login', headerShown: false }}
+            />
+            <Stack.Screen
+              name='register'
+              options={{
+                headerTitle: 'Create Account',
+                headerRight: () => (
+                  <Button onPress={() => router.push('modal')}>Open</Button>
+                ),
+              }}
+            />
+            <Stack.Screen name='modal' options={{ presentation: 'modal' }} />
+            <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
+            <Stack.Screen
+              name='filtersModal'
+              options={{
+                presentation: 'modal',
+                contentStyle: { backgroundColor: 'red' },
+              }}
+            />
+          </SafeAreaView>
         </Stack>
 
         {/* </UserProvider> */}

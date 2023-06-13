@@ -4,11 +4,13 @@ import { Button, TouchableRipple } from 'react-native-paper';
 import Ripple from 'react-native-material-ripple';
 
 export default function RippleButton(props: any) {
-  const { children, ...rest } = props; // Extracting children from props
+  const { children, style, ...rest } = props; // Extracting children from props
 
   return (
-    <Ripple {...rest}>
-      <Button {...rest}>{children}</Button>
+    <Ripple rippleContainerBorderRadius={style.borderRadius} {...rest}>
+      <Button style={style} {...rest}>
+        {children}
+      </Button>
     </Ripple>
   );
 }

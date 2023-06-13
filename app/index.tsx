@@ -47,10 +47,12 @@ import React, { useContext, useEffect, useState } from 'react';
 import {
   Button,
   HelperText,
+  IconButton,
   MD3DarkTheme,
   MD3LightTheme,
   Snackbar,
   TextInput,
+  MD3Colors,
 } from 'react-native-paper';
 import { View } from 'react-native';
 import {
@@ -63,7 +65,7 @@ import {
   UserCredential,
 } from 'firebase/auth';
 import { DarkTheme, useTheme } from '@react-navigation/native';
-import { firebaseConfig } from '../firebaseConfig';
+import { PASS, USER, firebaseConfig } from '../firebaseConfig';
 import { UserContext } from '../context/UserContext';
 import { Auth as SignInWithPopup } from '../components/auth/Auth';
 import { Link, Stack } from 'expo-router';
@@ -73,6 +75,7 @@ import { SAMLAuthProvider, GoogleAuthProvider } from 'firebase/auth';
 import Particles from 'react-particles';
 import { AnimatedBackground } from '../components/AnimatedBackground';
 import { getSeedData } from '../utils/getSeedData';
+import RippleButton from '~/components/RippleButton';
 // import ParticleAnimation from 'react-particle-animation';
 
 export default function LoginPage() {
@@ -153,14 +156,12 @@ export default function LoginPage() {
   };
 
   const handleDebugLogin = () => {
-    signInWithEmailAndPassword(
-      firebaseAuth,
-      'jonathan.j.troiano@gmail.com',
-      'pYnrom-mywgi7-fonzis'
-    )
+    console.log('debug logging in');
+
+    signInWithEmailAndPassword(firebaseAuth, USER, PASS)
       .then(res => {
         console.log(`\x1b[34mlogin res: ${JSON.stringify(res, null, 2)}`);
-        myAuth?.signIn(); 
+        myAuth?.signIn();
         userCtx?.setIsLoggedIn(true);
       })
       // }
@@ -218,7 +219,6 @@ export default function LoginPage() {
         onChangeText={email => setEmail(email)}
         error={!!emailError}
         onBlur={validateEmail}
-        autoFocus={true}
       />
       <HelperText type='error' visible={!!emailError}>
         Email address is invalid!
@@ -238,26 +238,16 @@ export default function LoginPage() {
         Email address is invalid!
       </HelperText>
 
-      <View style={{ flex: 0.5, flexDirection: 'row' }}>
-        {/* TODO: To go back to normal, ONLY keep this button */}
-        <Button
-          // style={{ margin: 10, marginTop: 30, width: 300 }}
-          mode='contained'
-          contentStyle={{ padding: 10 }}
-          onPress={handleLogin}
-        >
-          Login
-        </Button>
-        <Button
-          // style={{ margin: 10, marginTop: 30, width: 300 }}
-          mode='contained'
-          contentStyle={{ padding: 10 }}
-          buttonColor='red'
-          onPress={handleDebugLogin}
-        >
-          DEBUG LOGIN
-        </Button>
-      </View>
+      {/* TODO: To go back to normal, ONLY keep this button */}
+      <RippleButton
+        style={{ width: 300 }}
+        mode='contained'
+        contentStyle={{ padding: 10 }}
+        onPress={handleLogin}
+        onLongPress={handleDebugLogin} // TODO: DON'T LEAVE THIS OPEN
+      >
+        Login
+      </RippleButton>
       <Link href='/register' asChild>
         <Button
           style={{ margin: 10, width: 300 }}
@@ -279,16 +269,20 @@ export default function LoginPage() {
       >
         {['google', 'microsoft', 'apple'].map(
           (provider: string, index: number) => (
-            <FontAwesome.Button
-              key={index}
-              style={{ padding: 5 }}
-              size={42}
-              name={provider}
-              backgroundColor='transparent'
-              color='#ccc'
-              children={null}
-              onPress={() => handleSSOLogin(provider)}
-            />
+            <RippleButton
+              onPress={() => console.log('hi')}
+              style={{ borderRadius: 50 }}
+            >
+              <IconButton
+                key={provider}
+                icon={provider}
+                animated={true}
+                theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+                iconColor='#ccc'
+                size={42}
+                // onPress={() => handleSSOLogin(provider)}
+              />
+            </RippleButton>
           )
         )}
       </View>

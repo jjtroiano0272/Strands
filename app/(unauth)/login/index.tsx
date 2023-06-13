@@ -28,16 +28,16 @@ import {
   UserCredential,
 } from 'firebase/auth';
 import { DarkTheme, useTheme } from '@react-navigation/native';
-import { firebaseConfig } from '../../firebaseConfig';
-import { UserContext } from '../../context/UserContext';
-import { Auth as SignInWithPopup } from '../../components/auth/Auth';
+import { firebaseConfig } from '../../../firebaseConfig';
+import { UserContext } from '../../../context/UserContext';
+import { Auth as SignInWithPopup } from '../../../components/auth/Auth';
 import { Link, Stack } from 'expo-router';
-import { useAuth } from '../../context/auth';
+import { useAuth } from '../../../context/auth';
 import { SAMLAuthProvider, GoogleAuthProvider } from 'firebase/auth';
 // import { BubbleBackground } from '../../components/AnimatedBackground';
 import Particles from 'react-particles';
-import { AnimatedBackground } from '../../components/AnimatedBackground';
-import { getSeedData } from '../../utils/getSeedData';
+import { AnimatedBackground } from '../../../components/AnimatedBackground';
+import { getSeedData } from '../../../utils/getSeedData';
 // import ParticleAnimation from 'react-particle-animation';
 
 export default function Login() {

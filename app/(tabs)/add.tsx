@@ -24,8 +24,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MediaLibraryPermissionResponse } from 'expo-image-picker';
 import { getStorage, ref, uploadBytes } from 'firebase/storage';
 import { uuidv4 } from '@firebase/util';
-import ButtonWithRipple from '../../components/RippleButton';
-import RippleButton from '../../components/RippleButton';
+import ButtonWithRipple from '~/components/RippleButton';
+import RippleButton from '~/components/RippleButton';
 import Swiper from 'react-native-swiper';
 
 export default function Add() {
@@ -34,7 +34,7 @@ export default function Add() {
   const route = useRoute();
   const [type, setType] = useState(CameraType.back);
   const [camera, setCamera] = useState<Camera | null>(null);
-  const [selectedImages, setSelectedImages] = useState<string[] | null>(null);
+  const [selectedImages, setSelectedImages] = useState<string[]>();
   // const [imagePaths, setImagePaths] = useState<string[] | null>(null);
   const [fetchingData, setFetchingData] = useState(false);
   const [loading, setLoading] = useState(false);

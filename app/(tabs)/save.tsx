@@ -48,20 +48,19 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { getAuth, User } from 'firebase/auth';
-
-// import { firebaseApp } from '../_layout';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { auth, db, firebaseConfig } from '../../firebaseConfig';
-import { ScrollView } from 'react-native-gesture-handler';
 import { firebase } from '@react-native-firebase/auth';
-import StarRating from '../../components/StarRating';
+import { ScrollView } from 'react-native-gesture-handler';
+// Local Imports
+import { auth, db, firebaseConfig } from 'firebaseConfig';
+import StarRating from '~/components/StarRating';
 import {
   labels as labelsConst,
   hairTypeImages as hairTypeImagesConst,
-} from '../../constants/Labels';
-import { FireBasePost } from '../../@types/types';
-import { useGeoLocation } from '../../hooks/useGeolocation';
+} from '~/constants/Labels';
+import { useGeoLocation } from '~/hooks/useGeolocation';
+import { FireBasePost } from '~/@types/types';
 
 type RouteParams = {
   imgUris: string;
@@ -103,14 +102,6 @@ export default function save() {
     productsUsed: false,
     formulaType: false,
   });
-  // const [dropdownData, setDropdownData] = useState({
-  //   hairType: {
-  //     visible: false,
-  //     items: hairTypeItems,
-  //   },
-  //   productsUsed: false,
-  //   formulaType: false,
-  // });
 
   const [dropdownValue, setDropdownValue] = useState<string[] | null>(null);
   const [formulaType, setFormulaType] = useState([
@@ -378,7 +369,7 @@ export default function save() {
                 />
               ))}
             </Swiper>
-            <StarRating />
+            {/* <StarRating /> */}
             {/* Hair type */}
             <DropDownPicker
               theme={!theme.dark ? 'LIGHT' : 'DARK'}

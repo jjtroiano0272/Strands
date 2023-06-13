@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { createAvatar } from '@dicebear/core';
 import { lorelei } from '@dicebear/collection';
 import { SvgXml } from 'react-native-svg';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { faker } from '@faker-js/faker';
 import {
   ActionSheetIOS,
@@ -18,7 +18,7 @@ import useFetch from '../hooks/useFetch';
 import { ExternalLink } from './ExternalLink';
 import { MonoText } from './StyledText';
 import {
-  Avatar as PaperAvatar,
+  Avatar,
   Button,
   Card,
   Title,
@@ -29,28 +29,68 @@ import {
   useTheme as usePaperTheme,
 } from 'react-native-paper';
 import { Text, View } from './Themed';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { DarkTheme, useTheme } from '@react-navigation/native';
-import { Timestamp } from 'firebase/firestore';
-import Avatar from 'boring-avatars';
+import {
+  Timestamp,
+  arrayRemove,
+  arrayUnion,
+  collection,
+  doc,
+  getDocs,
+  onSnapshot,
+  query,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import Swiper from 'react-native-swiper';
 import { style } from 'd3';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getDatabase, ref, child, push, update } from 'firebase/database';
+import { db } from 'firebaseConfig';
 
-export default function Post({
-  imgSrc,
-  auth,
-  displayName,
-  clientName,
-  comments,
-  createdAt,
-  isSeasonal,
-  productsUsed,
-  rating,
-  postData,
-}: PostProps) {
+export default function Post({ postData, savedPosts }: PostProps) {
   const theme = useTheme();
+  const router = useRouter();
   const paperTheme = usePaperTheme();
-  const dummyPhoneNumber = faker.phone.number();
+  const [isSaved, setIsSaved] = useState(false);
+
+  const savePost = async (postId: string) => {
+    const uid = getAuth().currentUser?.uid;
+
+    if (uid) {
+      await updateDoc(doc(db, 'users', uid), {
+        savedPosts: arrayUnion(postId),
+      });
+    }
+
+    setIsSaved(true);
+  };
+
+  const unsavePost = async (postId: string) => {
+    const uid = getAuth().currentUser?.uid;
+
+    if (uid) {
+      await updateDoc(doc(db, 'users', uid), {
+        savedPosts: arrayRemove(postId),
+      }).then(res => `Post updated successfully! ${res}`);
+    }
+
+    setIsSaved(false);
+  };
+
+  const uid = getAuth().currentUser?.uid;
+  const unsub =
+    uid &&
+    onSnapshot(doc(db, 'users', uid), doc => {
+      // console.log(
+      //   'Current data: ',
+      //   JSON.stringify(doc?.data()?.savedPosts, null, 2)
+      // );
+
+      const source = doc.metadata.hasPendingWrites ? 'Local' : 'Server';
+      console.log(source, ' data: ', JSON.stringify(doc.data(), null, 2));
+    });
 
   const getElapsedTime = (
     time1: number,
@@ -93,99 +133,69 @@ export default function Post({
   const showActionSheet = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
+    let actionSheetOptions = [
+      'Cancel',
+      !savedPosts?.includes(postData?.docId || '')
+        ? 'Save Post'
+        : 'Unsave Post',
+      `View ${postData?.clientName}'s profile`,
+      `View ${postData?.auth?.displayName}'s profile`,
+    ];
+
     ActionSheetIOS.showActionSheetWithOptions(
       {
-        options: [
-          'Cancel',
-          'Save Post',
-          `View Profile for ${postData?.auth?.displayName}`,
-        ],
+        options: actionSheetOptions,
         // destructiveButtonIndex: 2,
         cancelButtonIndex: 0,
         userInterfaceStyle: 'dark',
       },
       buttonIndex => {
-        if (buttonIndex === 0) {
-          // cancel action
-        } else if (buttonIndex === 1) {
-          console.warn(`Placeholder for saving post`);
+        if (!savedPosts?.includes(postData?.docId || '')) {
+          ('Save Post');
+        } else if (savedPosts?.includes(postData?.docId || '') && isSaved) {
+          ('UnsavePost');
+        }
+
+        // If post is not saved, show the 'Save Post' option
+        if (
+          buttonIndex === 1 &&
+          postData?.docId &&
+          !savedPosts?.includes(postData?.docId)
+        ) {
+          savePost(postData.docId);
+        }
+        // If the post is already saved, how 'Unsave post' option
+        else if (
+          buttonIndex === 1 &&
+          postData?.docId &&
+          savedPosts?.includes(postData?.docId)
+        ) {
+          unsavePost(postData.docId);
         } else if (buttonIndex === 2) {
-          console.warn(`Placeholder for viewing stylist`);
+          router.push({
+            pathname: `clients/${postData?.clientName}`,
+            params: { clientName: postData?.clientName },
+          });
+        }
+        // Go to user's profile
+        else if (buttonIndex === 3) {
+          router.push({
+            pathname: `users/${postData?.auth?.uid}`,
+            // params: { docId: docId },
+          });
+        } else if (buttonIndex === 0) {
+          return;
         }
       }
     );
   };
 
-  const CoverImage = () => {
-    // TODO: Bad practice!
-    /**
-     * Three types:
-     *    Multiple images => Swiper
-     *    One Image       => Cover Image
-     *    No Image        => Placeholder image?
-     */
-    if (postData?.media?.image?.length) {
-      if (postData?.media?.image?.length! > 1) {
-        return (
-          <Swiper
-            style={styles.wrapper}
-            containerStyle={styles.swiperContainer}
-            onIndexChanged={() => Haptics.ImpactFeedbackStyle.Light}
-          >
-            {postData?.media?.image?.map((imgUri, index) => (
-              <Image
-                key={index}
-                style={styles.swiperImage}
-                source={{
-                  uri: imgUri,
-                }}
-              />
-            ))}
-          </Swiper>
-        );
-      } else if (postData.media.image.length === 1) {
-        return (
-          <Card.Cover
-            source={{
-              uri: postData?.media?.image[0],
-            }}
-          />
-        );
-      }
-    }
-    return <Card.Cover source={{ uri: 'https://unsplash.it/300/300' }} />;
-  };
-
   return (
     <Link
       href={{
-        // pathname: `/${postData?.clientName}`,
-        // params: {
-        //   imgSrc: 'https://unsplash.it/300',
-        //   //   clientName: clientName,
-        //   //   comments: comments,
-        //   //   displayName: displayName,
-        //   // imgSrc: postData?.media?.image ?? undefined,
-        //   //   username: displayName,
-        //   //   //   auth,
-        //   //   //   createdAt,
-        //   //   //   isSeasonal,
-        //   //   //   productsUsed,
-        //   //   //   rating,
-        // },
-
-        // For troubleshooting this Linking structure: https://www.youtube.com/live/yyGS0adZdsU?feature=share&t=2760
-        pathname: `${postData?.clientName}`,
-        // pathname: `/users/h5x`,
+        pathname: `posts/foo`,
         params: {
-          name: `${postData?.clientName}`,
-          // imgSrc: postData?.media,
-          imgParam: encodeURIComponent(
-            postData?.media?.image?.join(',') as string
-          ),
-          phoneNumber: `${postData?.phoneNumber}`,
-          postedBy: postData?.auth?.displayName,
-          comments: postData?.comments,
+          docId: postData?.docId,
         },
       }}
       onLongPress={showActionSheet}
@@ -227,7 +237,7 @@ export default function Post({
           }
           // TODO: Have the DB autogenerate the image if the user doesn't have profileimage
           left={props => (
-            <PaperAvatar.Image
+            <Avatar.Image
               {...props}
               size={36}
               source={{
@@ -239,13 +249,13 @@ export default function Post({
           )}
           right={props =>
             // TODO Make a banner, not a button
-            isSeasonal && (
-              <PaperAvatar.Icon
+            savedPosts?.includes(postData?.docId || '') && (
+              <Avatar.Icon
                 {...props}
-                style={{ backgroundColor: 'transparent' }}
+                style={{ backgroundColor: 'transparent', top: -30 }}
                 color={theme.colors.primary}
                 size={20}
-                icon='airplane'
+                icon='bookmark'
               />
             )
           }

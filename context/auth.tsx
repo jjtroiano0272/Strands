@@ -41,9 +41,9 @@ function useProtectedRoute(user: any) {
       console.log(`LOGGED OUT`);
     } else if (user && inAuthGroup) {
       // Redirect away from the sign-in page.
-      router.replace('home');
+      router.replace('feed');
     }
-  }, [user, segments]);
+  }, [user]);
 }
 
 export function Provider(props: any) {

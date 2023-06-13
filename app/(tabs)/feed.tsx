@@ -1,31 +1,21 @@
-import chalk from 'chalk';
 import BottomSheet, {
   BottomSheetModal,
   BottomSheetModalProvider,
 } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import {
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  TouchableOpacity,
-  useWindowDimensions,
-  Image,
-} from 'react-native';
+import { FlatList, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { useTheme } from '@react-navigation/native';
-import { comments, images as dummyImages } from '../../constants/dummyData';
 import React from 'react';
-import { ScrollView } from 'react-native';
 import { FireBasePost } from '../../@types/types';
-import useFetch from '../../hooks/useFetch';
 import Post from '../../components/Post';
-import { Stack } from 'expo-router';
 import {
   DocumentData,
   Timestamp,
   collection,
+  doc,
+  getDoc,
   getDocs,
   query,
   where,
@@ -51,36 +41,18 @@ import {
   sortLabelsObj,
   springConfig,
 } from '../../constants/constants';
-import { FirebaseError } from 'firebase/app';
-import { faker } from '@faker-js/faker';
-import axios from 'axios';
-import { getSeedData } from '../../utils/getSeedData';
-
-type RedditAPIData = {
-  data: [
-    {
-      data: {
-        title: string;
-        thumbnail: 'default' | 'self' | 'nsfw' | any;
-        url_overridden_by_dest: string;
-        author: string;
-      };
-    }
-  ];
-  error: string | null;
-  loading: string | boolean | null;
-};
+import RippleButton from '~/components/RippleButton';
+import { Stack } from 'expo-router';
 
 const Feed = () => {
-  // const userPostsCollectionRef = collection(db, 'posts', userID!, 'userPosts');
   const theme = useTheme();
-  const [myDbData, setMyDbData] = useState<FireBasePost[] | undefined | null>(
-    null
-  );
-  const [initialDbData, setInitialDbData] = useState<
-    FireBasePost[] | undefined | null
+  const [myDbData, setMyDbData] = useState<
+    (FireBasePost | DocumentData | string)[] | undefined | null
   >(null);
-  const userPostsCollectionRef = collection(db, 'posts');
+  const [initialDbData, setInitialDbData] = useState<
+    (FireBasePost | DocumentData | string)[] | undefined | null
+  >(null);
+  const [savedPosts, setSavedPosts] = useState<string[]>();
   const [refreshing, setRefreshing] = useState(false);
   const dimensions = useWindowDimensions();
   const top = useSharedValue(dimensions.height / 1.5);
@@ -92,12 +64,13 @@ const Feed = () => {
   } | null>(null);
   const [selectedFilters, setSelectedFilters] = useState<string[] | null>(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  // const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  let bottomSheetModalRef: any;
 
   const [pressed, setPressed] = useState<boolean | null>(null);
   const [finalData, setFinalData] = useState<unknown[] | null>(null);
   const currentUser = getAuth().currentUser;
-  const userID = getAuth().currentUser?.uid;
+  const currentUserID = getAuth().currentUser?.uid;
   const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
@@ -118,59 +91,56 @@ const Feed = () => {
   const [sortingBy, setSortingBy] = useState<
     string | number | Timestamp | null
   >(null);
+  const [errors, setErrors] = useState<unknown>();
+  const [refreshingData, setRefreshingData] = useState(false);
 
-  const apiUrl = 'https://www.reddit.com/r/FancyFollicles.json';
+  // API initalizers
+  const userPostsCollectionRef = collection(db, 'posts');
 
   /**
    *  ALL DATA CALLS
    */
   // TODO There's a better way to write this so the output gets stored in a var
-  const {
-    data: redditPlaceholderData,
-    error,
-    loading,
-  }: RedditAPIData = useFetch(apiUrl);
+  const fetchMyData = async () => {
+    let list: (DocumentData | string)[] = [];
 
-  const fetchMyData = () => {
-    let list: DocumentData[] = [];
-    getDocs(userPostsCollectionRef)
-      .then(querySnapshot => {
+    try {
+      getDocs(userPostsCollectionRef).then(querySnapshot => {
         querySnapshot.forEach(doc => {
-          list.push(doc.data());
-        });
+          const data = doc.data(); // Get the data object
+          data.docId = doc.id; // Add the id property with the value of doc.id
 
-        setMyDbData(list);
-        setInitialDbData(list);
-      })
-      .catch((error: FirebaseError) => {
-        console.log(
-          'Error getting document: \x1b[34m',
-          error.code,
-          error.message
-        );
+          list.push(data); // Push the modified object into the list array
+        });
       });
+
+      if (currentUserID) {
+        const docRef = doc(db, 'users', currentUserID);
+        const docSnap = await getDoc(docRef);
+
+        docSnap.exists()
+          ? setSavedPosts(docSnap.data().savedPosts)
+          : // docSnap.data() will be undefined in this case
+            console.log('No such document!');
+      } else {
+        console.warn('no current user!');
+      }
+
+      setMyDbData(list);
+      setInitialDbData(list);
+
+      // console.log(`list: ${JSON.stringify(list.slice(0, 2), null, 2)}`);
+    } catch (error) {
+      console.error(`Error getting document: \x1b[33m${error}`);
+
+      setErrors(error);
+    }
   };
 
   const fetchUsers = async (search: string) => {
-    // FIREBASE 8 METHODOLOGY
-    // Also, back then firestore didn't contain a fuzzy search
-    // firebase
-    //   .firestore()
-    //   .collection('users')
-    //   .where('name', '>=', search)
-    //   .get()
-    //   .then((snapshot: any) => {
-    //     let localUsers = snapshot.docs.map((doc: any) => {
-    //       const data = doc.data();
-    //       const id = doc.id;
-    //       return { id, ...data };
-    //     });
-
-    // FIREBASE 9 METHODOLOGY
-    // const db = getFirestore();
     try {
       const q = query(
-        collection(db, 'posts'),
+        userPostsCollectionRef,
         where('clientName', '>=', search)
       );
 
@@ -222,9 +192,9 @@ const Feed = () => {
 
   const sortByProperty = (
     property: string,
-    data: FireBasePost[] | undefined | null,
+    data: (string | FireBasePost | DocumentData)[] | null | undefined,
     asc?: boolean
-  ): FireBasePost[] | undefined | null => {
+  ): (string | FireBasePost | DocumentData)[] | undefined | null => {
     if (data) {
       if (asc) {
         return [...data].sort((a, b) => {
@@ -256,7 +226,7 @@ const Feed = () => {
   const getDataSortedBy = (
     varName: string | null
   ): FireBasePost[] | undefined | void => {
-    let result: FireBasePost[] | undefined | null;
+    let result: (string | FireBasePost | DocumentData)[] | null | undefined;
 
     switch (varName) {
       case 'createdAt':
@@ -297,7 +267,7 @@ const Feed = () => {
   };
 
   const handlePresentModalPress = useCallback(() => {
-    bottomSheetModalRef?.current?.present();
+    // bottomSheetModalRef?.current?.present();
   }, []);
 
   const handleSheetChanges = useCallback((index: number) => {
@@ -326,8 +296,14 @@ const Feed = () => {
       // return setMyDbData(initialDbData);
     }
 
+    console.log(`myDbData: ${myDbData && JSON.stringify(myDbData[0])}`);
+
     // TODO: Might need some catches in here just for data type mismatches
-    const result = myDbData?.filter(item => item[filterName]);
+    const result = myDbData?.filter(
+      (item: FireBasePost | DocumentData | string) =>
+        (item as DocumentData | FireBasePost)[filterName]
+    );
+
     setMyDbData(result);
   };
 
@@ -343,203 +319,138 @@ const Feed = () => {
     : myDbData;
 
   useEffect(() => {
-    // console.log(`filteredData: ${filteredData ? true : false}`);
-  }, [filteredData]);
-
-  useEffect(() => {
-    console.log(`selectedFilter: ${JSON.stringify(selectedFilters, null, 2)}`);
-  }, [selectedFilters]);
-
-  useEffect(() => {
-    // myDbData.map((item: FireBasePost, index: number) => (
-    // console.log(`myDbData: ${JSON.stringify(myDbData, null, 2)}`);
-  }, [myDbData]);
-
-  useEffect(() => {
     fetchMyData();
   }, [!myDbData]);
 
   useEffect(() => {
-    // console.log(`\x1b[32m${JSON.stringify(myDbData, null, 2)}`);
-    console.log(
-      `Sort direction: ${
-        dataIsCurrentlySortedBy?.sortAsc ? 'asc' : 'desc' ? 'null' : 'no'
-      }`
-    );
-  }, [dataIsCurrentlySortedBy?.sortAsc]);
+    fetchMyData();
+  }, []);
 
-  // useEffect(() => {
-  //   console.log(JSON.stringify(seed, null, 2));
-  // }, []);
+  useEffect(() => {}, [myDbData]);
 
   return (
     <>
-      <BottomSheetModalProvider>
-        <ScrollView
-          // style={styles.getStartedContainer}
-          style={
-            {
-              // paddingTop: Constants.statusBarHeight,
-            }
-          }
+      <Stack.Screen options={{ headerShown: false }} />
+      {!errors ? (
+        <FlatList
+          data={sortByProperty('createdAt', myDbData, false)?.filter(
+            (
+              item: any // TODO Clean up types
+            ) =>
+              !selectedFilters?.length ||
+              selectedFilters.every(filter => filter[item])
+          )}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          keyExtractor={(item, index) => index.toString()}
+          numColumns={2}
+          renderItem={({ item }) => (
+            <Post postData={item} savedPosts={savedPosts} />
+          )}
           contentContainerStyle={{
-            backgroundColor: '#ecf0f1',
-            padding: 8,
-            width: '100%',
-            justifyContent: 'space-between',
+            paddingVertical: 8,
+            paddingHorizontal: 4,
           }}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-        >
-          <Stack.Screen
-            options={{
-              headerShown: false,
-            }}
-          />
+          ListFooterComponent={
+            <BottomSheetModalProvider>
+              <Button
+                mode='outlined'
+                onPress={handlePresentModalPress}
+                contentStyle={{ borderRadius: 50 }}
+              >
+                Sort Results
+              </Button>
 
-          {/* TODO Add a filter button for like 'Show me people of x hair type within x miles of me, etc. */}
-          {/* <View style={styles.container}> */}
-          {/* TODO Offload to custom component with only the needed text, standardized format */}
-          {/* <View style={styles.cardsContainer}> */}
-          {/* {sortByProperty('createdAt', myDbData, false)
-                ?.filter(
-                  // TODO Narrow down the type checking
-                  (item: any) =>
-                    !selectedFilters?.length ||
-                    selectedFilters.every(filter => filter[item])
-                )
-                .map((post: FireBasePost, index: number) => {
-                  return (
-                    <Post
+              <BottomSheetModal
+                backgroundStyle={{ backgroundColor: theme.colors.background }}
+                handleIndicatorStyle={{ backgroundColor: theme.colors.text }}
+                index={0}
+                snapPoints={snapPoints}
+                // ref={node => (bottomSheetModalRef = node)}
+                enablePanDownToClose={true}
+                onChange={handleSheetChanges}
+              >
+                <Text>Sort by</Text>
+                {sortLabelsObj
+                  .filter(x => x.displayName !== null)
+                  .map((label, index: number) => (
+                    <List.Item
                       key={index}
-                      postData={post}
-                      // clientName: clientName,
-                      // comments,
-                      // displayName: username,
-                      // imgSrc,
-                      // username: username ?? uid,
-                      // createdAt={item?.createdAt?.seconds}
-                      // isSeasonal={item?.isSeasonal}
-                      // auth={item?.auth}
-                      // clientName={item?.clientName}
-                      // comments={item?.comments}
-                      // displayName={item?.auth?.displayName}
-                      // imgSrc={item?.media?.image ?? null}
-                      // username='foo'
-                      // rating={item?.rating}
+                      style={{ width: '100%' }}
+                      theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+                      title={label.displayName}
+                      left={props => (
+                        <List.Icon
+                          {...props}
+                          icon={label.icon}
+                          color={
+                            label?.varName === dataIsCurrentlySortedBy?.var
+                              ? theme?.colors.primary
+                              : ''
+                          }
+                        />
+                      )}
+                      right={props => {
+                        if (label.varName === dataIsCurrentlySortedBy?.var) {
+                          if (dataIsCurrentlySortedBy.sortAsc) {
+                            return (
+                              <List.Icon {...props} icon={'sort-ascending'} />
+                            );
+                          } else {
+                            return (
+                              <List.Icon {...props} icon={'sort-descending'} />
+                            );
+                          }
+                        }
+                        return <List.Icon {...props} icon={''} />;
+                      }}
+                      onPress={() => getDataSortedBy(label.varName)}
                     />
-                  );
-                })} */}
-
-          <FlatList
-            data={sortByProperty('createdAt', myDbData, false)?.filter(
-              (item: any) =>
-                !selectedFilters?.length ||
-                selectedFilters.every(filter => filter[item])
-            )}
-            // TODO: Ostensibly this should be setup to grab unique IDs from the DB structure...
-            keyExtractor={(item, index) => index.toString()}
-            numColumns={2}
-            renderItem={({ item }) => (
-              // <TouchableOpacity
-              //   style={{ flex: 1, margin: 4, aspectRatio: 1 }}
-              // >
-              //   <Image
-              //     style={{ flex: 1, resizeMode: 'cover' }}
-              //     source={{ uri: item.uri }}
-              //   />
-              // </TouchableOpacity>
-              <Post postData={item} />
-            )}
-            contentContainerStyle={{
-              paddingVertical: 8,
-              paddingHorizontal: 4,
-            }}
-          />
-          {/* </View> */}
-          {/* </View> */}
-
-          <Button
-            mode='outlined'
-            onPress={handlePresentModalPress}
-            contentStyle={{ borderRadius: 50 }}
-          >
-            Sort Results
-          </Button>
-        </ScrollView>
-
-        {/* TODO This should probably be in its own file to offload rendering logic */}
-        <BottomSheetModal
-          backgroundStyle={{ backgroundColor: theme.colors.background }}
-          handleIndicatorStyle={{ backgroundColor: theme.colors.text }}
-          index={0}
-          snapPoints={snapPoints}
-          ref={bottomSheetModalRef}
-          enablePanDownToClose={true}
-          onChange={handleSheetChanges}
-        >
-          <Text>Sort by</Text>
-          {sortLabelsObj
-            .filter(x => x.displayName !== null)
-            .map((label, index: number) => (
-              <List.Item
-                key={index}
-                style={{ width: '100%' }}
-                theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-                title={label.displayName}
-                left={props => (
-                  <List.Icon
-                    {...props}
-                    icon={label.icon}
-                    color={
-                      label?.varName === dataIsCurrentlySortedBy?.var
-                        ? theme?.colors.primary
-                        : ''
-                    }
-                  />
-                )}
-                right={props => {
-                  if (label.varName === dataIsCurrentlySortedBy?.var) {
-                    if (dataIsCurrentlySortedBy.sortAsc) {
-                      return <List.Icon {...props} icon={'sort-ascending'} />;
-                    } else {
-                      return <List.Icon {...props} icon={'sort-descending'} />;
-                    }
-                  }
-                  return <List.Icon {...props} icon={''} />;
-                }}
-                onPress={() => getDataSortedBy(label.varName)}
-              />
-            ))}
-          <Text>Filter</Text>
-          <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap' }}>
-            {sortLabelsObj
-              .filter(x => x.displayName !== null)
-              .map((label, index: number) => (
-                <Chip
-                  key={index}
-                  style={{ margin: 5 }}
-                  // icon='information'
-                  onPress={() => handleFilterPress(label.varName)}
-                  // selected={selectedFilters?.includes(label.varName)}
-                  mode={
-                    selectedFilters?.includes(label.varName)
-                      ? 'flat'
-                      : 'outlined'
-                  }
-                  showSelectedOverlay={true}
+                  ))}
+                <Text>Filter</Text>
+                <View
+                  style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap' }}
                 >
-                  {label.displayName}
-                </Chip>
-              ))}
-          </View>
+                  {sortLabelsObj
+                    .filter(x => x.displayName !== null)
+                    .map((label, index: number) => (
+                      <Chip
+                        key={index}
+                        style={{ margin: 5 }}
+                        onPress={() => handleFilterPress(label.varName)}
+                        // icon='information'
+                        // selected={selectedFilters?.includes(label.varName)}
+                        mode={
+                          selectedFilters?.includes(label.varName)
+                            ? 'flat'
+                            : 'outlined'
+                        }
+                        showSelectedOverlay={true}
+                      >
+                        {label.displayName}
+                      </Chip>
+                    ))}
+                </View>
 
-          <Button mode='outlined' onPress={handleReset}>
-            RESET
-          </Button>
-        </BottomSheetModal>
-      </BottomSheetModalProvider>
+                <Button mode='outlined' onPress={handleReset}>
+                  RESET
+                </Button>
+              </BottomSheetModal>
+            </BottomSheetModalProvider>
+          }
+        />
+      ) : (
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <RippleButton
+            style={{ padding: 50, borderRadius: 100 }}
+            onPress={fetchMyData}
+          >
+            Retry
+          </RippleButton>
+        </View>
+      )}
     </>
   );
 };

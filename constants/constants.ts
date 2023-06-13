@@ -1,4 +1,6 @@
 import { WithSpringConfig } from 'react-native-reanimated';
+import * as ExpoHaptics from 'expo-haptics';
+
 
 export const springConfig: WithSpringConfig = {
   damping: 0.1,
@@ -55,3 +57,14 @@ export const sortLabelsObj: { icon: string; varName: string; displayName: string
     displayName: null
   },
 ];
+
+export const SOCIAL_MEDIA_ICONS = 24;
+
+export const Haptics = {
+  Error: () => ExpoHaptics.notificationAsync(ExpoHaptics.NotificationFeedbackType.Error),
+  Success: () => ExpoHaptics.notificationAsync(ExpoHaptics.NotificationFeedbackType.Success),
+  Warning: () => ExpoHaptics.notificationAsync(ExpoHaptics.NotificationFeedbackType.Warning),
+  Light: () => ExpoHaptics.impactAsync(ExpoHaptics.ImpactFeedbackStyle.Light),
+  Medium: () => ExpoHaptics.impactAsync(ExpoHaptics.ImpactFeedbackStyle.Medium),
+  Heavy: () => ExpoHaptics.impactAsync(ExpoHaptics.ImpactFeedbackStyle.Heavy),
+};
