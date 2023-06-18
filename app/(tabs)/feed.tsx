@@ -1,3 +1,4 @@
+import { arrayWithUpdateData } from '../../DATA_TO_UPDATE_WITH';
 import BottomSheet, {
   BottomSheetModal,
   BottomSheetModalProvider,
@@ -13,15 +14,21 @@ import Post from '../../components/Post';
 import {
   DocumentData,
   Timestamp,
+  addDoc,
   collection,
+  deleteField,
   doc,
   getDoc,
   getDocs,
+  orderBy,
   query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
   where,
 } from 'firebase/firestore';
 // import { fetchUser } from '../../redux/actions';
-import { db } from '../../firebaseConfig';
+import { db, postsRef, usersRef } from '../../firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import {
   Button,
@@ -43,25 +50,28 @@ import {
 } from '../../constants/constants';
 import RippleButton from '~/components/RippleButton';
 import { Stack } from 'expo-router';
+import { faker } from '@faker-js/faker';
+import { set } from 'firebase/database';
+import { OLD_DATA } from '../../OLD_DATA';
 
 const Feed = () => {
   const theme = useTheme();
-  const [myDbData, setMyDbData] = useState<
+  const dimensions = useWindowDimensions();
+  const top = useSharedValue(dimensions.height / 1.5);
+
+  const [posts, setPosts] = useState<
     (FireBasePost | DocumentData | string)[] | undefined | null
   >(null);
   const [initialDbData, setInitialDbData] = useState<
     (FireBasePost | DocumentData | string)[] | undefined | null
   >(null);
-  const [savedPosts, setSavedPosts] = useState<string[]>();
   const [refreshing, setRefreshing] = useState(false);
-  const dimensions = useWindowDimensions();
-  const top = useSharedValue(dimensions.height / 1.5);
   // TODO These set the height of the modal but I need some  way to grab the dynamic height of it based on what data is being shown
   const snapPoints = useMemo(() => ['75%'], []);
   const [dataIsCurrentlySortedBy, setdataIsCurrentlySortedBy] = useState<{
-    var: string | boolean | number;
-    sortAsc: boolean | null;
-  } | null>(null);
+    property: string | boolean | number;
+    orderByDirection: 'asc' | 'desc';
+  }>();
   const [selectedFilters, setSelectedFilters] = useState<string[] | null>(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
   // const bottomSheetModalRef = useRef<BottomSheetModal>(null);
@@ -95,41 +105,43 @@ const Feed = () => {
   const [refreshingData, setRefreshingData] = useState(false);
 
   // API initalizers
-  const userPostsCollectionRef = collection(db, 'posts');
+
+  let oldPosts: { [field: string]: any }[];
+  let newPosts: { [field: string]: any }[];
+  let newClients;
 
   /**
    *  ALL DATA CALLS
    */
   // TODO There's a better way to write this so the output gets stored in a var
-  const fetchMyData = async () => {
-    let list: (DocumentData | string)[] = [];
+  const fetchPostsData = async () => {
+    let postData: (FireBasePost | DocumentData | string)[] = [];
+    let userData: { [key: string]: any }[] = [];
+    let result: {}[];
 
     try {
-      getDocs(userPostsCollectionRef).then(querySnapshot => {
-        querySnapshot.forEach(doc => {
-          const data = doc.data(); // Get the data object
-          data.docId = doc.id; // Add the id property with the value of doc.id
-
-          list.push(data); // Push the modified object into the list array
-        });
+      // GET POSTS
+      const recentPosts = query(postsRef, orderBy('createdAt', 'desc'));
+      const postSnap = await getDocs(recentPosts);
+      postSnap.forEach(post => {
+        const data = { ...post.data(), docId: post.id }; // Get the data object
+        postData.push(data); // Push the modified object into the list array
       });
 
-      if (currentUserID) {
-        const docRef = doc(db, 'users', currentUserID);
-        const docSnap = await getDoc(docRef);
+      // GET USERS
+      const userSnap = await getDocs(usersRef);
+      userSnap.forEach(user => {
+        userData.push(user.data());
+      });
 
-        docSnap.exists()
-          ? setSavedPosts(docSnap.data().savedPosts)
-          : // docSnap.data() will be undefined in this case
-            console.log('No such document!');
-      } else {
-        console.warn('no current user!');
-      }
-
-      setMyDbData(list);
-      setInitialDbData(list);
-
-      // console.log(`list: ${JSON.stringify(list.slice(0, 2), null, 2)}`);
+      // console.log(`userData: ${JSON.stringify(userData.slice(0, 3))}`);
+      const combinedData = postData.map((post, index) => ({
+        ...post,
+        ...userData[index],
+      }));
+      setPosts(combinedData);
+      // setPosts(postData);
+      setInitialDbData(postData);
     } catch (error) {
       console.error(`Error getting document: \x1b[33m${error}`);
 
@@ -137,32 +149,11 @@ const Feed = () => {
     }
   };
 
-  const fetchUsers = async (search: string) => {
-    try {
-      const q = query(
-        userPostsCollectionRef,
-        where('clientName', '>=', search)
-      );
-
-      const snapshot = await getDocs(q);
-
-      let localUsers = snapshot.docs.map(doc => {
-        const data = doc.data();
-        const id = doc.id;
-        return { id, ...data };
-      });
-
-      // console.log(`users: ${JSON.stringify(localUsers)}`);
-    } catch (err) {
-      console.error(`Error with collection query for users: ${err}`);
-    }
-  };
-
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    fetchMyData();
+    fetchPostsData();
 
     setTimeout(() => {
       setRefreshing(false);
@@ -192,78 +183,85 @@ const Feed = () => {
 
   const sortByProperty = (
     property: string,
-    data: (string | FireBasePost | DocumentData)[] | null | undefined,
-    asc?: boolean
-  ): (string | FireBasePost | DocumentData)[] | undefined | null => {
-    if (data) {
-      if (asc) {
-        return [...data].sort((a, b) => {
-          if (a[property] > b[property]) {
-            return 1;
-          } else if (a[property] < b[property]) {
-            return -1;
-          } else {
-            return 0;
-          }
-        });
-      } else {
-        return [...data].sort((a, b) => {
-          if (a[property] < b[property]) {
-            return 1;
-          } else if (a[property] > b[property]) {
-            return -1;
-          } else {
-            return 0;
-          }
-        });
-      }
+    data: (FireBasePost & DocumentData & string)[],
+    orderByDirection: 'asc' | 'desc' = 'asc'
+  ): (string & FireBasePost & DocumentData)[] | undefined => {
+    if (!data) return;
+
+    if (orderByDirection === 'asc') {
+      return [...data].sort((a, b) => {
+        if (a[property] > b[property]) {
+          return 1;
+        } else if (a[property] < b[property]) {
+          return -1;
+        } else {
+          return 0;
+        }
+      });
+    } else {
+      return [...data].sort((a, b) => {
+        if (a[property] < b[property]) {
+          return 1;
+        } else if (a[property] > b[property]) {
+          return -1;
+        } else {
+          return 0;
+        }
+      });
     }
-    // TODO Wouldn't it be more efficient to just return nothing instead passing any data around?
-    // It's the same effect--no data has changed.
-    return data;
   };
 
   const getDataSortedBy = (
     varName: string | null
   ): FireBasePost[] | undefined | void => {
-    let result: (string | FireBasePost | DocumentData)[] | null | undefined;
+    let result: (FireBasePost & DocumentData & string)[];
 
     switch (varName) {
       case 'createdAt':
         setdataIsCurrentlySortedBy({
-          var: varName,
-          sortAsc: !dataIsCurrentlySortedBy?.sortAsc,
+          property: varName,
+          orderByDirection:
+            dataIsCurrentlySortedBy?.orderByDirection === 'asc'
+              ? 'desc'
+              : 'asc',
         });
-        result = sortByProperty(varName, myDbData);
+        posts && setPosts(sortByProperty(varName, posts));
       case 'isSeasonal':
-        result = sortByProperty(varName, myDbData);
+        posts && setPosts(sortByProperty(varName, posts));
         break;
       case 'displayName':
-        result = sortByProperty(`auth.${varName}`, myDbData);
+        posts && setPosts(sortByProperty(`auth.${varName}`, posts));
         break;
       case 'rating':
         setdataIsCurrentlySortedBy({
-          var: varName,
-          sortAsc: !dataIsCurrentlySortedBy?.sortAsc,
+          property: varName,
+          // sortAsc: !dataIsCurrentlySortedBy?.sortAsc,
+          orderByDirection:
+            dataIsCurrentlySortedBy?.orderByDirection === 'asc'
+              ? 'desc'
+              : 'asc',
         });
 
-        result = sortByProperty(
-          varName,
-          myDbData,
-          dataIsCurrentlySortedBy?.sortAsc!
-        );
+        posts &&
+          setPosts(
+            sortByProperty(
+              varName,
+              posts,
+              dataIsCurrentlySortedBy?.orderByDirection!
+            )
+          );
         break;
       case null:
         console.log(`in null, resetting data....`);
         setdataIsCurrentlySortedBy(null);
-        result = initialDbData;
+        setPosts(initialDbData);
         break;
       default:
         console.error(`No data supplied to sort by! Exiting...`);
         return;
     }
 
-    setMyDbData(result);
+    // setPosts(result);
   };
 
   const handlePresentModalPress = useCallback(() => {
@@ -296,15 +294,13 @@ const Feed = () => {
       // return setMyDbData(initialDbData);
     }
 
-    console.log(`myDbData: ${myDbData && JSON.stringify(myDbData[0])}`);
-
     // TODO: Might need some catches in here just for data type mismatches
-    const result = myDbData?.filter(
+    const result = posts?.filter(
       (item: FireBasePost | DocumentData | string) =>
         (item as DocumentData | FireBasePost)[filterName]
     );
 
-    setMyDbData(result);
+    setPosts(result);
   };
 
   const handleReset = () => {
@@ -313,39 +309,50 @@ const Feed = () => {
   };
 
   const filteredData = selectedFilters?.length
-    ? myDbData?.filter((item: FireBasePost | any) =>
+    ? posts?.filter((item: FireBasePost | any) =>
         selectedFilters?.every(filter => filter[item])
       )
-    : myDbData;
+    : posts;
 
   useEffect(() => {
-    fetchMyData();
-  }, [!myDbData]);
+    fetchPostsData();
+  }, [!posts]);
 
   useEffect(() => {
-    fetchMyData();
-  }, []);
+    console.log(
+      `posts (${posts?.length} found): ${JSON.stringify(
+        posts?.slice(0, 3),
+        null,
+        2
+      )}`
+    );
+  }, [posts]);
 
-  useEffect(() => {}, [myDbData]);
+  // useEffect(() => {
+  //   fetchPostsData();
+  // }, []);
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
+
       {!errors ? (
         <FlatList
-          data={sortByProperty('createdAt', myDbData, false)?.filter(
-            (
-              item: any // TODO Clean up types
-            ) =>
+          data={posts?.filter(
+            (post: any) =>
               !selectedFilters?.length ||
-              selectedFilters.every(filter => filter[item])
+              selectedFilters.every(filter => filter[post])
           )}
           refreshing={refreshing}
           onRefresh={handleRefresh}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={(_, index) => index.toString()}
           numColumns={2}
           renderItem={({ item }) => (
-            <Post postData={item} savedPosts={savedPosts} />
+            <Post
+              postData={item}
+              // savedPosts={savedPosts}
+              // postedBy={item.postedBy}
+            />
           )}
           contentContainerStyle={{
             paddingVertical: 8,
@@ -384,15 +391,17 @@ const Feed = () => {
                           {...props}
                           icon={label.icon}
                           color={
-                            label?.varName === dataIsCurrentlySortedBy?.var
+                            label?.varName === dataIsCurrentlySortedBy?.property
                               ? theme?.colors.primary
                               : ''
                           }
                         />
                       )}
                       right={props => {
-                        if (label.varName === dataIsCurrentlySortedBy?.var) {
-                          if (dataIsCurrentlySortedBy.sortAsc) {
+                        if (
+                          label.varName === dataIsCurrentlySortedBy?.property
+                        ) {
+                          if (dataIsCurrentlySortedBy.orderByDirection) {
                             return (
                               <List.Icon {...props} icon={'sort-ascending'} />
                             );
@@ -445,7 +454,7 @@ const Feed = () => {
         >
           <RippleButton
             style={{ padding: 50, borderRadius: 100 }}
-            onPress={fetchMyData}
+            onPress={fetchPostsData}
           >
             Retry
           </RippleButton>

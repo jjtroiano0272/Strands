@@ -158,7 +158,11 @@ export default function LoginPage() {
   const handleDebugLogin = () => {
     console.log('debug logging in');
 
-    signInWithEmailAndPassword(firebaseAuth, USER, PASS)
+    signInWithEmailAndPassword(
+      firebaseAuth,
+      USER,
+      PASS
+    )
       .then(res => {
         console.log(`\x1b[34mlogin res: ${JSON.stringify(res, null, 2)}`);
         myAuth?.signIn();

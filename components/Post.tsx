@@ -11,7 +11,12 @@ import {
   StyleSheet,
   Image,
 } from 'react-native';
-import { FireBasePost, IAPIData, PostProps } from '../@types/types';
+import {
+  FireBasePost,
+  IAPIData,
+  PostProps,
+  YetAnotherNewOne,
+} from '../@types/types';
 import { Badge as RNEBadge } from 'react-native-elements';
 import Colors from '../constants/Colors';
 import useFetch from '../hooks/useFetch';
@@ -32,6 +37,7 @@ import { Text, View } from './Themed';
 import { Link, useRouter } from 'expo-router';
 import { DarkTheme, useTheme } from '@react-navigation/native';
 import {
+  DocumentData,
   Timestamp,
   arrayRemove,
   arrayUnion,
@@ -49,11 +55,17 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getDatabase, ref, child, push, update } from 'firebase/database';
 import { db } from 'firebaseConfig';
 
-export default function Post({ postData, savedPosts }: PostProps) {
+export default function Post({
+  postData,
+}: {
+  postData: FireBasePost | DocumentData | string;
+}) {
   const theme = useTheme();
   const router = useRouter();
   const paperTheme = usePaperTheme();
   const [isSaved, setIsSaved] = useState(false);
+
+  console.log(`postData: ${JSON.stringify(postData, null, 2)}`);
 
   const savePost = async (postId: string) => {
     const uid = getAuth().currentUser?.uid;
@@ -89,7 +101,7 @@ export default function Post({ postData, savedPosts }: PostProps) {
       // );
 
       const source = doc.metadata.hasPendingWrites ? 'Local' : 'Server';
-      console.log(source, ' data: ', JSON.stringify(doc.data(), null, 2));
+      // console.log(source, ' data: ', JSON.stringify(doc.data(), null, 2));
     });
 
   const getElapsedTime = (
@@ -135,7 +147,7 @@ export default function Post({ postData, savedPosts }: PostProps) {
 
     let actionSheetOptions = [
       'Cancel',
-      !savedPosts?.includes(postData?.docId || '')
+      !postData.savedPosts?.includes(postData?.docId || '')
         ? 'Save Post'
         : 'Unsave Post',
       `View ${postData?.clientName}'s profile`,

@@ -33,43 +33,73 @@ export type UserContextType = {
 };
 
 export type FireBasePost = {
-  [key: string]: string | number | boolean;
-  auth?: {
-    displayName?: string;
-    profileImage?: string;
-    uid?: string;
-  };
-  geolocation?: {
-    lat: number;
-    lng: number;
-  };
-  formula: {
-    description: string;
+  // [key: string]: string | number | boolean;
+  // auth?: {
+  //   displayName?: string;
+  //   profileImage?: string;
+  //   uid?: string;
+  // };
+  // geolocation?: {
+  //   lat: number;
+  //   lng: number;
+  // };
+  // formula?: {
+  //   description: string;
+  //   type: string;
+  // };
+  // clientName?: string;
+  // comments?: string;
+  // createdAt?: string;
+  // downloadURL?: string;
+  // isSeasonal?: boolean;
+  // media?: {
+  //   image?: string[] | null;
+  //   video?: string[];
+  // };
+  // phoneNumber?: number;
+  // productsUsed?: [
+  //   {
+  //     label?: string;
+  //     value?: string;
+  //   }
+  // ];
+  // rating?: number;
+  // docId?: string;
+  // salon?: string;
+  // savedPosts?: string[];
+  // averageRating?: number;
+  // id?: string;
+  // postsAboutClient?: { [key: string]: unknown; }[];
+
+
+  formulaUsed: {
+    description: string,
     type: string;
-  };
-  clientName?: string;
-  comments?: string;
-  createdAt?: string;
-  downloadURL?: string;
-  isSeasonal?: boolean;
-  media?: {
-    image?: string[] | null;
-    video?: string[];
-  };
-  phoneNumber?: number;
-  productsUsed?: [
-    {
-      label?: string;
-      value?: string;
-    }
-  ];
-  rating?: number;
-  docId?: string;
-  salon?: string;
-  savedPosts?: string[];
-  averageRating?: number;
-  id?: string;
-  postsAboutClient?: { [key: string]: unknown; }[];
+  },
+  geolocation: {
+    lng: number,
+    lat: number;
+  },
+  lastUpdatedAt: {
+    seconds: number,
+    nanoseconds: number;
+  },
+  media: {
+    images: string[],
+    videos: string[];
+  },
+  bio: string,
+  comments: string,
+  createdAt: string, // Maybe with Date type?
+  displayName: string,
+  docId: string,
+  followers: [],
+  following: [],
+  postedBy: string,
+  profileImage: string,
+  rating: number,
+  savedPosts: string[],
+  username: string;
 };
 
 type RefactoredPost = {
@@ -102,6 +132,37 @@ type RefactoredPost = {
   rating?: number;
   docId?: string;
   salon?: string;
+};
+
+export type YetAnotherNewOne = {
+  lastUpdatedAt: {
+    seconds: number,
+    nanoseconds: number;
+  },
+  geolocation: {
+    lng: number,
+    lat: number;
+  },
+  formulaUsed: {
+    description: string,
+    type: string;
+  },
+  media: {
+    images: string[],
+    videos: string[];
+  },
+  postedBy: string,
+  rating: number,
+  comments: string,
+  createdAt: string, // Maybe with Date type?
+  docId: string,
+  following: [],
+  profileImage: string,
+  savedPosts: [],
+  followers: [],
+  bio: string,
+  displayName: string,
+  username: string;
 };
 
 export type UserProfile = {
@@ -154,6 +215,7 @@ export type PostProps = {
   salon?: string | undefined;
   postData?: FireBasePost;
   savedPosts?: string[];
+  postedBy?: string;
 };
 
 declare module 'react-particle-backgrounds' {

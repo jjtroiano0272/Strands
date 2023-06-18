@@ -1,3 +1,4 @@
+import { Haptics } from '~/constants/constants';
 import {
   LineChart,
   BarChart,
@@ -7,7 +8,6 @@ import {
   StackedBarChart,
 } from 'react-native-chart-kit';
 import * as Progress from 'react-native-progress';
-import * as Haptics from 'expo-haptics';
 import { faker } from '@faker-js/faker';
 import Animated, {
   useAnimatedSensor,
@@ -48,6 +48,7 @@ import {
   ProgressBar,
   Divider,
   TextInput,
+  MD3Colors,
 } from 'react-native-paper';
 import { Text, View } from '../../../components/Themed';
 import {
@@ -73,6 +74,7 @@ import {
   getDocs,
   getFirestore,
   query,
+  updateDoc,
   where,
 } from 'firebase/firestore';
 import { db } from 'firebaseConfig';
@@ -172,6 +174,10 @@ export default function Client() {
   };
 
   const [editable, setEditable] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState<{
+    raw: number;
+    formatted: string;
+  }>({ raw: 0, formatted: '' });
 
   const getLocaleDate = (date: Date | string) => {
     console.log(`date: ${date}`);
@@ -189,17 +195,18 @@ export default function Client() {
     return localeDate.toLocaleString('en-US', { dateStyle: 'medium' });
   };
 
-  const IMAGE_OFFSET = 100;
+  const IMAGE_OFFSET = 200;
+  const WIDTH = 300;
+  const HEIGHT = WIDTH * 0.8;
   const imageStyle = useAnimatedStyle(() => {
     const { yaw, pitch, roll } = sensor.sensor.value;
-    console.log(yaw.toFixed(1), pitch.toFixed(1), roll.toFixed(1));
 
     return {
       transform: [
         {
           translateX: withTiming(
             interpolate(
-              yaw,
+              yaw * 0.2,
               [-Math.PI / 2, Math.PI / 2],
               [-IMAGE_OFFSET * 2, 0]
             ),
@@ -209,7 +216,7 @@ export default function Client() {
         {
           translateY: withTiming(
             interpolate(
-              pitch,
+              pitch * 0.2,
               [-Math.PI / 2, Math.PI / 2],
               [-IMAGE_OFFSET * 2, 0]
             ),
@@ -220,6 +227,21 @@ export default function Client() {
     };
   });
 
+  const formatMobileNumber = (text: string) => {
+    var cleaned = ('' + text).replace(/\D/g, '');
+    var match = cleaned.match(/^(1|)?(\d{3})(\d{3})(\d{4})$/);
+
+    if (match) {
+      var intlCode = match[1] ? '+1 ' : '',
+        number = [intlCode, '(', match[2], ') ', match[3], '-', match[4]].join(
+          ''
+        );
+      return number;
+    }
+
+    return text;
+  };
+
   useEffect(() => {
     // fetchPost();
     fetchClientData();
@@ -229,6 +251,10 @@ export default function Client() {
     console.log(`clientData: ${JSON.stringify(clientData, null, 2)}`);
   }, [clientData]);
 
+  useEffect(() => {
+    console.log(`phoneNumber: ${JSON.stringify(phoneNumber, null, 2)}`);
+  }, [phoneNumber]);
+
   return (
     <ScrollView style={styles.getStartedContainer}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -237,27 +263,20 @@ export default function Client() {
         style={styles.card}
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
       >
-        {/* <Card.Cover
-          style={[
-            {
-              height: 400 + 2 * IMAGE_OFFSET,
-              width: 400 + 2 * IMAGE_OFFSET,
-              transform: [{ translateX: 50 }],
-            },
-            // imageStyle,
-          ]}
-          source={{
-            uri:
-              clientData?.postsAboutClient[0]?.media?.image?.[0] ??
-              `https://api.dicebear.com/6.x/notionists/png/seed=${clientData?.id}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
-          }}
-        /> */}
         <View
           style={{
-            height: 300,
+            height: HEIGHT,
             width: '100%',
             backgroundColor: 'red',
             overflow: 'hidden',
+
+            // height: 300,
+            // width: '100%',
+            // backgroundColor: 'red',
+            // overflow: 'hidden',
+            // flex: 1,
+            // alignItems: 'center',
+            // justifyContent: 'center',
           }}
         >
           <Animated.Image
@@ -268,12 +287,16 @@ export default function Client() {
             }}
             style={[
               {
-                height: 1000,
-                width: 1000,
-                // height: undefined,
-                // width: undefined,
-                flex: 1,
+                // height: width,
+                // width: height,
+                // flex: 1,
                 resizeMode: 'cover',
+
+                height: WIDTH + 2 * IMAGE_OFFSET,
+                width: HEIGHT + 2 * IMAGE_OFFSET,
+                // position: 'absolute',
+                // flex: 1,
+                // resizeMode: 'cover',
               },
               imageStyle,
             ]}
@@ -285,24 +308,39 @@ export default function Client() {
           title={clientName} // Client's name
           titleStyle={[{ color: theme.colors.text }, styles.cardTitle]}
           subtitleStyle={[{ color: theme.colors.text }, styles.cardSubtitle]}
-          right={
-            clientData?.averageRating
-              ? () => (
-                  <View
-                    style={{
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      padding: 20,
-                      backgroundColor: 'transparent',
-                    }}
-                  >
-                    <Text style={{ fontWeight: 'bold', fontSize: 24 }}>
-                      {clientData.averageRating.toFixed(1)}
-                    </Text>
-                  </View>
-                )
-              : undefined
-          }
+          right={() => (
+            <View
+              style={{
+                backgroundColor: 'transparent',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              {clientData?.averageRating ? (
+                <>
+                  <IconButton
+                    icon='star'
+                    iconColor={
+                      clientData.averageRating < 1.67
+                        ? '#DC4C64'
+                        : clientData.averageRating < 3.33
+                        ? '#E4A11B'
+                        : clientData.averageRating < 5
+                        ? '#14A44D'
+                        : 'black'
+                    }
+                    size={36}
+                  />
+                  <Text>{clientData.averageRating.toFixed(1)}</Text>
+                </>
+              ) : (
+                <>
+                  <IconButton icon='star-outline' iconColor='#ccc' />
+                  <Text>NO RATINGS YET</Text>
+                </>
+              )}
+            </View>
+          )}
         />
 
         <Card.Content>
@@ -312,7 +350,54 @@ export default function Client() {
               theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
               title={() => (
                 <TextInput
+                  right={
+                    phoneNumber.formatted.toString().length >= 10 && (
+                      <TextInput.Icon
+                        icon='check-circle'
+                        iconColor='#68EEAD'
+                        onPress={() => {}}
+                        onLongPress={async () => {
+                          console.log(`Should then update record in DB!`);
+
+                          // await updateDoc(doc(db, 'clients', uid), {
+                          //   profileImage: downloadURL,
+                          // }).then(res =>
+                          //   setUploadStatus({ ...uploadStatus, profileImage: 'success' })
+                          // );
+                          const q = query(
+                            collection(db, 'posts'),
+                            where('clientName', '==', 'Daniela')
+                          );
+                          const querySnapshot = await getDocs(q);
+                          querySnapshot.forEach(doc => {
+                            console.log(doc.id, ' => ', doc.data());
+                          });
+
+                          // await updateDoc(doc(db, 'posts', uid), {
+                          //   profileImage: downloadURL,
+                          // }).then(res =>
+                          //   setUploadStatus({
+                          //     ...uploadStatus,
+                          //     profileImage: 'success',
+                          //   })
+                          // );
+
+                          Haptics.Success();
+                        }}
+                      />
+                    )
+                  }
                   editable={editable}
+                  maxLength={12}
+                  onChangeText={text => {
+                    let formattedNumber = formatMobileNumber(text);
+                    setPhoneNumber({
+                      ...phoneNumber,
+                      formatted: formattedNumber,
+                    });
+                  }}
+                  value={phoneNumber.formatted}
+                  keyboardType='phone-pad'
                   label={
                     clientData?.postsAboutClient[0]?.phoneNumber
                       ? formatPhoneNumber(
@@ -358,8 +443,9 @@ export default function Client() {
             <Text style={{ lineHeight: 18 }}>Seen by </Text>
           </View>
           {(clientData ? clientData.postsAboutClient : []).map(
-            (post: FireBasePost) => (
+            (post: FireBasePost, index: number) => (
               <List.Item
+                key={index}
                 style={{ padding: 10, borderRadius: 10, marginVertical: 5 }}
                 title={() => (
                   <View
@@ -394,26 +480,6 @@ export default function Client() {
                 )}
                 right={() =>
                   post?.rating && (
-                    // <View
-                    //   style={{
-                    //     flex: 1,
-                    //     backgroundColor: 'transparent',
-                    //   }}
-                    // >
-                    //   <ProgressCircle
-                    //     style={{ height: 20 }}
-                    //     progress={post.rating / 5}
-                    //     progressColor={
-                    //       post.rating < 1.67
-                    //         ? '#DC4C64'
-                    //         : post.rating < 3.33
-                    //         ? '#E4A11B'
-                    //         : post.rating < 5
-                    //         ? '#14A44D'
-                    //         : 'black'
-                    //     }
-                    //   />
-                    // </View>
                     <View
                       style={{
                         backgroundColor: 'transparent',
@@ -439,11 +505,10 @@ export default function Client() {
                   )
                 }
                 onPress={() =>
-                  // router.push({
-                  //   pathname: `posts/${item?.docId}`,
-                  //   params: item?.docId,
-                  // })
-                  console.log(JSON.stringify(post, null, 2))
+                  router.push({
+                    pathname: `posts/${post?.docId}`,
+                    params: { docId: post?.docId },
+                  })
                 }
               />
             )

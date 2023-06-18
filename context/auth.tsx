@@ -27,8 +27,8 @@ function useProtectedRoute(user: any) {
     // const inAuthGroup: boolean = segments[0] === '(tabs)';
     const inAuthGroup: boolean = true;
 
-    console.log(`inAuthGroup: ${inAuthGroup}\nuser: ${user}`);
-    console.log(`Path: ${segments.join(' > ')}`);
+    console.log('\x1b[33m', { inAuthGroup }, { user });
+    console.log('\x1b[33m', `Path: ${segments.join(' > ')}`);
 
     if (
       // If the user is not signed in and the initial segment is not anything in the auth group.
