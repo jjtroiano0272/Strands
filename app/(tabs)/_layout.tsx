@@ -90,6 +90,7 @@ export default () => {
             <FontAwesome name='star' size={iconSize} color='red' />
           ),
           href: null,
+          headerShown: false,
         }}
       />
       <Tabs.Screen
@@ -99,6 +100,7 @@ export default () => {
             <FontAwesome name='star' size={iconSize} color='red' />
           ),
           href: null,
+          headerShown: false,
         }}
       />
       <Tabs.Screen
@@ -108,6 +110,7 @@ export default () => {
             <FontAwesome name='star' size={iconSize} color='red' />
           ),
           href: null,
+          headerShown: false,
         }}
       />
       <Tabs.Screen
@@ -117,6 +120,7 @@ export default () => {
             <FontAwesome name='star' size={iconSize} color='red' />
           ),
           href: null,
+          headerShown: false,
         }}
       />
     </Tabs>

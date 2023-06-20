@@ -10,6 +10,7 @@ import {
   ScrollView,
   StyleSheet,
   Image,
+  TouchableOpacity,
 } from 'react-native';
 import {
   FireBasePost,
@@ -43,6 +44,7 @@ import {
   arrayUnion,
   collection,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   query,
@@ -53,19 +55,22 @@ import Swiper from 'react-native-swiper';
 import { style } from 'd3';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getDatabase, ref, child, push, update } from 'firebase/database';
-import { db } from 'firebaseConfig';
+import { clientsRef, db } from 'firebaseConfig';
 
 export default function Post({
   postData,
+  postsSavedByUser,
 }: {
-  postData: FireBasePost | DocumentData | string;
+  postData: FireBasePost;
+  postsSavedByUser: string[];
 }) {
   const theme = useTheme();
   const router = useRouter();
+  const uid = getAuth().currentUser?.uid;
   const paperTheme = usePaperTheme();
   const [isSaved, setIsSaved] = useState(false);
 
-  console.log(`postData: ${JSON.stringify(postData, null, 2)}`);
+  // console.log(`postData: ${JSON.stringify(postData, null, 2)}`);
 
   const savePost = async (postId: string) => {
     const uid = getAuth().currentUser?.uid;
@@ -91,7 +96,6 @@ export default function Post({
     setIsSaved(false);
   };
 
-  const uid = getAuth().currentUser?.uid;
   const unsub =
     uid &&
     onSnapshot(doc(db, 'users', uid), doc => {
@@ -142,6 +146,34 @@ export default function Post({
     return result;
   };
 
+  /* 
+      "rating": 4,
+      "createdAt": "2023-04-07T05:53:42.847Z",
+      "comments": "Has a specific event or occasion in mind and wants a hairstyle that will fit the dress code or theme",
+      "postedBy": "DF26Vzgq8gKcBd4Z9qF8mo0RUe4L",
+      "formulaUsed": {
+        "type": "aveda",
+        "description": "30g Light Golden Brown + 20g Honey Blonde + 20g 30 Vol Developer"
+      },
+      "media": {
+        "images": [
+          "https://loremflickr.com/300/300/hairStylist?lock=83937",
+          "https://loremflickr.com/300/300/hairStylist?lock=2800",
+          "https://loremflickr.com/300/300/hairStylist?lock=91815"
+        ],
+        "videos": []
+      },
+      "lastUpdatedAt": {
+        "seconds": 1686769311,
+        "nanoseconds": 46000000
+      },
+      "geolocation": {
+        "lng": "-81.7826",
+        "lat": "26.1909"
+      },
+      "docId": "YbZIZm1FIIaOvJAPoiW3"
+  */
+
   const showActionSheet = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -150,8 +182,10 @@ export default function Post({
       !postData.savedPosts?.includes(postData?.docId || '')
         ? 'Save Post'
         : 'Unsave Post',
-      `View ${postData?.clientName}'s profile`,
-      `View ${postData?.auth?.displayName}'s profile`,
+      postData?.clientName
+        ? `View ${postData?.clientName}'s profile`
+        : 'No client',
+      `View ${postData?.displayName}'s profile`,
     ];
 
     ActionSheetIOS.showActionSheetWithOptions(
@@ -202,7 +236,30 @@ export default function Post({
     );
   };
 
-  return (
+  const DEBUG = true;
+
+  console.log(`postData: ${JSON.stringify(postData, null, 2)}`);
+
+  const [clientData, setClientData] = useState<DocumentData>();
+
+  useEffect(() => {
+    const getClientData = async () => {
+      const docRef = doc(db, 'clients', postData?.clientID);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        // console.log('Document data:', docSnap.data());
+        setClientData({ ...getClientData, ...docSnap.data() });
+      } else {
+        // docSnap.data() will be undefined in this case
+        console.log('No such document!');
+      }
+    };
+
+    getClientData();
+  }, []);
+
+  return !DEBUG ? (
     <Link
       href={{
         pathname: `posts/foo`,
@@ -279,6 +336,14 @@ export default function Post({
         />
       </Card>
     </Link>
+  ) : (
+    <View>
+      <Text>{JSON.stringify(postData)}</Text>
+      {/* <Text>{postsSavedByUser}</Text> */}
+      {/* <TouchableOpacity style={{ height: 75, width: 75 }}>
+        <Text>Hi</Text>
+      </TouchableOpacity> */}
+    </View>
   );
 }
 

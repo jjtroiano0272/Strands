@@ -1,3 +1,4 @@
+import LottieView from 'lottie-react-native';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -58,10 +59,11 @@ const UserPosts = () => {
     fetchPosts();
   }, []);
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {postsByUser &&
-        postsByUser?.map((post, index) => (
+  return postsByUser ? (
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScrollView contentContainerStyle={styles.container}>
+        {postsByUser?.map((post, index) => (
           <List.Item
             key={index}
             style={{ width: '100%' }}
@@ -93,7 +95,30 @@ const UserPosts = () => {
             }
           />
         ))}
-    </ScrollView>
+      </ScrollView>
+    </>
+  ) : (
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <LottieView
+          source={require('~/assets/images/126314-empty-box-by-partho.json')}
+          autoPlay={true}
+          style={{ marginBottom: 40, height: 350, width: 350 }}
+          // speed={0.3}
+          // colorFilters={[
+          //   { keypath: 'bottom', color: 'rgb(158, 42, 155)' },
+          //   { keypath: 'top', color: 'rgb(255, 170, 243)' },
+          // ]}
+        />
+        <Text style={{ marginBottom: 15 }}>
+          Looks like you haven't posted anything yet...
+        </Text>
+        <Text style={{ fontSize: 36 }} onPress={() => router.push('add')}>
+          Start now?
+        </Text>
+      </View>
+    </>
   );
 };
 

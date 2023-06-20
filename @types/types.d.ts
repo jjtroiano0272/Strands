@@ -33,73 +33,34 @@ export type UserContextType = {
 };
 
 export type FireBasePost = {
-  // [key: string]: string | number | boolean;
-  // auth?: {
-  //   displayName?: string;
-  //   profileImage?: string;
-  //   uid?: string;
-  // };
-  // geolocation?: {
-  //   lat: number;
-  //   lng: number;
-  // };
-  // formula?: {
-  //   description: string;
-  //   type: string;
-  // };
-  // clientName?: string;
-  // comments?: string;
-  // createdAt?: string;
-  // downloadURL?: string;
-  // isSeasonal?: boolean;
-  // media?: {
-  //   image?: string[] | null;
-  //   video?: string[];
-  // };
-  // phoneNumber?: number;
-  // productsUsed?: [
-  //   {
-  //     label?: string;
-  //     value?: string;
-  //   }
-  // ];
-  // rating?: number;
-  // docId?: string;
-  // salon?: string;
-  // savedPosts?: string[];
-  // averageRating?: number;
-  // id?: string;
-  // postsAboutClient?: { [key: string]: unknown; }[];
-
-
-  formulaUsed: {
-    description: string,
-    type: string;
+  formulaUsed?: {
+    description?: string,
+    type?: string;
   },
-  geolocation: {
-    lng: number,
-    lat: number;
+  geolocation?: {
+    lng?: number,
+    lat?: number;
   },
-  lastUpdatedAt: {
-    seconds: number,
-    nanoseconds: number;
+  lastUpdatedAt?: {
+    seconds?: number,
+    nanoseconds?: number;
   },
-  media: {
-    images: string[],
-    videos: string[];
+  media?: {
+    images?: string[],
+    videos?: string[];
   },
-  bio: string,
-  comments: string,
-  createdAt: string, // Maybe with Date type?
-  displayName: string,
-  docId: string,
-  followers: [],
-  following: [],
-  postedBy: string,
-  profileImage: string,
-  rating: number,
-  savedPosts: string[],
-  username: string;
+  bio?: string,
+  comments?: string,
+  createdAt?: string, // Maybe with Date type?
+  displayName?: string,
+  docId?: string,
+  followers?: [],
+  following?: [],
+  postedBy?: string,
+  profileImage?: string,
+  rating?: number,
+  savedPosts?: string[],
+  username?: string;
 };
 
 type RefactoredPost = {

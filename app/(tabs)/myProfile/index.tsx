@@ -317,6 +317,29 @@ const MyProfilePage = () => {
   //     })
   //   : console.error('error in unsub');
 
+  const handlePressEdit = async () => {
+    if (editable) {
+      setEditable(!editable);
+
+      // update data on server
+      const uid = getAuth().currentUser?.uid;
+
+      if (uid) {
+        await updateDoc(doc(db, 'users', uid), {
+          displayName: data?.user?.displayName,
+          bio: data?.user?.bio,
+          // foo: data?.user?.profileImage,
+        });
+      }
+    }
+  };
+
+  const handleLongPressEdit = () => {
+    if (!editable) {
+      setEditable(!editable);
+    }
+  };
+
   useEffect(() => {
     const gyroscopeSubscription = Gyroscope.addListener(gyroscopeData => {
       setGyroscopeData(gyroscopeData);
@@ -341,29 +364,6 @@ const MyProfilePage = () => {
   useEffect(() => {
     console.log(`\x1b[32muser data: ${JSON.stringify(data, null, 2)}`);
   }, []);
-
-  const handlePressEdit = async () => {
-    if (editable) {
-      setEditable(!editable);
-
-      // update data on server
-      const uid = getAuth().currentUser?.uid;
-
-      if (uid) {
-        await updateDoc(doc(db, 'users', uid), {
-          displayName: data?.user?.displayName,
-          bio: data?.user?.bio,
-          // foo: data?.user?.profileImage,
-        });
-      }
-    }
-  };
-
-  const handleLongPressEdit = () => {
-    if (!editable) {
-      setEditable(!editable);
-    }
-  };
 
   return (
     <>

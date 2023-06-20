@@ -51,6 +51,7 @@
     "flubber": "^0.4.2",
     "framer-motion": "^10.12.4",
     "localtunnel": "^2.0.2",
+    "lottie-react-native": "^5.1.6",
     "metro-react-native-babel-preset": "^0.76.6",
     "react": "18.2.0",
     "react-dom": "18.2.0",

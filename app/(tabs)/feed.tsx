@@ -5,7 +5,7 @@ import BottomSheet, {
 } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { FlatList, StyleSheet, useWindowDimensions } from 'react-native';
+import { FlatList, StyleSheet, useWindowDimensions, Image } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { useTheme } from '@react-navigation/native';
 import React from 'react';
@@ -13,11 +13,14 @@ import { FireBasePost } from '../../@types/types';
 import Post from '../../components/Post';
 import {
   DocumentData,
+  FieldPath,
   Timestamp,
   addDoc,
   collection,
+  deleteDoc,
   deleteField,
   doc,
+  documentId,
   getDoc,
   getDocs,
   orderBy,
@@ -28,7 +31,7 @@ import {
   where,
 } from 'firebase/firestore';
 // import { fetchUser } from '../../redux/actions';
-import { db, postsRef, usersRef } from '../../firebaseConfig';
+import { clientsRef, db, postsRef, usersRef } from '../../firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import {
   Button,
@@ -38,6 +41,7 @@ import {
   MD3LightTheme,
 } from 'react-native-paper';
 import {
+  log,
   useAnimatedGestureHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -59,23 +63,20 @@ const Feed = () => {
   const dimensions = useWindowDimensions();
   const top = useSharedValue(dimensions.height / 1.5);
 
-  const [posts, setPosts] = useState<
-    (FireBasePost | DocumentData | string)[] | undefined | null
-  >(null);
-  const [initialDbData, setInitialDbData] = useState<
-    (FireBasePost | DocumentData | string)[] | undefined | null
-  >(null);
+  const [postsSavedByUser, setPostsSavedByUser] = useState();
+  const [posts, setPosts] = useState<FireBasePost[]>();
+  const [initialDbData, setInitialDbData] = useState<FireBasePost[]>();
   const [refreshing, setRefreshing] = useState(false);
   // TODO These set the height of the modal but I need some  way to grab the dynamic height of it based on what data is being shown
   const snapPoints = useMemo(() => ['75%'], []);
   const [dataIsCurrentlySortedBy, setdataIsCurrentlySortedBy] = useState<{
     property: string | boolean | number;
     orderByDirection: 'asc' | 'desc';
-  }>();
+  } | null>();
   const [selectedFilters, setSelectedFilters] = useState<string[] | null>(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
-  // const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  let bottomSheetModalRef: any;
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  // let bottomSheetModalRef: any;
 
   const [pressed, setPressed] = useState<boolean | null>(null);
   const [finalData, setFinalData] = useState<unknown[] | null>(null);
@@ -106,18 +107,13 @@ const Feed = () => {
 
   // API initalizers
 
-  let oldPosts: { [field: string]: any }[];
-  let newPosts: { [field: string]: any }[];
-  let newClients;
-
   /**
    *  ALL DATA CALLS
    */
   // TODO There's a better way to write this so the output gets stored in a var
   const fetchPostsData = async () => {
-    let postData: (FireBasePost | DocumentData | string)[] = [];
+    let postData: FireBasePost[] = [];
     let userData: { [key: string]: any }[] = [];
-    let result: {}[];
 
     try {
       // GET POSTS
@@ -132,6 +128,22 @@ const Feed = () => {
       const userSnap = await getDocs(usersRef);
       userSnap.forEach(user => {
         userData.push(user.data());
+
+        if (user.id === currentUserID) {
+          // Works. Now set it to find the current user's savedPosts
+          console.log(`Found you! ${user.id}`);
+          getDoc(doc(db, 'users', user.id))
+            .then(docSnap => {
+              console.log('Check here');
+              console.log(docSnap.data());
+            })
+            .catch(err => console.error(err));
+        } else {
+          console.log({
+            yourUID: currentUserID,
+            foundUID: user.id,
+          });
+        }
       });
 
       // console.log(`userData: ${JSON.stringify(userData.slice(0, 3))}`);
@@ -139,8 +151,8 @@ const Feed = () => {
         ...post,
         ...userData[index],
       }));
+
       setPosts(combinedData);
-      // setPosts(postData);
       setInitialDbData(postData);
     } catch (error) {
       console.error(`Error getting document: \x1b[33m${error}`);
@@ -183,7 +195,7 @@ const Feed = () => {
 
   const sortByProperty = (
     property: string,
-    data: (FireBasePost & DocumentData & string)[],
+    data: FireBasePost[],
     orderByDirection: 'asc' | 'desc' = 'asc'
   ): (string & FireBasePost & DocumentData)[] | undefined => {
     if (!data) return;
@@ -256,6 +268,7 @@ const Feed = () => {
         setdataIsCurrentlySortedBy(null);
         setPosts(initialDbData);
         break;
+
       default:
         console.error(`No data supplied to sort by! Exiting...`);
         return;
@@ -264,9 +277,9 @@ const Feed = () => {
     // setPosts(result);
   };
 
-  const handlePresentModalPress = useCallback(() => {
-    // bottomSheetModalRef?.current?.present();
-  }, []);
+  const handlePresentModalPress = () => {
+    bottomSheetModalRef?.current?.present();
+  };
 
   const handleSheetChanges = useCallback((index: number) => {
     // console.log('handleSheetChanges', index);
@@ -296,8 +309,7 @@ const Feed = () => {
 
     // TODO: Might need some catches in here just for data type mismatches
     const result = posts?.filter(
-      (item: FireBasePost | DocumentData | string) =>
-        (item as DocumentData | FireBasePost)[filterName]
+      item => Object.keys(item).indexOf(filterName) !== -1
     );
 
     setPosts(result);
@@ -316,7 +328,7 @@ const Feed = () => {
 
   useEffect(() => {
     fetchPostsData();
-  }, [!posts]);
+  }, []);
 
   useEffect(() => {
     console.log(
@@ -328,37 +340,103 @@ const Feed = () => {
     );
   }, [posts]);
 
-  // useEffect(() => {
-  //   fetchPostsData();
-  // }, []);
+  useEffect(() => {
+    // Add client ID to each post
+    const writeToDB = async () => {
+      let postIDs: string[] = [];
+      let clientIDs: string[] = [];
+
+      const recentPosts = query(postsRef);
+      const postSnap = await getDocs(recentPosts);
+      postSnap.forEach(post => {
+        postIDs.push(post.id); // Push the modified object into the list array
+      });
+      const clientSnap = await getDocs(clientsRef);
+      clientSnap.forEach(client => {
+        clientIDs.push(client.id);
+      });
+
+      //   getDoc(doc(db, 'clients', client.id))
+      //     .then(docSnap => {
+      //       // console.log(`clientId: ${JSON.stringify(docSnap?.id)}`);
+      //     })
+      //     .catch(err => console.error(err));
+
+      let i = 0;
+      //   for (var postID in postIDs) {
+      //     let result = clientIDs[i];
+
+      //     updateDoc(doc(db, 'posts', postID), {
+      //       clientID: result,
+      //     })
+      //       .then(() => i++)
+      //       .catch(err => console.error(err));
+
+      //     console.log(`i: ${i}, postID: ${postID}, clientID: ${clientIDs[i]}`);
+      //   }
+      // });
+
+      try {
+        const querySnapshot = await getDocs(postsRef);
+
+        // Create an array of update promises
+        const updatePromises = querySnapshot.docs.map(doc => {
+          updateDoc(doc.ref, {
+            clientID: clientIDs[i],
+          });
+
+          i = i + 1;
+        });
+
+        // Await all update promises to complete
+        await Promise.all(updatePromises);
+
+        console.log('All documents updated successfully');
+      } catch (error) {
+        console.error('Error updating documents:', error);
+      }
+    };
+
+    // writeToDB();
+  }, []);
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
 
       {!errors ? (
-        <FlatList
-          data={posts?.filter(
-            (post: any) =>
-              !selectedFilters?.length ||
-              selectedFilters.every(filter => filter[post])
-          )}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          keyExtractor={(_, index) => index.toString()}
-          numColumns={2}
-          renderItem={({ item }) => (
-            <Post
-              postData={item}
-              // savedPosts={savedPosts}
-              // postedBy={item.postedBy}
-            />
-          )}
-          contentContainerStyle={{
-            paddingVertical: 8,
-            paddingHorizontal: 4,
-          }}
-          ListFooterComponent={
+        <>
+          <FlatList
+            contentContainerStyle={{
+              paddingVertical: 8,
+              paddingHorizontal: 4,
+            }}
+            data={posts?.filter(
+              (post: any) =>
+                !selectedFilters?.length ||
+                selectedFilters.every(filter => filter[post])
+            )}
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            keyExtractor={(_, index) => index.toString()}
+            numColumns={2}
+            renderItem={({ item }) => (
+              <Post
+                postData={item}
+                postsSavedByUser={['foo']}
+                // postsSavedByUser={postsSavedByUser}
+                // savedPosts={savedPosts}
+                // postedBy={item.postedBy}
+              />
+
+              // <Image
+              //   source={{ uri: item.profileImage }}
+              //   style={{ height: 50, width: 50 }}
+              // />
+            )}
+          />
+
+          {!errors && posts && posts.length > 0 && (
             <BottomSheetModalProvider>
               <Button
                 mode='outlined'
@@ -369,11 +447,14 @@ const Feed = () => {
               </Button>
 
               <BottomSheetModal
-                backgroundStyle={{ backgroundColor: theme.colors.background }}
+                backgroundStyle={{
+                  backgroundColor: theme.colors.background,
+                  // backgroundColor: 'red',
+                }}
                 handleIndicatorStyle={{ backgroundColor: theme.colors.text }}
                 index={0}
                 snapPoints={snapPoints}
-                // ref={node => (bottomSheetModalRef = node)}
+                ref={bottomSheetModalRef}
                 enablePanDownToClose={true}
                 onChange={handleSheetChanges}
               >
@@ -446,8 +527,8 @@ const Feed = () => {
                 </Button>
               </BottomSheetModal>
             </BottomSheetModalProvider>
-          }
-        />
+          )}
+        </>
       ) : (
         <View
           style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
