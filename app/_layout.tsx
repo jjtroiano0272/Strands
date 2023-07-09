@@ -105,19 +105,17 @@ function RootLayoutNav() {
           <SafeAreaView>
             <Stack.Screen
               name='login'
-              options={{ headerTitle: 'Login', headerShown: false }}
+              options={{ headerTitle: 'Login', headerShown: true }}
             />
             <Stack.Screen
-              name='register'
+              name='(unauth)/register'
               options={{
                 headerTitle: 'Create Account',
-                headerRight: () => (
-                  <Button onPress={() => router.push('modal')}>Open</Button>
-                ),
+                headerShown: true,
               }}
             />
             <Stack.Screen name='modal' options={{ presentation: 'modal' }} />
-            <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
+            {/* <Stack.Screen name='(tabs)' options={{ headerShown: true }} /> */}
             <Stack.Screen
               name='filtersModal'
               options={{

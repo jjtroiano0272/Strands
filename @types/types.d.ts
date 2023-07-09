@@ -50,6 +50,7 @@ export type FireBasePost = {
     videos?: string[];
   },
   bio?: string,
+  clientID?: string,
   comments?: string,
   createdAt?: string, // Maybe with Date type?
   displayName?: string,
@@ -61,6 +62,8 @@ export type FireBasePost = {
   rating?: number,
   savedPosts?: string[],
   username?: string;
+  docId?: string;
+  [key: string]: DocumentData;
 };
 
 type RefactoredPost = {

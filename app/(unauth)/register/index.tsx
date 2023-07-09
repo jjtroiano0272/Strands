@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import React, { useContext, useEffect, useState } from 'react';
 import { View, Keyboard } from 'react-native';
 import {
@@ -11,7 +11,7 @@ import {
 } from 'react-native-paper';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useTheme } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { UserContext } from '~/context/UserContext';
 import { Auth as SignInWithPopupButton } from '~/components/auth/Auth';
 import { useAuth } from '~/context/auth';
@@ -32,6 +32,7 @@ export default function RegisterPage() {
   const theme = useTheme();
   const userCtx = useContext(UserContext);
 
+  const router = useRouter();
   const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
   const onToggleSnackBar = () => setSnackbarVisible(!snackbarVisible);
   const onDismissSnackBar = () => setSnackbarVisible(false);
@@ -66,22 +67,36 @@ export default function RegisterPage() {
   };
 
   const validateEmail = () => {
+    if (!email) return;
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email!)) {
+    if (!emailRegex.test(email)) {
       setEmailError('Invalid email format');
+    } else if (email.length === 0 || emailRegex.test(email)) {
+      setEmailError(null);
     }
   };
 
   const validatePassword = () => {
-    if (password!.length < 8 && password!.length > 0) {
+    if (!password) return;
+
+    if (password.length < 8 && password.length > 0) {
       setPasswordError('Password must be at least 8 characters long');
+    } else if (password.length === 0) {
+      setPasswordError(null);
+    } else {
+      setPasswordError(null);
     }
   };
 
   const validateLicenseId = () => {
+    if (!licenseId) return;
+
     const licenseIdRegex = /^[A-Za-z]{2}\d{7}$/;
-    if (!licenseIdRegex.test(licenseId!)) {
+    if (!licenseIdRegex.test(licenseId)) {
       setLicenseError('A license must have two letters followed by 7 numbers!');
+    } else if (licenseId.length === 0 || licenseIdRegex.test(licenseId)) {
+      setLicenseError(null);
     }
   };
 
@@ -98,7 +113,8 @@ export default function RegisterPage() {
   }, [snackbarVisible]);
 
   return (
-    <View style={styles.container}>
+    <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>
+      {/* <View style={styles.container}> */}
       {/* <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -112,13 +128,14 @@ export default function RegisterPage() {
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         placeholder='email'
         keyboardType='email-address'
+        textContentType='username'
         error={!!emailError}
         onBlur={validateEmail}
         onChangeText={email => setEmail(email)}
         autoFocus={true}
       />
       <HelperText type='error' visible={!!emailError}>
-        Email address is invalid!
+        {emailError}
       </HelperText>
 
       <TextInput
@@ -126,13 +143,16 @@ export default function RegisterPage() {
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         placeholder='password'
         keyboardType='visible-password'
+        textContentType={
+          password && password.length > 0 ? 'password' : 'newPassword'
+        }
         error={!!passwordError}
         onBlur={validatePassword}
         onChangeText={password => setPassword(password)}
         secureTextEntry={true}
       />
       <HelperText type='error' visible={!!passwordError}>
-        Email address is invalid!
+        {passwordError}
       </HelperText>
 
       <TextInput
@@ -142,7 +162,7 @@ export default function RegisterPage() {
         onChangeText={name => setName(name)}
       />
       <HelperText type='error' visible={false}>
-        Email address is invalid!
+        Keep this here for consistent spacing
       </HelperText>
 
       <TextInput
@@ -151,15 +171,20 @@ export default function RegisterPage() {
         placeholder='license number'
         error={!!licenseError}
         onBlur={validateLicenseId}
-        onChangeText={licenseId => setLicenseId(licenseId)}
+        onChangeText={licenseId => setLicenseId(licenseId.toUpperCase())}
+        value={licenseId ?? ''}
       />
       <HelperText type='error' visible={!!licenseError}>
-        Email address is invalid!
+        {licenseError}
       </HelperText>
 
       <Button
         style={{ margin: 10, marginTop: 30, width: 300 }}
-        mode='contained'
+        mode={
+          !!emailError || !!passwordError || !!licenseError
+            ? 'outlined'
+            : 'contained'
+        }
         contentStyle={{ padding: 10 }}
         onPress={handleRegister}
       >
@@ -183,7 +208,8 @@ export default function RegisterPage() {
         {errors}
       </Snackbar>
       {/* </KeyboardAvoidingView> */}
-    </View>
+      {/* </View> */}
+    </Pressable>
   );
 }
 

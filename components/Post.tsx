@@ -182,8 +182,8 @@ export default function Post({
       !postData.savedPosts?.includes(postData?.docId || '')
         ? 'Save Post'
         : 'Unsave Post',
-      postData?.clientName
-        ? `View ${postData?.clientName}'s profile`
+      clientData?.firstName
+        ? `View ${clientData?.firstName}'s profile`
         : 'No client',
       `View ${postData?.displayName}'s profile`,
     ];
@@ -196,9 +196,12 @@ export default function Post({
         userInterfaceStyle: 'dark',
       },
       buttonIndex => {
-        if (!savedPosts?.includes(postData?.docId || '')) {
+        if (!postsSavedByUser?.includes(postData?.docId || '')) {
           ('Save Post');
-        } else if (savedPosts?.includes(postData?.docId || '') && isSaved) {
+        } else if (
+          postsSavedByUser?.includes(postData?.docId || '') &&
+          isSaved
+        ) {
           ('UnsavePost');
         }
 
@@ -206,7 +209,7 @@ export default function Post({
         if (
           buttonIndex === 1 &&
           postData?.docId &&
-          !savedPosts?.includes(postData?.docId)
+          !postsSavedByUser?.includes(postData?.docId)
         ) {
           savePost(postData.docId);
         }
@@ -214,19 +217,21 @@ export default function Post({
         else if (
           buttonIndex === 1 &&
           postData?.docId &&
-          savedPosts?.includes(postData?.docId)
+          postsSavedByUser?.includes(postData?.docId)
         ) {
           unsavePost(postData.docId);
         } else if (buttonIndex === 2) {
           router.push({
-            pathname: `clients/${postData?.clientName}`,
-            params: { clientName: postData?.clientName },
+            pathname: `clients/${clientData?.firstName}${clientData?.lastName}`,
+            params: {
+              clientName: clientData?.firstName + clientData?.lastName,
+            },
           });
         }
         // Go to user's profile
         else if (buttonIndex === 3) {
           router.push({
-            pathname: `users/${postData?.auth?.uid}`,
+            pathname: `users/${postData?.postedBy}`,
             // params: { docId: docId },
           });
         } else if (buttonIndex === 0) {
@@ -235,10 +240,6 @@ export default function Post({
       }
     );
   };
-
-  const DEBUG = true;
-
-  console.log(`postData: ${JSON.stringify(postData, null, 2)}`);
 
   const [clientData, setClientData] = useState<DocumentData>();
 
@@ -254,12 +255,17 @@ export default function Post({
         // docSnap.data() will be undefined in this case
         console.log('No such document!');
       }
+      // 1oLsVwRHB1CsBjBamz0x
     };
 
     getClientData();
   }, []);
 
-  return !DEBUG ? (
+  useEffect(() => {
+    console.log(`postData.displayName: ${postData?.displayName}`);
+  }, []);
+
+  return (
     <Link
       href={{
         pathname: `posts/foo`,
@@ -274,7 +280,7 @@ export default function Post({
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
       >
         <Card.Title
-          title={postData?.clientName}
+          title={clientData?.firstName}
           titleStyle={{ color: theme.colors.text }}
           subtitle={
             <>
@@ -284,7 +290,7 @@ export default function Post({
                     color: paperTheme.colors.secondary,
                   }}
                 >
-                  ⟩⟩ {postData?.auth?.displayName}
+                  ⟩⟩ {postData?.displayName ?? postData?.username}
                 </Text>
                 <Text style={{ color: theme.colors.text }}>
                   {/* {postData?.createdAt &&
@@ -311,14 +317,14 @@ export default function Post({
               size={36}
               source={{
                 uri:
-                  postData?.auth?.profileImage ??
-                  `https://api.dicebear.com/6.x/lorelei/png/seed=${postData?.auth?.uid}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
+                  postData?.profileImage ??
+                  `https://api.dicebear.com/6.x/lorelei/png/seed=${postData?.docId}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
               }}
             />
           )}
           right={props =>
             // TODO Make a banner, not a button
-            savedPosts?.includes(postData?.docId || '') && (
+            postsSavedByUser?.includes(postData?.docId || '') && (
               <Avatar.Icon
                 {...props}
                 style={{ backgroundColor: 'transparent', top: -30 }}
@@ -331,19 +337,13 @@ export default function Post({
         />
         <Card.Cover
           source={{
-            uri: postData?.media?.image ? postData?.media?.image[0] : undefined,
+            uri: postData?.media?.images
+              ? postData?.media?.images[0]
+              : undefined,
           }}
         />
       </Card>
     </Link>
-  ) : (
-    <View>
-      <Text>{JSON.stringify(postData)}</Text>
-      {/* <Text>{postsSavedByUser}</Text> */}
-      {/* <TouchableOpacity style={{ height: 75, width: 75 }}>
-        <Text>Hi</Text>
-      </TouchableOpacity> */}
-    </View>
   );
 }
 

@@ -1,3 +1,4 @@
+import { randUser } from '@ngneat/falso';
 import { arrayWithUpdateData } from '../../DATA_TO_UPDATE_WITH';
 import BottomSheet, {
   BottomSheetModal,
@@ -63,7 +64,7 @@ const Feed = () => {
   const dimensions = useWindowDimensions();
   const top = useSharedValue(dimensions.height / 1.5);
 
-  const [postsSavedByUser, setPostsSavedByUser] = useState();
+  const [postsSavedByUser, setPostsSavedByUser] = useState<string[]>();
   const [posts, setPosts] = useState<FireBasePost[]>();
   const [initialDbData, setInitialDbData] = useState<FireBasePost[]>();
   const [refreshing, setRefreshing] = useState(false);
@@ -120,7 +121,7 @@ const Feed = () => {
       const recentPosts = query(postsRef, orderBy('createdAt', 'desc'));
       const postSnap = await getDocs(recentPosts);
       postSnap.forEach(post => {
-        const data = { ...post.data(), docId: post.id }; // Get the data object
+        const data: FireBasePost = { ...post.data(), docId: post.id }; // Get the data object
         postData.push(data); // Push the modified object into the list array
       });
 
@@ -154,6 +155,28 @@ const Feed = () => {
 
       setPosts(combinedData);
       setInitialDbData(postData);
+    } catch (error) {
+      console.error(`Error getting document: \x1b[33m${error}`);
+
+      setErrors(error);
+    }
+  };
+
+  const fetchUserData = async () => {
+    if (!currentUserID) return;
+
+    try {
+      const docRef = doc(db, 'users', currentUserID);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        // For some reason, the savedPosts field comes back as an object, not the array it's stored as in the DB, and
+        // I don't want to take the extra time to properly fix it right now.
+        setPostsSavedByUser(docSnap.data().savedPosts);
+      } else {
+        // docSnap.data() will be undefined in this case
+        console.log('No such document!');
+      }
     } catch (error) {
       console.error(`Error getting document: \x1b[33m${error}`);
 
@@ -197,30 +220,28 @@ const Feed = () => {
     property: string,
     data: FireBasePost[],
     orderByDirection: 'asc' | 'desc' = 'asc'
-  ): (string & FireBasePost & DocumentData)[] | undefined => {
+  ): (FireBasePost | { docId: string })[] | undefined => {
     if (!data) return;
 
-    if (orderByDirection === 'asc') {
-      return [...data].sort((a, b) => {
-        if (a[property] > b[property]) {
-          return 1;
-        } else if (a[property] < b[property]) {
-          return -1;
-        } else {
-          return 0;
+    return [...data].sort((a, b) => {
+      // const aValue = a[property];
+      const aValue: unknown = a[a.indexOf(property)]; // parse through a for the element whose value is `property`
+      const bValue = b[b.indexOf(property)];
+
+      if (aValue && !bValue) {
+        return orderByDirection === 'asc' ? 1 : -1;
+      } else if (!aValue && bValue) {
+        return orderByDirection === 'asc' ? -1 : 1;
+      } else if (aValue && bValue) {
+        if (aValue > bValue) {
+          return orderByDirection === 'asc' ? 1 : -1;
+        } else if (aValue < bValue) {
+          return orderByDirection === 'asc' ? -1 : 1;
         }
-      });
-    } else {
-      return [...data].sort((a, b) => {
-        if (a[property] < b[property]) {
-          return 1;
-        } else if (a[property] > b[property]) {
-          return -1;
-        } else {
-          return 0;
-        }
-      });
-    }
+      }
+
+      return 0;
+    });
   };
 
   const getDataSortedBy = (
@@ -328,6 +349,7 @@ const Feed = () => {
 
   useEffect(() => {
     fetchPostsData();
+    fetchUserData();
   }, []);
 
   useEffect(() => {
@@ -343,62 +365,86 @@ const Feed = () => {
   useEffect(() => {
     // Add client ID to each post
     const writeToDB = async () => {
-      let postIDs: string[] = [];
-      let clientIDs: string[] = [];
+      // let posts: DocumentData[] = [];
+      // let clients: DocumentData[] = [];
+      // let users: DocumentData[] = [];
+      // let postUserMap = [];
+      // let createTheseUsers: string[] = [];
 
-      const recentPosts = query(postsRef);
-      const postSnap = await getDocs(recentPosts);
-      postSnap.forEach(post => {
-        postIDs.push(post.id); // Push the modified object into the list array
-      });
-      const clientSnap = await getDocs(clientsRef);
-      clientSnap.forEach(client => {
-        clientIDs.push(client.id);
-      });
+      // const postsQuery = query(postsRef);
+      // const postSnap = await getDocs(postsQuery);
+      // postSnap.forEach(post => {
+      //   console.log(`post: ${JSON.stringify(post.data(), null, 2)}`);
 
-      //   getDoc(doc(db, 'clients', client.id))
-      //     .then(docSnap => {
-      //       // console.log(`clientId: ${JSON.stringify(docSnap?.id)}`);
-      //     })
-      //     .catch(err => console.error(err));
+      //   posts.push(post.data()); // Push the modified object into the list array
+      // });
 
-      let i = 0;
-      //   for (var postID in postIDs) {
-      //     let result = clientIDs[i];
+      // const clientSnap = await getDocs(clientsRef);
+      // clientSnap.forEach(client => {
+      //   clients.push(client.data());
+      // });
 
-      //     updateDoc(doc(db, 'posts', postID), {
-      //       clientID: result,
-      //     })
-      //       .then(() => i++)
-      //       .catch(err => console.error(err));
+      // const userSnap = await getDocs(usersRef);
+      // userSnap.forEach(user => {
+      //   users.push({ id: user.id, ...user.data() });
+      // });
 
-      //     console.log(`i: ${i}, postID: ${postID}, clientID: ${clientIDs[i]}`);
+      // posts.map(post => {
+      //   const result = users.find(user => user.id === post.postedBy);
+
+      //   if (!result) {
+      //     console.log(`empty record: ${post.postedBy}`);
+      //     createTheseUsers.push(post.postedBy);
       //   }
       // });
 
-      try {
-        const querySnapshot = await getDocs(postsRef);
+      const createTheseUsers = [
+        'l954qYwwbl3kD4RokCzk3IYnqu2p',
+        'LAmPYYutVeqhNuPriCrzrrRl4b6r',
+        'nyiHKjsD1zBFDgveVnlN3PYfiTno',
+        'Ul58TGrcCps6FoQnaSVYFedmmgBe',
+        'DF26Vzgq8gKcBd4Z9qF8mo0RUe4L',
+        'ncEfJDZHy60EzFxsJyfFtO2Jih9Y',
+      ];
 
-        // Create an array of update promises
-        const updatePromises = querySnapshot.docs.map(doc => {
-          updateDoc(doc.ref, {
-            clientID: clientIDs[i],
-          });
+      for (let i = 0; i < createTheseUsers.length; i++) {
+        const newUser = {
+          bio: faker.lorem.words(20),
+          displayName: faker.name.firstName(),
+          followers: [],
+          following: [],
+          profileImage: `https://loremflickr.com/50/50/portrait?lock=${faker.random.numeric(
+            5
+          )}`,
+          savedPosts: [],
+          socialMediaLinks: {
+            facebook: '',
+            instagram: '',
+            reddit: '',
+            youtube: '',
+          },
+          // const modifiedStr = str.replace(/[^a-zA-Z0-9]/g, ""); // Remove non-alphanumeric characters
 
-          i = i + 1;
-        });
+          username: randUser().username.replace(/[^a-zA-Z0-9]/g, ''),
+        };
+        console.log(`user id: ${createTheseUsers[i]}`);
+        console.log(JSON.stringify(newUser, null, 2));
 
-        // Await all update promises to complete
-        await Promise.all(updatePromises);
-
-        console.log('All documents updated successfully');
-      } catch (error) {
-        console.error('Error updating documents:', error);
+        const newUserRef = doc(db, 'users', createTheseUsers[i]);
+        await setDoc(newUserRef, newUser);
       }
     };
 
     // writeToDB();
   }, []);
+
+  useEffect(() => {
+    console.log(
+      `postsSAved ${
+        Array.isArray(postsSavedByUser) ? 'array' : typeof postsSavedByUser
+      }: ${JSON.stringify(postsSavedByUser, null, 2)}`
+    );
+  }, [postsSavedByUser]);
 
   return (
     <>
@@ -406,128 +452,135 @@ const Feed = () => {
 
       {!errors ? (
         <>
-          <FlatList
-            contentContainerStyle={{
-              paddingVertical: 8,
-              paddingHorizontal: 4,
-            }}
-            data={posts?.filter(
-              (post: any) =>
-                !selectedFilters?.length ||
-                selectedFilters.every(filter => filter[post])
-            )}
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            keyExtractor={(_, index) => index.toString()}
-            numColumns={2}
-            renderItem={({ item }) => (
-              <Post
-                postData={item}
-                postsSavedByUser={['foo']}
-                // postsSavedByUser={postsSavedByUser}
-                // savedPosts={savedPosts}
-                // postedBy={item.postedBy}
-              />
-
-              // <Image
-              //   source={{ uri: item.profileImage }}
-              //   style={{ height: 50, width: 50 }}
-              // />
-            )}
-          />
-
-          {!errors && posts && posts.length > 0 && (
-            <BottomSheetModalProvider>
-              <Button
-                mode='outlined'
-                onPress={handlePresentModalPress}
-                contentStyle={{ borderRadius: 50 }}
-              >
-                Sort Results
-              </Button>
-
-              <BottomSheetModal
-                backgroundStyle={{
-                  backgroundColor: theme.colors.background,
-                  // backgroundColor: 'red',
-                }}
-                handleIndicatorStyle={{ backgroundColor: theme.colors.text }}
-                index={0}
-                snapPoints={snapPoints}
-                ref={bottomSheetModalRef}
-                enablePanDownToClose={true}
-                onChange={handleSheetChanges}
-              >
-                <Text>Sort by</Text>
-                {sortLabelsObj
-                  .filter(x => x.displayName !== null)
-                  .map((label, index: number) => (
-                    <List.Item
-                      key={index}
-                      style={{ width: '100%' }}
-                      theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-                      title={label.displayName}
-                      left={props => (
-                        <List.Icon
-                          {...props}
-                          icon={label.icon}
-                          color={
-                            label?.varName === dataIsCurrentlySortedBy?.property
-                              ? theme?.colors.primary
-                              : ''
-                          }
-                        />
-                      )}
-                      right={props => {
-                        if (
-                          label.varName === dataIsCurrentlySortedBy?.property
-                        ) {
-                          if (dataIsCurrentlySortedBy.orderByDirection) {
-                            return (
-                              <List.Icon {...props} icon={'sort-ascending'} />
-                            );
-                          } else {
-                            return (
-                              <List.Icon {...props} icon={'sort-descending'} />
-                            );
-                          }
-                        }
-                        return <List.Icon {...props} icon={''} />;
+          <BottomSheetModalProvider>
+            <FlatList
+              contentContainerStyle={{
+                paddingVertical: 8,
+                paddingHorizontal: 4,
+              }}
+              data={posts?.filter(
+                (post: any) =>
+                  !selectedFilters?.length ||
+                  selectedFilters.every(filter => filter[post])
+              )}
+              ListFooterComponent={() =>
+                !errors && posts && posts.length > 0 ? (
+                  <>
+                    <Button
+                      mode='outlined'
+                      onPress={handlePresentModalPress}
+                      contentStyle={{ borderRadius: 50 }}
+                    >
+                      Sort Results
+                    </Button>
+                    <BottomSheetModal
+                      backgroundStyle={{
+                        backgroundColor: theme.colors.background,
+                        // backgroundColor: 'red',
                       }}
-                      onPress={() => getDataSortedBy(label.varName)}
-                    />
-                  ))}
-                <Text>Filter</Text>
-                <View
-                  style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap' }}
-                >
-                  {sortLabelsObj
-                    .filter(x => x.displayName !== null)
-                    .map((label, index: number) => (
-                      <Chip
-                        key={index}
-                        style={{ margin: 5 }}
-                        onPress={() => handleFilterPress(label.varName)}
-                        // icon='information'
-                        // selected={selectedFilters?.includes(label.varName)}
-                        mode={
-                          selectedFilters?.includes(label.varName)
-                            ? 'flat'
-                            : 'outlined'
-                        }
-                        showSelectedOverlay={true}
+                      handleIndicatorStyle={{
+                        backgroundColor: theme.colors.text,
+                      }}
+                      index={0}
+                      snapPoints={snapPoints}
+                      ref={bottomSheetModalRef}
+                      enablePanDownToClose={true}
+                      onChange={handleSheetChanges}
+                    >
+                      <Text>Sort by</Text>
+                      {sortLabelsObj
+                        .filter(x => x.displayName !== null)
+                        .map((label, index: number) => (
+                          <List.Item
+                            key={index}
+                            style={{ width: '100%' }}
+                            theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+                            title={label.displayName}
+                            left={props => (
+                              <List.Icon
+                                {...props}
+                                icon={label.icon}
+                                color={
+                                  label?.varName ===
+                                  dataIsCurrentlySortedBy?.property
+                                    ? theme?.colors.primary
+                                    : ''
+                                }
+                              />
+                            )}
+                            right={props => {
+                              if (
+                                label.varName ===
+                                dataIsCurrentlySortedBy?.property
+                              ) {
+                                if (dataIsCurrentlySortedBy.orderByDirection) {
+                                  return (
+                                    <List.Icon
+                                      {...props}
+                                      icon={'sort-ascending'}
+                                    />
+                                  );
+                                } else {
+                                  return (
+                                    <List.Icon
+                                      {...props}
+                                      icon={'sort-descending'}
+                                    />
+                                  );
+                                }
+                              }
+                              return <List.Icon {...props} icon={''} />;
+                            }}
+                            onPress={() => getDataSortedBy(label.varName)}
+                          />
+                        ))}
+                      <Text>Filter</Text>
+                      <View
+                        style={{
+                          flex: 1,
+                          flexDirection: 'row',
+                          flexWrap: 'wrap',
+                        }}
                       >
-                        {label.displayName}
-                      </Chip>
-                    ))}
-                </View>
-
-                <Button mode='outlined' onPress={handleReset}>
-                  RESET
-                </Button>
-              </BottomSheetModal>
-            </BottomSheetModalProvider>
-          )}
+                        {sortLabelsObj
+                          .filter(x => x.displayName !== null)
+                          .map((label, index: number) => (
+                            <Chip
+                              key={index}
+                              style={{ margin: 5 }}
+                              onPress={() => handleFilterPress(label.varName)}
+                              // icon='information'
+                              // selected={selectedFilters?.includes(label.varName)}
+                              mode={
+                                selectedFilters?.includes(label.varName)
+                                  ? 'flat'
+                                  : 'outlined'
+                              }
+                              showSelectedOverlay={true}
+                            >
+                              {label.displayName}
+                            </Chip>
+                          ))}
+                      </View>
+                      <Button mode='outlined' onPress={handleReset}>
+                        RESET
+                      </Button>
+                    </BottomSheetModal>
+                  </>
+                ) : null
+              }
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              keyExtractor={(_, index) => index.toString()}
+              numColumns={2}
+              renderItem={({ item }) => (
+                <Post
+                  postData={item}
+                  postsSavedByUser={postsSavedByUser ?? ['']} // TODO: Not a great bulletproof method, but hey it'll work for now.
+                />
+              )}
+            />
+          </BottomSheetModalProvider>
         </>
       ) : (
         <View

@@ -53,6 +53,7 @@ import {
   Snackbar,
   TextInput,
   MD3Colors,
+  Text,
 } from 'react-native-paper';
 import { View } from 'react-native';
 import {
@@ -68,7 +69,7 @@ import { DarkTheme, useTheme } from '@react-navigation/native';
 import { PASS, USER, firebaseConfig } from '../firebaseConfig';
 import { UserContext } from '../context/UserContext';
 import { Auth as SignInWithPopup } from '../components/auth/Auth';
-import { Link, Stack } from 'expo-router';
+import { Link, Stack, useRouter } from 'expo-router';
 import { useAuth } from '../context/auth';
 import { SAMLAuthProvider, GoogleAuthProvider } from 'firebase/auth';
 // import { BubbleBackground } from '../components/AnimatedBackground';
@@ -95,6 +96,8 @@ export default function LoginPage() {
   const onDismissSnackBar = () => setSnackbarVisible(false);
   const samlProvider = new SAMLAuthProvider('saml.example-provider');
   const googleProvider = new GoogleAuthProvider();
+
+  const router = useRouter();
 
   // TODO Only display errors for a few seconds, then fade out, but keep the red line underneath
   const validateEmail = () => {
@@ -158,11 +161,7 @@ export default function LoginPage() {
   const handleDebugLogin = () => {
     console.log('debug logging in');
 
-    signInWithEmailAndPassword(
-      firebaseAuth,
-      USER,
-      PASS
-    )
+    signInWithEmailAndPassword(firebaseAuth, USER, PASS)
       .then(res => {
         console.log(`\x1b[34mlogin res: ${JSON.stringify(res, null, 2)}`);
         myAuth?.signIn();
@@ -213,7 +212,7 @@ export default function LoginPage() {
 
   return (
     <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>
-      <Stack.Screen options={{ headerShown: false }} />
+      {/* <Stack.Screen options={{ headerShown: false }} /> */}
 
       <TextInput
         style={styles.input}
@@ -289,6 +288,19 @@ export default function LoginPage() {
             </RippleButton>
           )
         )}
+      </View>
+      <View
+        style={{
+          bottom: -100, // TODO: Not a good way to do this but I don't wanna research the whole junk right now
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+        }}
+      >
+        <Button onPress={() => router.push('forgotPassword')}>
+          <Text variant='labelSmall' style={{ color: '#121212' }}>
+            Forgot password?
+          </Text>
+        </Button>
       </View>
 
       <Snackbar

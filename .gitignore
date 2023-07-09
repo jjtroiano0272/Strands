@@ -10,7 +10,7 @@ npm-debug.*
 *.orig.*
 web-build/
 README.md
-fireBaseconfig.js
+fireBaseconfig.*
 .env
 
 # macOS

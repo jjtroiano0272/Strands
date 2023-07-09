@@ -53,6 +53,8 @@ export default function useFirebase(
       .then(res => res.json())
       .then(data => setData(data));
   }, []);
+
+  
 }
 
 // const fetchUserData = async () => {

@@ -40,6 +40,8 @@ function useProtectedRoute(user: any) {
 
       console.log(`LOGGED OUT`);
     } else if (user && inAuthGroup) {
+      console.log(`Book em Danno, I'm in!`);
+
       // Redirect away from the sign-in page.
       router.replace('feed');
     }
