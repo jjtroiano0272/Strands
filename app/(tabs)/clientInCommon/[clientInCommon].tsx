@@ -9,7 +9,7 @@ import {
   getDocs,
   DocumentData,
 } from 'firebase/firestore';
-import { db } from 'firebaseConfig';
+import { db } from '~/firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import { Avatar } from 'react-native-paper';
 import StarRating from '~/components/StarRating';

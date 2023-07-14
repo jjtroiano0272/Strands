@@ -45,17 +45,53 @@ import { useTheme } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { UserContext } from '../../../context/UserContext';
 import Swiper from 'react-native-swiper';
+import {
+  DocumentData,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  getFirestore,
+  query,
+  where,
+} from 'firebase/firestore';
+import { db } from '~/firebaseConfig';
 
-import { DocumentData, doc, getDoc, getFirestore } from 'firebase/firestore';
-import { db } from 'firebaseConfig';
-
-export default function ClientProfile() {
+export default function ClientProfile({
+  postData,
+}: {
+  postData: FireBasePost;
+}) {
   const userCtx = useContext(UserContext);
   const router = useRouter();
   const theme = useTheme();
   const [phoneModalVisible, setPhoneModalVisible] = useState(false);
 
   const { docId }: { docId?: string } = useLocalSearchParams();
+  console.log(`docId: ${docId}`);
+  const getStylistData = async () => {
+    if (!docId) return;
+
+    const docRef = doc(db, 'posts', docId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      console.log(
+        `post looking at : ${JSON.stringify(docSnap.data(), null, 2)}`
+      );
+
+      const idOfStylistThatPostedThis = docSnap.data().postedBy;
+
+      // Then look up the users table by `postedBy` field from the doc here
+      const stylistRef = doc(db, 'users', idOfStylistThatPostedThis);
+      const stylistSnap = await getDoc(stylistRef);
+      console.log(
+        `Stylist data: ${JSON.stringify(stylistSnap.data(), null, 2)}`
+      );
+    } else {
+      console.log('No such document!');
+    }
+  };
 
   // TODO These need to be replace with actual data, but will need to be engineered.
   // For example, user actually needs to come from something like the user context for the actual user.
@@ -136,11 +172,33 @@ export default function ClientProfile() {
 
   useEffect(() => {
     fetchPost();
+    getPosterInfo();
+    getStylistData();
   }, []);
 
   useEffect(() => {
-    console.log(`data: ${JSON.stringify(data?.media?.image, null, 2)}`);
+    console.log(`data: ${JSON.stringify(data, null, 2)}`);
   }, [data]);
+
+  // TEMP
+  const getPosterInfo = async () => {
+    const querySnapshot = await getDocs(collection(db, 'users'));
+
+    if (!querySnapshot.empty) {
+      const docSnapshot = querySnapshot.docs;
+      const posts = docSnapshot.map(doc => {
+        // return { ...doc.data(), docId: doc.id };
+        if (doc.id === data?.postedBy) {
+          console.log(
+            `user displayName: ${JSON.stringify(doc.data(), null, 2)}`
+          );
+
+          // append to data state var
+          setData({ ...data, displayName: doc.data().displayName });
+        }
+      });
+    }
+  };
 
   return (
     <ScrollView style={styles.getStartedContainer}>
@@ -167,11 +225,11 @@ export default function ClientProfile() {
                   alignItems: 'baseline',
                 }}
                 href={{
-                  pathname: `users/${data?.auth?.uid}`,
+                  pathname: `users/${data?.postedBy}`,
                   params: { docId: docId },
                 }}
               >
-                {data?.auth?.displayName}
+                {postData?.displayName}
               </Link>
 
               <View
@@ -184,7 +242,7 @@ export default function ClientProfile() {
         />
 
         <Card.Content>
-          {data?.media?.image && (
+          {data?.media?.images && (
             <Swiper
               containerStyle={styles.swiper}
               dot={
@@ -210,7 +268,7 @@ export default function ClientProfile() {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
               }
             >
-              {data.media.image.map((imgUri: string) => (
+              {data.media.images.map((imgUri: string) => (
                 <Image
                   style={styles.flex1}
                   key={imgUri}
@@ -251,7 +309,7 @@ export default function ClientProfile() {
             Salon
           </Subheading>
           <Paragraph style={{ color: theme.colors.text }}>
-            {data?.salon ?? 'N/A'}
+            {data?.salonSeenAt ?? 'N/A'}
           </Paragraph>
           {/* Comments */}
           <Subheading style={[styles.subtitle, { color: theme.colors.text }]}>

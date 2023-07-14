@@ -7,7 +7,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import { auth, db } from 'firebaseConfig';
+import { auth, db } from '~/firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { UserProfile } from '~/@types/types';
@@ -53,8 +53,6 @@ export default function useFirebase(
       .then(res => res.json())
       .then(data => setData(data));
   }, []);
-
-  
 }
 
 // const fetchUserData = async () => {

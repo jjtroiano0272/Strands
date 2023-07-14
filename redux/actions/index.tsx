@@ -7,7 +7,7 @@
 //   Firestore,
 // } from 'firebase/firestore/lite';
 // import { useReducer } from 'react';
-// import { firebaseConfig } from '../../firebaseConfig';
+// import { firebaseConfig } from '~/firebaseConfig';
 // // Follow this pattern to import other Firebase services
 // // import { } from 'firebase/<service>';import { Auth, getAuth } from 'firebase/auth';
 

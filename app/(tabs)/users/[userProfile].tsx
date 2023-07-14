@@ -31,7 +31,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import { db } from 'firebaseConfig';
+import { db } from '~/firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import {
   Avatar,

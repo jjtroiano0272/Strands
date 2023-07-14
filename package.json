@@ -99,6 +99,7 @@
     "@babel/core": "^7.20.0",
     "@faker-js/faker": "^7.6.0",
     "@types/d3": "^7.4.0",
+    "@types/firebase": "^3.2.1",
     "@types/react": "~18.0.14",
     "@types/react-native-communications": "^2.2.1",
     "@types/react-native-dotenv": "^0.2.0",

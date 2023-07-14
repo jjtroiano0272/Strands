@@ -77,7 +77,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { db } from 'firebaseConfig';
+import { db } from '~/firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import { interpolate } from 'react-native-reanimated';
 
@@ -471,8 +471,8 @@ export default function Client() {
                 left={() => (
                   <Avatar.Image
                     source={{
-                      uri: post?.media?.image
-                        ? post.media.image[0]
+                      uri: post?.media?.images
+                        ? post.media.images[0]
                         : `https://api.dicebear.com/6.x/notionists/png/seed=${post?.id}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
                     }}
                     size={64}

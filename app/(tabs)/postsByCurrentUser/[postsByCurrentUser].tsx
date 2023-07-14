@@ -11,7 +11,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import { db } from 'firebaseConfig';
+import { db } from '~/firebaseConfig';
 import { List, MD3LightTheme, Avatar, MD3DarkTheme } from 'react-native-paper';
 import { useTheme } from '@react-navigation/native';
 

@@ -19,7 +19,7 @@ import {
 } from 'firebase/auth';
 import { useAuth } from '~/context/auth';
 import { UserContext } from '~/context/UserContext';
-// import { passwordReset } from '../../../firebaseConfig';
+// import { passwordReset } from '~/firebaseConfig';
 import { FirebaseError } from 'firebase/app';
 
 const ForgotPasswordPage = () => {

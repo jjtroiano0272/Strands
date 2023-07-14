@@ -32,7 +32,7 @@ import {
   where,
 } from 'firebase/firestore';
 // import { fetchUser } from '../../redux/actions';
-import { clientsRef, db, postsRef, usersRef } from '../../firebaseConfig';
+import { clientsRef, db, postsRef, usersRef } from '~/firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import {
   Button,
@@ -42,7 +42,6 @@ import {
   MD3LightTheme,
 } from 'react-native-paper';
 import {
-  log,
   useAnimatedGestureHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -113,47 +112,35 @@ const Feed = () => {
    */
   // TODO There's a better way to write this so the output gets stored in a var
   const fetchPostsData = async () => {
-    let postData: FireBasePost[] = [];
+    let postData: (FireBasePost | DocumentData)[] = [];
     let userData: { [key: string]: any }[] = [];
 
     try {
       // GET POSTS
       const recentPosts = query(postsRef, orderBy('createdAt', 'desc'));
       const postSnap = await getDocs(recentPosts);
-      postSnap.forEach(post => {
-        const data: FireBasePost = { ...post.data(), docId: post.id }; // Get the data object
+      postSnap.forEach(async post => {
+        // also get user Data
+        const userRef = doc(db, 'users', post?.data().postedBy);
+        const userSnap = await getDoc(userRef);
+
+        const data: FireBasePost = {
+          ...post.data(),
+          ...userSnap.data(),
+          docId: post.id,
+        }; // Get the data object
+
+        // console.log(`HERE BITCH: ${JSON.stringify(data, null, 2)}`);
+
+        // console.log(`post1: ${JSON.stringify(post.data(), null, 2)}`);
+        // console.log(`finalData: ${JSON.stringify(data, null, 2)}`);
+
         postData.push(data); // Push the modified object into the list array
       });
 
-      // GET USERS
-      const userSnap = await getDocs(usersRef);
-      userSnap.forEach(user => {
-        userData.push(user.data());
+      console.log(`posts now: ${JSON.stringify(postData, null, 2)}`);
 
-        if (user.id === currentUserID) {
-          // Works. Now set it to find the current user's savedPosts
-          console.log(`Found you! ${user.id}`);
-          getDoc(doc(db, 'users', user.id))
-            .then(docSnap => {
-              console.log('Check here');
-              console.log(docSnap.data());
-            })
-            .catch(err => console.error(err));
-        } else {
-          console.log({
-            yourUID: currentUserID,
-            foundUID: user.id,
-          });
-        }
-      });
-
-      // console.log(`userData: ${JSON.stringify(userData.slice(0, 3))}`);
-      const combinedData = postData.map((post, index) => ({
-        ...post,
-        ...userData[index],
-      }));
-
-      setPosts(combinedData);
+      setPosts(postData);
       setInitialDbData(postData);
     } catch (error) {
       console.error(`Error getting document: \x1b[33m${error}`);
@@ -353,13 +340,13 @@ const Feed = () => {
   }, []);
 
   useEffect(() => {
-    console.log(
-      `posts (${posts?.length} found): ${JSON.stringify(
-        posts?.slice(0, 3),
-        null,
-        2
-      )}`
-    );
+    // console.log(
+    //   `posts (${posts?.length} found): ${JSON.stringify(
+    //     posts?.slice(0, 2),
+    //     null,
+    //     2
+    //   )}`
+    // );
   }, [posts]);
 
   useEffect(() => {
@@ -427,8 +414,8 @@ const Feed = () => {
 
           username: randUser().username.replace(/[^a-zA-Z0-9]/g, ''),
         };
-        console.log(`user id: ${createTheseUsers[i]}`);
-        console.log(JSON.stringify(newUser, null, 2));
+        // console.log(`user id: ${createTheseUsers[i]}`);
+        // console.log(JSON.stringify(newUser, null, 2));
 
         const newUserRef = doc(db, 'users', createTheseUsers[i]);
         await setDoc(newUserRef, newUser);
@@ -439,12 +426,16 @@ const Feed = () => {
   }, []);
 
   useEffect(() => {
-    console.log(
-      `postsSAved ${
-        Array.isArray(postsSavedByUser) ? 'array' : typeof postsSavedByUser
-      }: ${JSON.stringify(postsSavedByUser, null, 2)}`
-    );
+    // console.log(
+    //   `postsSAved ${
+    //     Array.isArray(postsSavedByUser) ? 'array' : typeof postsSavedByUser
+    //   }: ${JSON.stringify(postsSavedByUser, null, 2)}`
+    // );
   }, [postsSavedByUser]);
+
+  useEffect(() => {
+    console.log(`posts: ${JSON.stringify(posts?.slice(0, 2), null, 2)}`);
+  }, [posts]);
 
   return (
     <>
@@ -577,6 +568,7 @@ const Feed = () => {
                 <Post
                   postData={item}
                   postsSavedByUser={postsSavedByUser ?? ['']} // TODO: Not a great bulletproof method, but hey it'll work for now.
+                  // postedById={}
                 />
               )}
             />

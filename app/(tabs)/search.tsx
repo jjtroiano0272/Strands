@@ -8,7 +8,7 @@ import { useTheme } from '@react-navigation/native';
 import { ScrollView } from 'react-native';
 import { Stack } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db } from '../../firebaseConfig';
+import { db } from '~/firebaseConfig';
 import {
   Avatar,
   List,

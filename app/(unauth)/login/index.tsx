@@ -28,7 +28,7 @@
 //   UserCredential,
 // } from 'firebase/auth';
 // import { DarkTheme, useTheme } from '@react-navigation/native';
-// import { firebaseConfig } from '../../../firebaseConfig';
+// import { firebaseConfig } from '~/firebaseConfig';
 // import { UserContext } from '../../../context/UserContext';
 // import { Auth as SignInWithPopup } from '../../../components/auth/Auth';
 // import { Link, Stack } from 'expo-router';

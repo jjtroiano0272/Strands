@@ -55,7 +55,7 @@ import Swiper from 'react-native-swiper';
 import { style } from 'd3';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getDatabase, ref, child, push, update } from 'firebase/database';
-import { clientsRef, db } from 'firebaseConfig';
+import { clientsRef, db } from '~/firebaseConfig';
 
 export default function Post({
   postData,
@@ -262,15 +262,16 @@ export default function Post({
   }, []);
 
   useEffect(() => {
-    console.log(`postData.displayName: ${postData?.displayName}`);
+    // console.log(`postData.displayName: ${postData?.displayName}`);
   }, []);
 
   return (
     <Link
       href={{
-        pathname: `posts/foo`,
+        pathname: `posts/${postData?.docId}`,
         params: {
           docId: postData?.docId,
+          postData: postData,
         },
       }}
       onLongPress={showActionSheet}
@@ -307,6 +308,9 @@ export default function Post({
                         ?.unit
                     } ago`}
                 </Text>
+
+                <Text>{postData?.displayName}</Text>
+                <Text>{postData?.postedBy}</Text>
               </View>
             </>
           }

@@ -14,6 +14,7 @@ module.exports = function (api) {
             '~/context': './context',
             '~/hooks': './hooks',
             '~/utils': './utils',
+            '~/firebaseConfig': './firebaseConfig',
           },
         },
       ],
