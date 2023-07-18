@@ -122,26 +122,29 @@ const Feed = () => {
       postSnap.forEach(async post => {
         // also get user Data
         const userRef = doc(db, 'users', post?.data().postedBy);
-        const userSnap = await getDoc(userRef);
 
-        const data: FireBasePost = {
-          ...post.data(),
-          ...userSnap.data(),
-          docId: post.id,
-        }; // Get the data object
+        await getDoc(userRef)
+          .then(foo => {
+            // ✅ data itself works and grabs data
+            const data: FireBasePost = {
+              ...post.data(),
+              ...foo.data(),
+              docId: post.id,
+            };
 
-        // console.log(`HERE BITCH: ${JSON.stringify(data, null, 2)}`);
+            // postData.push(data); // Push the modified object into the list array
 
-        // console.log(`post1: ${JSON.stringify(post.data(), null, 2)}`);
-        // console.log(`finalData: ${JSON.stringify(data, null, 2)}`);
-
-        postData.push(data); // Push the modified object into the list array
+            if (data) {
+              setPosts(prevPosts =>
+                prevPosts ? [...prevPosts, data] : [data]
+              );
+              setInitialDbData(prevPosts =>
+                prevPosts ? [...prevPosts, data] : [data]
+              );
+            }
+          })
+          .catch(err => console.error(err));
       });
-
-      console.log(`posts now: ${JSON.stringify(postData, null, 2)}`);
-
-      setPosts(postData);
-      setInitialDbData(postData);
     } catch (error) {
       console.error(`Error getting document: \x1b[33m${error}`);
 
@@ -338,100 +341,6 @@ const Feed = () => {
     fetchPostsData();
     fetchUserData();
   }, []);
-
-  useEffect(() => {
-    // console.log(
-    //   `posts (${posts?.length} found): ${JSON.stringify(
-    //     posts?.slice(0, 2),
-    //     null,
-    //     2
-    //   )}`
-    // );
-  }, [posts]);
-
-  useEffect(() => {
-    // Add client ID to each post
-    const writeToDB = async () => {
-      // let posts: DocumentData[] = [];
-      // let clients: DocumentData[] = [];
-      // let users: DocumentData[] = [];
-      // let postUserMap = [];
-      // let createTheseUsers: string[] = [];
-
-      // const postsQuery = query(postsRef);
-      // const postSnap = await getDocs(postsQuery);
-      // postSnap.forEach(post => {
-      //   console.log(`post: ${JSON.stringify(post.data(), null, 2)}`);
-
-      //   posts.push(post.data()); // Push the modified object into the list array
-      // });
-
-      // const clientSnap = await getDocs(clientsRef);
-      // clientSnap.forEach(client => {
-      //   clients.push(client.data());
-      // });
-
-      // const userSnap = await getDocs(usersRef);
-      // userSnap.forEach(user => {
-      //   users.push({ id: user.id, ...user.data() });
-      // });
-
-      // posts.map(post => {
-      //   const result = users.find(user => user.id === post.postedBy);
-
-      //   if (!result) {
-      //     console.log(`empty record: ${post.postedBy}`);
-      //     createTheseUsers.push(post.postedBy);
-      //   }
-      // });
-
-      const createTheseUsers = [
-        'l954qYwwbl3kD4RokCzk3IYnqu2p',
-        'LAmPYYutVeqhNuPriCrzrrRl4b6r',
-        'nyiHKjsD1zBFDgveVnlN3PYfiTno',
-        'Ul58TGrcCps6FoQnaSVYFedmmgBe',
-        'DF26Vzgq8gKcBd4Z9qF8mo0RUe4L',
-        'ncEfJDZHy60EzFxsJyfFtO2Jih9Y',
-      ];
-
-      for (let i = 0; i < createTheseUsers.length; i++) {
-        const newUser = {
-          bio: faker.lorem.words(20),
-          displayName: faker.name.firstName(),
-          followers: [],
-          following: [],
-          profileImage: `https://loremflickr.com/50/50/portrait?lock=${faker.random.numeric(
-            5
-          )}`,
-          savedPosts: [],
-          socialMediaLinks: {
-            facebook: '',
-            instagram: '',
-            reddit: '',
-            youtube: '',
-          },
-          // const modifiedStr = str.replace(/[^a-zA-Z0-9]/g, ""); // Remove non-alphanumeric characters
-
-          username: randUser().username.replace(/[^a-zA-Z0-9]/g, ''),
-        };
-        // console.log(`user id: ${createTheseUsers[i]}`);
-        // console.log(JSON.stringify(newUser, null, 2));
-
-        const newUserRef = doc(db, 'users', createTheseUsers[i]);
-        await setDoc(newUserRef, newUser);
-      }
-    };
-
-    // writeToDB();
-  }, []);
-
-  useEffect(() => {
-    // console.log(
-    //   `postsSAved ${
-    //     Array.isArray(postsSavedByUser) ? 'array' : typeof postsSavedByUser
-    //   }: ${JSON.stringify(postsSavedByUser, null, 2)}`
-    // );
-  }, [postsSavedByUser]);
 
   useEffect(() => {
     console.log(`posts: ${JSON.stringify(posts?.slice(0, 2), null, 2)}`);

@@ -63,6 +63,7 @@ export type FireBasePost = {
   savedPosts?: string[],
   username?: string;
   docId?: string;
+  data?: { [key: string]: DocumentData, docId: string; };
   [key: string]: DocumentData;
 };
 

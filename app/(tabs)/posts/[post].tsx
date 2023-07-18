@@ -57,18 +57,17 @@ import {
 } from 'firebase/firestore';
 import { db } from '~/firebaseConfig';
 
-export default function ClientProfile({
-  postData,
-}: {
-  postData: FireBasePost;
-}) {
+export default function ClientProfile() {
   const userCtx = useContext(UserContext);
   const router = useRouter();
   const theme = useTheme();
   const [phoneModalVisible, setPhoneModalVisible] = useState(false);
 
-  const { docId }: { docId?: string } = useLocalSearchParams();
+  const { docId, postData }: { docId?: string; postData?: FireBasePost } =
+    useLocalSearchParams();
   console.log(`docId: ${docId}`);
+  console.log(`postData: ${JSON.stringify(postData, null, 2)}`);
+
   const getStylistData = async () => {
     if (!docId) return;
 
@@ -131,34 +130,9 @@ export default function ClientProfile({
   };
 
   const [data, setData] = useState<DocumentData | FireBasePost>();
-
-  // getDocs(userPostsCollectionRef)
-  //   .then(querySnapshot => {
-  //     querySnapshot.forEach(doc => {
-  //       const data = doc.data(); // Get the data object
-  //       data.docId = doc.id; // Add the id property with the value of doc.id
-
-  //       list.push(data); // Push the modified object into the list array
-
-  //       console.log(`id type: ${JSON.stringify(data, null, 2)}`);
-  //     });
-
-  //     setMyDbData(list);
-  //     setInitialDbData(list);
-
-  //     console.log(`list: ${JSON.stringify(list.slice(0, 2), null, 2)}`);
-  //   })
-  //   .catch((error: FirebaseError) => {
-  //     console.log(
-  //       'Error getting document: \x1b[34m',
-  //       error.code,
-  //       error.message
-  //     );
-
-  //     setErrors(error);
-  //   });
+  const [clientID, setClientID] = useState<string>();
   const fetchPost = async () => {
-    if (!docId) return;
+    if (!docId) return console.error(`no doc id!`);
 
     // TODO Refactor into one line compound?
     const docRef = doc(db, 'posts', docId);
@@ -167,13 +141,28 @@ export default function ClientProfile({
 
     console.log(`in post: ${JSON.stringify(docSnap.data(), null, 2)}`);
 
+    setClientID(docSnap?.data()?.clientID);
+
     setData(docData);
+  };
+
+  const fetchClientData = async () => {
+    // if (!clientID) return console.error(`no client id!`);
+
+    const clientRef = doc(db, 'clients', clientID);
+    const clientSnap = await getDoc(clientRef);
+    const clientData = clientSnap.data();
+
+    console.log(`clientData: ${JSON.stringify(clientData, null, 2)}`);
+
+    setData({ ...data, clientName: clientData?.firstName });
   };
 
   useEffect(() => {
     fetchPost();
     getPosterInfo();
     getStylistData();
+    fetchClientData();
   }, []);
 
   useEffect(() => {
@@ -203,6 +192,9 @@ export default function ClientProfile({
   return (
     <ScrollView style={styles.getStartedContainer}>
       <Stack.Screen options={{ title: `${data?.clientName}` }} />
+
+      <Text>docID: {docId}</Text>
+      <Text>clientID: {clientID}</Text>
 
       <Card
         style={styles.card}
