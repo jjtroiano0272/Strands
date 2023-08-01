@@ -268,7 +268,7 @@ export default function Post({
   return (
     <Link
       href={{
-        pathname: `posts/${postData?.docId}`,
+        // pathname: `posts/${postData?.docId}`,
         params: {
           docId: postData?.docId,
           postData: postData,
@@ -291,7 +291,7 @@ export default function Post({
                     color: paperTheme.colors.secondary,
                   }}
                 >
-                  ⟩⟩ {postData?.displayName ?? postData?.username}
+                  ⟩⟩ {postData?.postedBy?.slice(-4)}
                 </Text>
                 <Text style={{ color: theme.colors.text }}>
                   {/* {postData?.createdAt &&
@@ -310,7 +310,6 @@ export default function Post({
                 </Text>
 
                 <Text>{postData?.displayName}</Text>
-                <Text>{postData?.postedBy}</Text>
               </View>
             </>
           }

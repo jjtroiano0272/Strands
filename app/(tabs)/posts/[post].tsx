@@ -131,38 +131,32 @@ export default function ClientProfile() {
 
   const [data, setData] = useState<DocumentData | FireBasePost>();
   const [clientID, setClientID] = useState<string>();
-  const fetchPost = async () => {
+
+  const fetchData = async () => {
+    // const fetchPost
     if (!docId) return console.error(`no doc id!`);
 
     // TODO Refactor into one line compound?
     const docRef = doc(db, 'posts', docId);
     const docSnap = await getDoc(docRef);
     const docData = docSnap.data();
+    // setData(docData);
 
-    console.log(`in post: ${JSON.stringify(docSnap.data(), null, 2)}`);
+    // const fetchClientData
 
-    setClientID(docSnap?.data()?.clientID);
-
-    setData(docData);
-  };
-
-  const fetchClientData = async () => {
-    // if (!clientID) return console.error(`no client id!`);
-
-    const clientRef = doc(db, 'clients', clientID);
+    const clientRef = doc(db, 'clients', docSnap?.data()?.clientID);
     const clientSnap = await getDoc(clientRef);
     const clientData = clientSnap.data();
-
-    console.log(`clientData: ${JSON.stringify(clientData, null, 2)}`);
-
-    setData({ ...data, clientName: clientData?.firstName });
+    setClientID(docSnap?.data()?.clientID);
+    setData({ ...data, docData, clientName: clientData?.firstName });
   };
 
   useEffect(() => {
-    fetchPost();
-    getPosterInfo();
-    getStylistData();
-    fetchClientData();
+    // fetchPost();
+    // getPosterInfo();
+    // getStylistData();
+    // fetchClientData();
+    fetchData();
   }, []);
 
   useEffect(() => {

@@ -270,14 +270,13 @@ export default function LoginPage() {
           width: '100%',
         }}
       >
-        {['google', 'microsoft', 'apple'].map(
-          (provider: string, index: number) => (
+        {['google', 'microsoft', 'apple'].map((provider: string) => (
+          <React.Fragment key={provider}>
             <RippleButton
               onPress={() => console.log('hi')}
               style={{ borderRadius: 50 }}
             >
               <IconButton
-                key={provider}
                 icon={provider}
                 animated={true}
                 theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
@@ -286,8 +285,8 @@ export default function LoginPage() {
                 // onPress={() => handleSSOLogin(provider)}
               />
             </RippleButton>
-          )
-        )}
+          </React.Fragment>
+        ))}
       </View>
       <View
         style={{

@@ -163,7 +163,7 @@ export default function Add() {
         style={styles.camera}
         type={type}
         ratio={'1:1'}
-        ref={ref => setCamera(ref)}
+        // ref={ref => setCamera(ref)}
       >
         <View style={styles.buttonContainer}>
           <View

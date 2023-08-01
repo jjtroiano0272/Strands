@@ -119,32 +119,112 @@ const Feed = () => {
       // GET POSTS
       const recentPosts = query(postsRef, orderBy('createdAt', 'desc'));
       const postSnap = await getDocs(recentPosts);
-      postSnap.forEach(async post => {
-        // also get user Data
-        const userRef = doc(db, 'users', post?.data().postedBy);
+      // postSnap.forEach(async post => {
+      //   // also get user Data
+      //   const userRef = doc(db, 'users', post?.data().postedBy);
 
-        await getDoc(userRef)
-          .then(foo => {
-            // ✅ data itself works and grabs data
-            const data: FireBasePost = {
-              ...post.data(),
-              ...foo.data(),
-              docId: post.id,
-            };
+      //   await getDoc(userRef)
+      //     .then(foo => {
+      //       // ✅ data itself works and grabs data
+      //       const data: FireBasePost = {
+      //         ...post.data(),
+      //         ...foo.data(),
+      //         docId: post.id,
+      //       };
 
-            // postData.push(data); // Push the modified object into the list array
+      //       // postData.push(data); // Push the modified object into the list array
 
-            if (data) {
-              setPosts(prevPosts =>
-                prevPosts ? [...prevPosts, data] : [data]
-              );
-              setInitialDbData(prevPosts =>
-                prevPosts ? [...prevPosts, data] : [data]
-              );
-            }
-          })
-          .catch(err => console.error(err));
+      //       if (data) {
+      //         setPosts(prevPosts =>
+      //           prevPosts ? [...prevPosts, data] : [data]
+      //         );
+      //         setInitialDbData(prevPosts =>
+      //           prevPosts ? [...prevPosts, data] : [data]
+      //         );
+      //       }
+      //     })
+      //     .catch(err => console.error(err));
+      // });
+
+      postSnap.forEach(post => {
+        postData.push({ ...post.data(), docId: post.id }); // Push the modified object into the list array
       });
+
+      const users = query(usersRef);
+      const usersSnap = await getDocs(users);
+      usersSnap.forEach(user => {
+        userData.push({ ...user.data(), userId: user.id });
+      });
+
+      const matchedData: DocumentData = {};
+      postData.forEach(post => {
+        if (userData.includes({ userId: '62JdkwCUwpXoDNMBZjXwN1F2eKzI' })) {
+          console.log(`includes: ${post.userId}`);
+        }
+
+        const userIdToFind = post.postedBy;
+        const doesUserExist = userData.some(
+          user => user.userId === userIdToFind
+        );
+
+        if (doesUserExist) {
+          const userRef = doc(db, 'users', post.postedBy);
+          let result;
+          getDoc(userRef).then(foo => {
+            console.log(`found user: ${JSON.stringify(foo.data())}`);
+            result = foo.data();
+          });
+
+          if (post && result) {
+            post = result;
+          }
+        }
+      });
+
+      if (userData.includes({ userId: '62JdkwCUwpXoDNMBZjXwN1F2eKzI' })) {
+        console.log(`found something`);
+      }
+
+      // The matched data will be available in the matchedData object
+      // console.log(
+      //   `matchedData: ${JSON.stringify(
+      //     Object.entries(matchedData)[0],
+      //     null,
+      //     2
+      //   )}`
+      // );
+
+      /* It's gonna look slike
+                
+            "postData": [
+              {
+                "postedBy": "obZ8uZOrsO0g0qcCLVRTC6hWXCBo",
+                "comments": "Wants a hairstyle that will show off her natural curls or waves",
+                "docId": "aLpDv03nl9pF3PobzOck"
+                ...
+              },
+              ...
+            ],
+
+            "userData": [
+              {
+                "displayName": "Johnpaul",
+                "userId": "62JdkwCUwpXoDNMBZjXwN1F2eKzI"
+                ...
+              },
+              ...
+            ]
+      */
+
+      console.log(
+        `postData and userData: ${JSON.stringify(
+          { postData: postData.slice(0, 2), userData: userData.slice(0, 2) },
+          null,
+          2
+        )}`
+      );
+
+      setPosts(postData);
     } catch (error) {
       console.error(`Error getting document: \x1b[33m${error}`);
 
@@ -339,11 +419,11 @@ const Feed = () => {
 
   useEffect(() => {
     fetchPostsData();
-    fetchUserData();
+    // fetchUserData();
   }, []);
 
   useEffect(() => {
-    console.log(`posts: ${JSON.stringify(posts?.slice(0, 2), null, 2)}`);
+    console.log(`posts: ${JSON.stringify(posts?.slice(0, 1), null, 2)}`);
   }, [posts]);
 
   return (
