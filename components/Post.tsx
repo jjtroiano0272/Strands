@@ -224,7 +224,7 @@ export default function Post({
           router.push({
             pathname: `clients/${clientData?.firstName}${clientData?.lastName}`,
             params: {
-              clientName: clientData?.firstName + clientData?.lastName,
+              clientID: postData?.clientID,
             },
           });
         }
@@ -245,11 +245,13 @@ export default function Post({
 
   useEffect(() => {
     const getClientData = async () => {
+      if (!postData?.clientID) return;
+
       const docRef = doc(db, 'clients', postData?.clientID);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        // console.log('Document data:', docSnap.data());
+        console.log('Document data:', docSnap.data());
         setClientData({ ...getClientData, ...docSnap.data() });
       } else {
         // docSnap.data() will be undefined in this case
@@ -259,94 +261,105 @@ export default function Post({
     };
 
     getClientData();
+    fetchStylistData();
   }, []);
 
+  const [stylistData, setStylistData] = useState<DocumentData>();
+
+  const fetchStylistData = async (userID?: string) => {
+    if (!userID) return;
+
+    const stylistRef = doc(db, 'users', userID);
+    const stylistSnap = await getDoc(stylistRef);
+
+    if (stylistSnap.exists()) {
+      console.log('Stylist data:', stylistSnap.data());
+      setStylistData({ ...stylistData, ...stylistSnap.data() });
+    } else {
+      console.log('No such document!');
+    }
+  };
+
   useEffect(() => {
-    // console.log(`postData.displayName: ${postData?.displayName}`);
+    console.log(`postData of Post.tsx: ${JSON.stringify(postData, null, 2)}`);
   }, []);
 
   return (
-    <Link
-      href={{
-        // pathname: `posts/${postData?.docId}`,
-        params: {
-          docId: postData?.docId,
-          postData: postData,
-        },
-      }}
+    <Card
+      style={styles.card}
+      theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+      onPress={() =>
+        router.push({
+          pathname: `posts/${postData?.docId}`,
+          params: {
+            docId: postData?.docId,
+            postData: postData,
+          },
+        })
+      }
       onLongPress={showActionSheet}
     >
-      <Card
-        style={styles.card}
-        theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-      >
-        <Card.Title
-          title={clientData?.firstName}
-          titleStyle={{ color: theme.colors.text }}
-          subtitle={
-            <>
-              <View style={{ backgroundColor: 'transparent' }}>
-                <Text
-                  style={{
-                    color: paperTheme.colors.secondary,
-                  }}
-                >
-                  ⟩⟩ {postData?.postedBy?.slice(-4)}
-                </Text>
-                <Text style={{ color: theme.colors.text }}>
-                  {/* {postData?.createdAt &&
+      <Card.Title
+        title={clientData?.firstName}
+        titleStyle={{ color: theme.colors.text }}
+        subtitle={
+          <>
+            <View style={{ backgroundColor: 'transparent' }}>
+              <Text
+                style={{
+                  color: paperTheme.colors.secondary,
+                }}
+              >
+                ⟩⟩ {postData?.postedBy?.slice(-4)}
+              </Text>
+              <Text style={{ color: theme.colors.text }}>
+                {/* {postData?.createdAt &&
                     `${getElapsedTime(postData?.createdAt as number)?.number} ${
                       getElapsedTime(postData?.createdAt as number)?.unit
                     } ago`} */}
-                  {/* TODO: Offload to its own component and include the handling cases for like '1 weeks ago' */}
-                  {postData?.createdAt &&
-                    `${
-                      getElapsedTime(Date.parse(postData?.createdAt) / 1000)
-                        ?.number
-                    } ${
-                      getElapsedTime(Date.parse(postData?.createdAt) / 1000)
-                        ?.unit
-                    } ago`}
-                </Text>
-
-                <Text>{postData?.displayName}</Text>
-              </View>
-            </>
-          }
-          // TODO: Have the DB autogenerate the image if the user doesn't have profileimage
-          left={props => (
-            <Avatar.Image
+                {/* TODO: Offload to its own component and include the handling cases for like '1 weeks ago' */}
+                {postData?.createdAt &&
+                  `${
+                    getElapsedTime(Date.parse(postData?.createdAt) / 1000)
+                      ?.number
+                  } ${
+                    getElapsedTime(Date.parse(postData?.createdAt) / 1000)?.unit
+                  } ago`}
+              </Text>
+            </View>
+          </>
+        }
+        // TODO: Have the DB autogenerate the image if the user doesn't have profileimage
+        left={props => (
+          <Avatar.Image
+            {...props}
+            size={36}
+            source={{
+              uri:
+                postData?.profileImage ??
+                `https://api.dicebear.com/6.x/lorelei/png/seed=${postData?.docId}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
+            }}
+          />
+        )}
+        right={props =>
+          // TODO Make a banner, not a button
+          postsSavedByUser?.includes(postData?.docId || '') && (
+            <Avatar.Icon
               {...props}
-              size={36}
-              source={{
-                uri:
-                  postData?.profileImage ??
-                  `https://api.dicebear.com/6.x/lorelei/png/seed=${postData?.docId}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
-              }}
+              style={{ backgroundColor: 'transparent', top: -30 }}
+              color={theme.colors.primary}
+              size={20}
+              icon='bookmark'
             />
-          )}
-          right={props =>
-            // TODO Make a banner, not a button
-            postsSavedByUser?.includes(postData?.docId || '') && (
-              <Avatar.Icon
-                {...props}
-                style={{ backgroundColor: 'transparent', top: -30 }}
-                color={theme.colors.primary}
-                size={20}
-                icon='bookmark'
-              />
-            )
-          }
-        />
-        <Card.Cover
-          source={{
-            uri: postData?.media?.images
-              ? postData?.media?.images[0]
-              : undefined,
-          }}
-        />
-      </Card>
-    </Link>
+          )
+        }
+      />
+      <Card.Cover
+        source={{
+          uri: postData?.media?.images ? postData?.media?.images[0] : undefined,
+        }}
+      />
+    </Card>
   );
 }
 

@@ -171,7 +171,7 @@ const Feed = () => {
           const userRef = doc(db, 'users', post.postedBy);
           let result;
           getDoc(userRef).then(foo => {
-            console.log(`found user: ${JSON.stringify(foo.data())}`);
+            // console.log(`found user: ${JSON.stringify(foo.data())}`);
             result = foo.data();
           });
 
@@ -200,7 +200,7 @@ const Feed = () => {
               {
                 "postedBy": "obZ8uZOrsO0g0qcCLVRTC6hWXCBo",
                 "comments": "Wants a hairstyle that will show off her natural curls or waves",
-                "docId": "aLpDv03nl9pF3PobzOck"
+                "docId": "aLpDv03nl9pF3Pobzy7ju889Ock"
                 ...
               },
               ...
@@ -227,6 +227,7 @@ const Feed = () => {
       setPosts(postData);
     } catch (error) {
       console.error(`Error getting document: \x1b[33m${error}`);
+      console.log(`Coal mine canary!`);
 
       setErrors(error);
     }
@@ -436,7 +437,7 @@ const Feed = () => {
             <FlatList
               contentContainerStyle={{
                 paddingVertical: 8,
-                paddingHorizontal: 4,
+                paddingHorizontal: 10,
               }}
               data={posts?.filter(
                 (post: any) =>

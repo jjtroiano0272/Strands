@@ -68,6 +68,7 @@ import Swiper from 'react-native-swiper';
 
 import {
   DocumentData,
+  DocumentSnapshot,
   collection,
   doc,
   getDoc,
@@ -77,7 +78,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { db } from '~/firebaseConfig';
+import { clientsRef, db } from '~/firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import { interpolate } from 'react-native-reanimated';
 
@@ -86,118 +87,20 @@ export default function Client() {
   const router = useRouter();
   const theme = useTheme();
   const [phoneModalVisible, setPhoneModalVisible] = useState(false);
-  const { clientName }: { clientName?: string } = useLocalSearchParams();
+  const { clientName, clientID }: { clientName?: string; clientID?: string } =
+    useLocalSearchParams();
   const [clientData, setClientData] = useState<DocumentData | FireBasePost>();
   const auth = getAuth();
   const sensor = useAnimatedSensor(SensorType.ROTATION);
-
-  // const fetchPost = async () => {
-  //   if (!docId) return;
-
-  //   // TODO Refactor into one line compound?
-  //   const docRef = doc(db, 'posts', docId);
-  //   const docSnap = await getDoc(docRef);
-  //   const docData = docSnap.data();
-
-  //   console.log(`in post: ${JSON.stringify(docSnap.data(), null, 2)}`);
-
-  //   setData(docData);
-  // };
-
-  const handleOptionsMenu = (phoneNumber: string) => {
-    const menuOptions = ['Call', 'Text', 'Cancel'];
-
-    // Show the action sheet to the user
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        options: menuOptions,
-        cancelButtonIndex: menuOptions.length - 1,
-      },
-      async (index: number) => {
-        // if else method
-        try {
-          if (menuOptions[index] === 'Call') {
-            await Linking.openURL(`tel:${phoneNumber}`);
-          } else if (menuOptions[index] === 'Text') {
-            await Linking.openURL(
-              `sms:${phoneNumber}?body=Hi ${clientData?.clientName} this is ${auth?.currentUser?.displayName}. I just wanted to confirm the upcoming appointment with you`
-            );
-          } else {
-            return;
-          }
-        } catch (err) {
-          console.error(`menu option error: ${err}`);
-        }
-      }
-    );
-  };
-
-  const formatPhoneNumber = (num: string): string => {
-    return `(${num?.toString().slice(0, 3)}) ${num
-      ?.toString()
-      .slice(3, 6)}-${num?.toString().slice(6)}`;
-  };
-
-  const fetchClientData = async () => {
-    let numRatings = 0;
-    let ratingSum = 0;
-    let postsAboutClient: {}[] = [];
-
-    const postsRef = collection(db, 'posts');
-    const q = query(postsRef, where('clientName', '==', clientName));
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach(doc => {
-      numRatings = numRatings + 1;
-      console.log(`doc?.data()?.rating: ${doc?.data()?.rating}`);
-
-      if (doc?.data()?.rating) {
-        console.log(`truthy rating: ${doc?.data()?.rating}`);
-        ratingSum = ratingSum + doc?.data()?.rating;
-      }
-
-      postsAboutClient.push({ id: doc.id, ...doc.data() });
-    });
-
-    console.log(
-      `postsAboutClient: ${JSON.stringify(postsAboutClient, null, 2)}`
-    );
-
-    console.log(`ratingSum: ${ratingSum}`);
-    console.log(`numRatings: ${numRatings}`);
-    console.log(`averageRating: ${ratingSum / numRatings}`);
-
-    setClientData({
-      ...clientData,
-      averageRating: ratingSum / numRatings,
-      postsAboutClient,
-    });
-  };
-
   const [editable, setEditable] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState<{
     raw: number;
     formatted: string;
   }>({ raw: 0, formatted: '' });
-
-  const getLocaleDate = (date: Date | string) => {
-    console.log(`date: ${date}`);
-
-    const localeDate = new Date(
-      (date as string).substring(0, (date as string).indexOf('Z'))
-    );
-    const options = {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    };
-
-    return localeDate.toLocaleString('en-US', { dateStyle: 'medium' });
-  };
-
   const IMAGE_OFFSET = 200;
   const WIDTH = 300;
   const HEIGHT = WIDTH * 0.8;
+
   const imageStyle = useAnimatedStyle(() => {
     const { yaw, pitch, roll } = sensor.sensor.value;
 
@@ -227,6 +130,160 @@ export default function Client() {
     };
   });
 
+  // const fetchPost = async () => {
+  //   if (!docId) return;
+
+  //   // TODO Refactor into one line compound?
+  //   const docRef = doc(db, 'posts', docId);
+  //   const docSnap = await getDoc(docRef);
+  //   const docData = docSnap.data();
+
+  //   console.log(`in post: ${JSON.stringify(docSnap.data(), null, 2)}`);
+
+  //   setData(docData);
+  // };
+
+  const handleOptionsMenu = (phoneNumber: string) => {
+    const menuOptions = ['Call', 'Text', 'Cancel'];
+
+    // Show the action sheet to the user
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: menuOptions,
+        cancelButtonIndex: menuOptions.length - 1,
+      },
+      async (index: number) => {
+        // if else method
+        try {
+          if (menuOptions[index] === 'Call') {
+            await Linking.openURL(`tel:${phoneNumber}`);
+          } else if (menuOptions[index] === 'Text') {
+            console.log(`At text option for ${phoneNumber}`);
+
+            await Linking.openURL(`sms:+${phoneNumber}`);
+          } else {
+            return;
+          }
+        } catch (err) {
+          console.error(`menu option error: ${err}`);
+        }
+      }
+    );
+  };
+
+  useEffect(() => {
+    console.log(`clientData: ${JSON.stringify(clientData, null, 2)}`);
+    console.log(
+      `auth?.currentUser: ${JSON.stringify(auth?.currentUser, null, 2)}`
+    );
+  }, [clientData]);
+
+  const formatPhoneNumber = (num: string): string => {
+    return `(${num?.toString().slice(0, 3)}) ${num
+      ?.toString()
+      .slice(3, 6)}-${num?.toString().slice(6)}`;
+  };
+
+  const fetchClientData = async () => {
+    if (!clientID) return;
+
+    console.log(
+      !clientID ? 'no clientID!' : !clientName ? 'no clientName!' : null
+    );
+
+    console.log(`clientID: ${JSON.stringify(clientID, null, 2)}`);
+
+    let numRatings = 0;
+    let ratingSum = 0;
+    let postsAboutClient: {}[] = [];
+    let clientSnap: DocumentSnapshot<DocumentData>;
+    let firstName: string;
+    let lastName: string;
+    let phoneNumber: string | number;
+
+    try {
+      // Fetch posts ABOUT client
+      const postsRef = collection(db, 'posts');
+      const q = query(postsRef, where('clientID', '==', clientID));
+      const querySnapshot = await getDocs(q);
+
+      querySnapshot.forEach(doc => {
+        numRatings = numRatings + 1;
+        console.log(
+          `doc?.data()?.rating: ${JSON.stringify(doc?.data(), null, 2)}`
+        );
+
+        console.log(
+          `mf who posted: ${JSON.stringify(doc?.data().postedBy, null, 2)}`
+        );
+        // query DB for details about that user
+        const postsRef = collection(db, 'users');
+        const q = query(postsRef, where(doc.id, '==', doc?.data().postedBy));
+        getDocs(q).then(doc =>
+          console.log(`right here: ${JSON.stringify(doc.docs, null, 2)}`)
+        );
+
+        if (doc?.data()?.rating) {
+          console.log(`truthy rating: ${doc?.data()?.rating}`);
+          ratingSum = ratingSum + doc?.data()?.rating;
+        }
+
+        postsAboutClient.push({ id: doc.id, ...doc.data() });
+      });
+      console.log(
+        `postsAboutClient: ${JSON.stringify(postsAboutClient, null, 2)}`
+      );
+      console.log(`ratingSum: ${ratingSum}`);
+      console.log(`numRatings: ${numRatings}`);
+      console.log(`averageRating: ${ratingSum / numRatings}`);
+
+      // fetch client's information
+      const newClientRef = doc(db, 'clients', clientID);
+      const clientSnap = await getDoc(newClientRef);
+
+      firstName = clientSnap?.data()?.firstName;
+      lastName = clientSnap?.data()?.lastName;
+      phoneNumber = clientSnap?.data()?.phoneNumber;
+
+      // Who were they seen by and get their details
+      // stored on postsAboutClient.postedBy
+      console.log(
+        `phoneNumber in question: ${JSON.stringify(
+          clientSnap?.data()?.phoneNumber,
+          null,
+          2
+        )}`
+      );
+
+      setClientData({
+        ...clientData,
+        averageRating: ratingSum / numRatings,
+        postsAboutClient,
+        firstName,
+        lastName,
+        phoneNumber,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const getLocaleDate = (date: Date | string) => {
+    console.log(`date: ${date}`);
+
+    const localeDate = new Date(
+      (date as string).substring(0, (date as string).indexOf('Z'))
+    );
+    const options = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    };
+
+    return localeDate.toLocaleString('en-US', { dateStyle: 'medium' });
+  };
+
   const formatMobileNumber = (text: string) => {
     var cleaned = ('' + text).replace(/\D/g, '');
     var match = cleaned.match(/^(1|)?(\d{3})(\d{3})(\d{4})$/);
@@ -242,6 +299,8 @@ export default function Client() {
     return text;
   };
 
+  const [phoneNumberUpdated, setPhoneNumberUpdated] = useState(false);
+
   useEffect(() => {
     // fetchPost();
     fetchClientData();
@@ -254,6 +313,10 @@ export default function Client() {
   useEffect(() => {
     console.log(`phoneNumber: ${JSON.stringify(phoneNumber, null, 2)}`);
   }, [phoneNumber]);
+
+  useEffect(() => {
+    console.log(`editable: ${JSON.stringify(editable, null, 2)}`);
+  }, [editable]);
 
   return (
     <ScrollView style={styles.getStartedContainer}>
@@ -282,8 +345,8 @@ export default function Client() {
           <Animated.Image
             source={{
               uri:
-                clientData?.postsAboutClient[0]?.media?.image?.[0] ??
-                `https://api.dicebear.com/6.x/notionists/png/seed=${clientData?.id}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
+                clientData?.postsAboutClient[0]?.media?.images?.[0] ??
+                `https://api.dicebear.com/6.x/notionists/png/seed=${clientData?.postsAboutClient[0].id}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
             }}
             style={[
               {
@@ -305,7 +368,7 @@ export default function Client() {
 
         <Card.Title
           theme={MD3DarkTheme}
-          title={clientName} // Client's name
+          title={`${clientData?.firstName} ${clientData?.lastName}` ?? ''} // Client's name
           titleStyle={[{ color: theme.colors.text }, styles.cardTitle]}
           subtitleStyle={[{ color: theme.colors.text }, styles.cardSubtitle]}
           right={() => (
@@ -344,50 +407,13 @@ export default function Client() {
         />
 
         <Card.Content>
-          <Pressable onPress={() => console.log('pressable')}>
-            <List.Item
-              style={styles.listItem}
-              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-              title={() => (
+          <List.Item
+            style={styles.listItem}
+            theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+            title={() =>
+              editable ? (
                 <TextInput
-                  right={
-                    phoneNumber.formatted.toString().length >= 10 && (
-                      <TextInput.Icon
-                        icon='check-circle'
-                        iconColor='#68EEAD'
-                        onPress={() => {}}
-                        onLongPress={async () => {
-                          console.log(`Should then update record in DB!`);
-
-                          // await updateDoc(doc(db, 'clients', uid), {
-                          //   profileImage: downloadURL,
-                          // }).then(res =>
-                          //   setUploadStatus({ ...uploadStatus, profileImage: 'success' })
-                          // );
-                          const q = query(
-                            collection(db, 'posts'),
-                            where('clientName', '==', 'Daniela')
-                          );
-                          const querySnapshot = await getDocs(q);
-                          querySnapshot.forEach(doc => {
-                            console.log(doc.id, ' => ', doc.data());
-                          });
-
-                          // await updateDoc(doc(db, 'posts', uid), {
-                          //   profileImage: downloadURL,
-                          // }).then(res =>
-                          //   setUploadStatus({
-                          //     ...uploadStatus,
-                          //     profileImage: 'success',
-                          //   })
-                          // );
-
-                          Haptics.Success();
-                        }}
-                      />
-                    )
-                  }
-                  editable={editable}
+                  editable={true}
                   maxLength={12}
                   onChangeText={text => {
                     let formattedNumber = formatMobileNumber(text);
@@ -398,44 +424,102 @@ export default function Client() {
                   }}
                   value={phoneNumber.formatted}
                   keyboardType='phone-pad'
-                  label={
-                    clientData?.postsAboutClient[0]?.phoneNumber
-                      ? formatPhoneNumber(
-                          clientData?.postsAboutClient[0]?.phoneNumber
-                        )
-                      : 'Add phone number'
-                  }
-                  onPressIn={() => setEditable(true)}
+                  label={clientData?.phoneNumber ?? 'Add phone number'}
+                  // onPressIn={() => setEditable(true)}
+
                   style={{
                     backgroundColor: 'transparent',
                     fontStyle: 'italic',
+                    fontSize: 16,
                   }}
                   placeholderTextColor='#ccc'
                   underlineColor='transparent'
+                  right={
+                    <Button
+                      icon='camera'
+                      mode='contained'
+                      onPress={() => console.log('Pressed')}
+                      buttonColor='red'
+                    >
+                      Press me
+                    </Button>
+                  }
                 />
-              )}
-              titleStyle={
-                !clientData?.postsAboutClient[0]?.phoneNumber && {
-                  fontStyle: 'italic',
-                }
+              ) : (
+                <Text
+                  style={{
+                    backgroundColor: 'transparent',
+                    fontStyle: 'italic',
+                    fontSize: 16,
+                    padding: 19,
+                  }}
+                >
+                  {clientData?.phoneNumber}
+                </Text>
+              )
+            }
+            titleStyle={
+              !clientData?.phoneNumber && {
+                fontStyle: 'italic',
               }
-              // description='Item description'
-              left={() => (
-                <MaterialCommunityIcons
-                  color={theme.colors.primary}
-                  size={24}
-                  name='phone'
-                />
-              )}
-              onPress={() =>
-                !clientData?.phoneNumber
-                  ? setEditable(true)
-                  : handleOptionsMenu(
-                      clientData?.postsAboutClient[0]?.phoneNumber as string
-                    )
-              }
-            />
-          </Pressable>
+            }
+            // description='Item description'
+            left={() => (
+              <MaterialCommunityIcons
+                color={theme.colors.primary}
+                size={24}
+                name='phone'
+                style={{
+                  marginVertical: 20,
+                }}
+              />
+            )}
+            right={() => (
+              <>
+                {editable && (
+                  <IconButton
+                    icon='pencil-off-outline'
+                    onPress={() => setEditable(false)}
+                  />
+                )}
+                {phoneNumber.formatted.toString().length >= 10 && editable && (
+                  <IconButton
+                    icon={
+                      !phoneNumberUpdated
+                        ? 'check-circle-outline'
+                        : 'check-circle'
+                    }
+                    // buttonColor='#68EEAD'
+                    onPress={() => {}}
+                    onLongPress={async () => {
+                      if (!clientID)
+                        return console.error(`No client ID in textInput!`);
+
+                      try {
+                        const docRef = doc(db, 'clients', clientID);
+
+                        await updateDoc(docRef, {
+                          phoneNumber: phoneNumber.formatted,
+                        });
+                      } catch (error) {
+                        console.error(error);
+                      }
+
+                      Haptics.Success();
+                      setPhoneNumberUpdated(true);
+                      setEditable(false);
+                    }}
+                  />
+                )}
+              </>
+            )}
+            onPress={() => {
+              handleOptionsMenu(clientData?.phoneNumber.replace(/\D/g, ''));
+            }}
+            onLongPress={() =>
+              !editable ? setEditable(true) : setEditable(false)
+            }
+          />
 
           <Divider style={{ marginBottom: 20, paddingHorizontal: 100 }} />
 
@@ -572,7 +656,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
-  cardTitle: { fontSize: 42, paddingTop: 30 },
+  cardTitle: { fontSize: 36, paddingTop: 30 },
   cardSubtitle: { fontSize: 14, paddingVertical: 14 },
   swiperContainer: { height: 300, width: '100%', borderRadius: 30 },
   listItem: { padding: 10, marginVertical: 10, borderRadius: 7 },
