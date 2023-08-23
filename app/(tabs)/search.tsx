@@ -1,16 +1,31 @@
+import { Link, useRouter } from 'expo-router';
 import { createAvatar } from '@dicebear/core';
 import { lorelei } from '@dicebear/collection';
 import { SvgXml } from 'react-native-svg';
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshControl, StyleSheet } from 'react-native';
+import {
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Image,
+  View,
+} from 'react-native';
 import { Text } from '../../components/Themed';
 import { useTheme } from '@react-navigation/native';
 import { ScrollView } from 'react-native';
 import { Stack } from 'expo-router';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db } from '~/firebaseConfig';
+import {
+  DocumentData,
+  collection,
+  getDocs,
+  or,
+  query,
+  where,
+} from 'firebase/firestore';
+import { db, usersRef } from '~/firebaseConfig';
 import {
   Avatar,
+  Chip,
   List,
   MD3DarkTheme,
   MD3LightTheme,
@@ -38,14 +53,39 @@ export type User = {
     uid?: string;
   };
   rating?: number;
+  displayName: string;
+  bio: string;
+  savedPosts: string[];
+  username: string;
+  profileImage: string;
+  following: string[];
+  followers: string[];
+  socialMediaLinks: {
+    facebook: string;
+    instagram: string;
+    youtube: string;
+    reddit: string;
+  };
+  userID: string;
 };
 
 const Search = () => {
   const md5 = require('md5');
   const theme = useTheme();
   const [refreshing, setRefreshing] = React.useState(false);
-  const [displayUsers, setDisplayUsers] = useState<User[] | null>(null);
+  const [searchResults, setSearchResults] = useState<
+    (DocumentData | User)[] | null
+  >(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const router = useRouter();
+
+  const dicebearAvatar = createAvatar(lorelei, {
+    seed: 'Kitty',
+    backgroundColor: ['662C91', '17A398', '17A398', 'EE6C4D', 'F38D68'],
+    radius: 50,
+    size: 30,
+    // ... other options
+  }).toString();
 
   const handleRefresh = useCallback(() => {
     // setRefreshing(true);
@@ -58,34 +98,39 @@ const Search = () => {
   }, []);
 
   const searchUsers = async (search: string) => {
-    // FIREBASE 9 METHODOLOGY
-    // const db = getFirestore();
-    const q = query(collection(db, 'posts'), where('clientName', '>=', search));
+    try {
+      // FIREBASE 9 METHODOLOGY
+      // Ultimately it should have multiple OR conditions with
+      //    or(where('displayName', '>=', search), where('username', '>=', search))
+      let queryResult: DocumentData[] = [];
+      const q = query(usersRef, where('displayName', '>=', search));
+      const searchResultSnap = await getDocs(q);
+      searchResultSnap.forEach(user => {
+        // console.log(`${user.id} => ${JSON.stringify(user.data(), null, 2)}`);
+        // console.log(`queryResult: ${JSON.stringify(queryResult, null, 2)}`);
 
-    const snapshot = await getDocs(q);
+        queryResult.push({ userID: user.id, ...user.data() });
+      });
+      setSearchResults(queryResult);
 
-    let localUsers = snapshot.docs.map(doc => {
-      const data = doc.data();
-      const id = doc.id;
-      return { id, ...data };
-    });
-
-    setDisplayUsers(localUsers);
-
-    console.log(`users: ${JSON.stringify(localUsers)}`);
+      // console.log(`users: ${JSON.stringify(localUsers)}`);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const getGravatarURL = (email: string) => {
+  const getGravatarURL = (value?: string) => {
     // Trim leading and trailing whitespace from
     // an email address and force all characters
     // to lower case
-    const address = String(email).trim().toLowerCase();
+    const address = String(value).trim().toLowerCase();
 
     // Create an MD5 hash of the final string
     const hash = md5(address);
 
     // Grab the actual image URL
-    return `https://www.gravatar.com/avatar/${hash}`;
+    // return `https://www.gravatar.com/avatar/${hash}`;
+    return `https://api.dicebear.com/6.x/lorelei/png/seed=${value}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`;
   };
 
   useEffect(() => {
@@ -93,20 +138,18 @@ const Search = () => {
       if (searchQuery !== '') {
         searchUsers(searchQuery);
       } else {
-        setDisplayUsers(null);
+        setSearchResults(null);
       }
     }, 0);
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  const dicebearAvatar = createAvatar(lorelei, {
-    seed: 'Kitty',
-    backgroundColor: ['662C91', '17A398', '17A398', 'EE6C4D', 'F38D68'],
-    radius: 50,
-    size: 30,
-    // ... other options
-  }).toString();
+  useEffect(() => {
+    console.log(
+      `usersFound[0]: ${JSON.stringify(searchResults?.[0], null, 2)}`
+    );
+  }, [searchResults]);
 
   return (
     <>
@@ -121,39 +164,58 @@ const Search = () => {
         style={{ width: '100%' }}
         // onBlur={validateEmail}
       />
-      <ScrollView
-        style={styles.container}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-      >
-        <Stack.Screen options={{ headerShown: false }} />
 
-        {displayUsers?.map((user: User, index: number) => (
+      <FlatList
+        // refreshing={refreshing}
+        // onRefresh={handleRefresh}
+        data={searchResults}
+        renderItem={({ item: user }) => (
           <List.Item
-            key={index}
-            title={user.clientName}
-            // description={user.rating}
-            onPress={() => console.warn(`Expecting to navigate to user's page`)}
-            left={props => (
-              <List.Icon
-                {...props}
-                icon={
-                  true
-                    ? () => (
-                        // <Avatar.Image
-                        //   size={24}
-                        //   source={{ uri: 'https://unsplash.it/100/100' }}
-                        // />
-                        <SvgXml xml={dicebearAvatar} />
-                      )
-                    : 'folder'
-                }
-              />
-            )}
+            // key={index}
+            style={{ marginVertical: 20, padding: 10 }}
+            theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+            title={user?.displayName}
+            description={user?.bio}
+            left={props => {
+              return (
+                <View style={{ flex: 0.25, flexDirection: 'column' }}>
+                  <Image
+                    source={{
+                      uri:
+                        user?.profileImage ?? getGravatarURL(user?.displayName),
+                    }}
+                    style={{ height: 50, width: 50, borderRadius: 20 }}
+                  />
+                  <Chip
+                    icon='information'
+                    onPress={() => console.log('Pressed')}
+                  >
+                    stylist
+                  </Chip>
+                </View>
+              );
+            }}
+            onPress={() =>
+              router.push({
+                // pathname: `clients/${clientData?.firstName}${clientData?.lastName}`,
+                pathname: `users/${user?.userID}`, // Geraldine
+                params: {
+                  // clientID: postData?.clientID,
+                  // userID: user?.userID,
+                  userID: user?.userID,
+                },
+              })
+            }
           />
-        ))}
-      </ScrollView>
+        )}
+        contentContainerStyle={
+          !searchResults && {
+            flexGrow: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }
+        }
+      />
     </>
   );
 };

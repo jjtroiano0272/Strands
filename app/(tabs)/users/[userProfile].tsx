@@ -169,10 +169,13 @@ const NewsDetailsPage = () => {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
+      // console.log(`docSnap: ${JSON.stringify(docSnap.data(), null, 2)}`);
+
       setUserData({
-        ...userData,
-        following: docSnap?.data()?.following,
-        profileImage: (docSnap.data() as UserProfile).profileImage,
+        // ...userData,
+        // following: docSnap?.data()?.following,
+        // profileImage: (docSnap.data() as UserProfile).profileImage,
+        ...docSnap.data(),
       });
     } else {
       console.error(`Error fetching user's data!`);
@@ -262,44 +265,34 @@ const NewsDetailsPage = () => {
             overflow: 'hidden',
           }}
         >
-          <TouchableOpacity
-            onLongPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-            }}
-            style={{
-              width: 200,
-              height: 200,
-              borderRadius: 100,
-              overflow: 'hidden',
-            }}
-          >
-            <Image
-              source={{ uri: userData?.profileImage }}
-              style={[
-                {
-                  flex: 1,
-                  height: undefined,
-                  width: undefined,
-                  transform: [
-                    {
-                      translateX: gyroscopeData.x * 1,
-                    },
-                    {
-                      translateY: gyroscopeData.y * 1,
-                    },
-                  ],
-                },
-              ]}
-              resizeMode='contain'
-            />
-          </TouchableOpacity>
+          <Image
+            source={{ uri: userData?.profileImage }}
+            style={[
+              {
+                flex: 1,
+                width: 200,
+                height: 200,
+                borderRadius: 100,
+                overflow: 'hidden',
+                transform: [
+                  {
+                    translateX: gyroscopeData.x * 1,
+                  },
+                  {
+                    translateY: gyroscopeData.y * 1,
+                  },
+                ],
+              },
+            ]}
+            resizeMode='contain'
+          />
         </View>
       </View>
 
       {/* User's subtitle of name */}
       <View style={styles.infoContainer}>
         <Text style={[styles.text, { fontWeight: '200', fontSize: 36 }]}>
-          {userData?.name}
+          {userData?.displayName}
         </Text>
         {uid !== currentUserID && (
           <View style={styles.dm}>
@@ -328,7 +321,7 @@ const NewsDetailsPage = () => {
           }
         >
           <Text style={[styles.text, { fontSize: 24 }]}>
-            {userData?.numPosts}
+            {userData?.numPosts ?? '-'}
           </Text>
           <Text style={[styles.text, styles.subText]}>Posts</Text>
         </TouchableOpacity>
@@ -343,14 +336,32 @@ const NewsDetailsPage = () => {
             },
           ]}
         >
+          {/* 
+          "profileImage": "https://firebasestorage.googleapis.com/v0/b/yelpforhairstylists.appspot.com/o/post%2F0.55inkkij9fcl?alt=media&token=e79b700e-fb29-4a00-bbba-7b6b99ca63c3",
+          "displayName": "Jonathan Troiano",
+          "username": "jtroiano",
+          "bio": "Up in this SteerBacks, bb!",
+          "followers": [],
+          "following": [],
+          "socialMediaLinks": {
+            "reddit": "",
+            "youtube": "",
+            "instagram": "",
+            "facebook": ""
+          },
+          "savedPosts": [
+            "7PUd1ZtoE4PxKKD8ktED",
+            "7lJ0eOFIzWlUVSKcukYg",
+            "AKEarxBvkAned7iZ8p8y"
+          */}
           <Text style={[styles.text, { fontSize: 24 }]}>
-            {userData?.followers?.length ?? 'x'}
+            {userData?.followers?.length ?? '-'}
           </Text>
           <Text style={[styles.text, styles.subText]}>Followers</Text>
         </View>
         <View style={styles.statsBox}>
           <Text style={[styles.text, { fontSize: 24 }]}>
-            {userData?.following?.length ?? 'x'}
+            {userData?.following?.length ?? '-'}
           </Text>
           <Text style={[styles.text, styles.subText]}>Following</Text>
         </View>

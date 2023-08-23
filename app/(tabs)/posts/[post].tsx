@@ -1,12 +1,22 @@
+import TextTransition, { presets } from 'react-text-transition';
+import {
+  useSharedValue,
+  withSpring,
+  useDerivedValue,
+  useAnimatedStyle,
+  withDelay,
+} from 'react-native-reanimated';
+import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { faker } from '@faker-js/faker';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
   Alert,
   Image,
   Linking,
   Modal,
+  Animated,
   Platform,
   Pressable,
   ScrollView,
@@ -29,6 +39,10 @@ import {
   MD3LightTheme,
   MD3DarkTheme,
   List,
+  Chip,
+  IconButton,
+  MD3Colors,
+  Snackbar,
 } from 'react-native-paper';
 import { Text, View } from '../../../components/Themed';
 import {
@@ -62,13 +76,84 @@ export default function ClientProfile() {
   const router = useRouter();
   const theme = useTheme();
   const [phoneModalVisible, setPhoneModalVisible] = useState(false);
-
+  const [data, setData] = useState<DocumentData | FireBasePost>();
+  const [clientID, setClientID] = useState<string>();
   const { docId, postData }: { docId?: string; postData?: FireBasePost } =
     useLocalSearchParams();
-  console.log(`docId: ${docId}`);
-  console.log(`postData: ${JSON.stringify(postData, null, 2)}`);
 
-  const getStylistData = async () => {
+  // TODO These need to be replace with actual data, but will need to be engineered.
+  // For example, user actually needs to come from something like the user context for the actual user.
+  const placeholders = {
+    recipient: faker.name.firstName(),
+    user: faker.name.fullName(),
+    phoneNumber: faker.phone.number('(###) ###-###').toString(),
+  };
+
+  const messageBody = encodeURI(
+    `Hi ${placeholders.recipient} this is ${placeholders.user}. I just wanted to confirm the upcoming appointment with you`
+  );
+
+  const capitalizeFirstLetter = (str: string) => {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
+  const handleOptionsMenu = (phoneNumber: string) => {
+    const menuOptions = ['Call', 'Text', 'Cancel'];
+
+    // Show the action sheet to the user
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: menuOptions,
+        cancelButtonIndex: menuOptions.length - 1,
+      },
+      async (index: number) => {
+        // if else method
+        try {
+          if (menuOptions[index] === 'Call') {
+            await Linking.openURL(`tel:${phoneNumber}`);
+          } else if (menuOptions[index] === 'Text') {
+            // await Linking.openURL(`sms:${phoneNumber}?body=${messageBody}`); TODO: This needs to work correctly to set body
+            await Linking.openURL(`sms:${phoneNumber}`);
+          } else {
+            return;
+          }
+        } catch (err) {
+          console.error(`menu option error: ${err}`);
+        }
+      }
+    );
+  };
+
+  const fetchData = async () => {
+    // const fetchPost
+    if (!docId) return console.error(`no doc id!`);
+
+    try {
+      // TODO Refactor into one line compound?
+      const docRef = doc(db, 'posts', docId);
+      const docSnap = await getDoc(docRef);
+      const docData = docSnap.data();
+      console.log(`docData single: ${JSON.stringify(docData, null, 2)}`);
+
+      const clientRef = doc(db, 'clients', docSnap?.data()?.clientID);
+      const clientSnap = await getDoc(clientRef);
+      const clientData = clientSnap.data();
+
+      setClientID(docSnap?.data()?.clientID);
+      setData({
+        ...docData,
+        clientName: clientData?.firstName,
+        // Debug step
+        ...data,
+        phoneNumber: '1234567890',
+        postedBy: 'Foo Barrington',
+      });
+    } catch (error) {
+      console.error(`Error getting docs for post: ${error}`);
+    }
+  };
+
+  const fetchStylistData = async () => {
     if (!docId) return;
 
     const docRef = doc(db, 'posts', docId);
@@ -92,71 +177,12 @@ export default function ClientProfile() {
     }
   };
 
-  // TODO These need to be replace with actual data, but will need to be engineered.
-  // For example, user actually needs to come from something like the user context for the actual user.
-  const placeholders = {
-    recipient: faker.name.firstName(),
-    user: faker.name.fullName(),
-    phoneNumber: faker.phone.number('(###) ###-###').toString(),
-  };
-  const messageBody = encodeURI(
-    `Hi ${placeholders.recipient} this is ${placeholders.user}. I just wanted to confirm the upcoming appointment with you`
-  );
-
-  const handleOptionsMenu = (phoneNumber: string) => {
-    const menuOptions = ['Call', 'Text', 'Cancel'];
-
-    // Show the action sheet to the user
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        options: menuOptions,
-        cancelButtonIndex: menuOptions.length - 1,
-      },
-      async (index: number) => {
-        // if else method
-        try {
-          if (menuOptions[index] === 'Call') {
-            await Linking.openURL(`tel:${phoneNumber}`);
-          } else if (menuOptions[index] === 'Text') {
-            await Linking.openURL(`sms:${phoneNumber}?body=${messageBody}`);
-          } else {
-            return;
-          }
-        } catch (err) {
-          console.error(`menu option error: ${err}`);
-        }
-      }
-    );
-  };
-
-  const [data, setData] = useState<DocumentData | FireBasePost>();
-  const [clientID, setClientID] = useState<string>();
-
-  const fetchData = async () => {
-    // const fetchPost
-    if (!docId) return console.error(`no doc id!`);
-
-    // TODO Refactor into one line compound?
-    const docRef = doc(db, 'posts', docId);
-    const docSnap = await getDoc(docRef);
-    const docData = docSnap.data();
-    // setData(docData);
-
-    // const fetchClientData
-
-    const clientRef = doc(db, 'clients', docSnap?.data()?.clientID);
-    const clientSnap = await getDoc(clientRef);
-    const clientData = clientSnap.data();
-    setClientID(docSnap?.data()?.clientID);
-    setData({ ...data, docData, clientName: clientData?.firstName });
-  };
-
   useEffect(() => {
     // fetchPost();
-    // getPosterInfo();
     // getStylistData();
     // fetchClientData();
     fetchData();
+    getPosterInfo();
   }, []);
 
   useEffect(() => {
@@ -165,148 +191,295 @@ export default function ClientProfile() {
 
   // TEMP
   const getPosterInfo = async () => {
-    const querySnapshot = await getDocs(collection(db, 'users'));
+    // const querySnapshot = await getDocs(collection(db, 'users'));
 
-    if (!querySnapshot.empty) {
-      const docSnapshot = querySnapshot.docs;
-      const posts = docSnapshot.map(doc => {
-        // return { ...doc.data(), docId: doc.id };
-        if (doc.id === data?.postedBy) {
-          console.log(
-            `user displayName: ${JSON.stringify(doc.data(), null, 2)}`
-          );
+    // if (!querySnapshot.empty) {
+    //   const docSnapshot = querySnapshot.docs;
+    //   const posts = docSnapshot.map(doc => {
+    //     // return { ...doc.data(), docId: doc.id };
+    //     if (doc.id === data?.postedBy) {
+    //       console.log(
+    //         `user displayName: ${JSON.stringify(doc.data(), null, 2)}`
+    //       );
 
-          // append to data state var
-          setData({ ...data, displayName: doc.data().displayName });
-        }
-      });
+    //       // append to data state var
+    //       setData({ ...data, displayName: doc.data().displayName });
+    //     }
+    //   });
+    // }
+
+    const userRef = doc(db, 'users', data?.postedBy);
+    console.log(`userRef: ${JSON.stringify(userRef, null, 2)}`);
+    try {
+      const userDoc = await getDoc(userRef);
+      console.log(`userDoc: ${JSON.stringify(userDoc, null, 2)}`);
+      // Document was found in the cache. If no cached document exists,
+      // an error will be returned to the 'catch' block below.
+      console.log('Cached document data:', userDoc.data());
+    } catch (e) {
+      console.log('Error getting cached document:', e);
     }
   };
 
+  const [copiedText, setCopiedText] = useState('');
+  const [textCopied, setTextCopied] = useState(false);
+
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+
+  const onToggleSnackBar = () => setSnackbarVisible(!snackbarVisible);
+  const onDismissSnackBar = () => setSnackbarVisible(false);
+  const [snackbarMessage, setSnackbarMessage] = useState<string>();
+
+  const [isVisible, setIsVisible] = useState(false);
+  const slideAnim = new Animated.Value(0);
+
+  const startAnimation = () => {
+    setIsVisible(!isVisible);
+
+    Animated.spring(slideAnim, {
+      toValue: isVisible ? 0 : 1,
+      friction: 6,
+      useNativeDriver: false,
+    }).start(() => {
+      if (!isVisible) {
+        // Slide out after 1000ms (1 second)
+        setTimeout(() => {
+          startAnimation();
+        }, 1000);
+      }
+    });
+  };
+
+  const animatedStyle = {
+    transform: [
+      {
+        translateY: slideAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 0],
+        }),
+      },
+    ],
+  };
+
+  const handleCopyItem = async (str: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    await Clipboard.setStringAsync(str)
+      .then(() => {
+        startAnimation();
+        setTextCopied(true);
+        setSnackbarMessage('Whole formula copied!');
+        setIsVisible(true);
+      })
+      .catch(err => console.error(err));
+  };
+
+  const TEXTS = ['Forest', 'Building', 'Tree', 'Color'];
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const intervalId = setInterval(
+      () => setIndex(index => index + 1),
+      3000 // every 3 seconds
+    );
+    return () => clearTimeout(intervalId);
+  }, []);
+
   return (
-    <ScrollView style={styles.getStartedContainer}>
-      <Stack.Screen options={{ title: `${data?.clientName}` }} />
+    <>
+      <ScrollView style={styles.getStartedContainer}>
+        <Stack.Screen options={{ title: `${data?.clientName}` }} />
 
-      <Text>docID: {docId}</Text>
-      <Text>clientID: {clientID}</Text>
+        <Text>docID: {docId}</Text>
+        <Text>clientID: {clientID}</Text>
 
-      <Card
-        style={styles.card}
-        theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-      >
-        <Card.Title
-          theme={MD3DarkTheme}
-          title={null} // Client's name
-          titleStyle={[{ color: theme.colors.text }, styles.cardTitle]}
-          // TODO: Make username URL
-          subtitle={
-            <View style={styles.subtitleContainer}>
-              <Text style={{ lineHeight: 18 }}>Seen by </Text>
+        <Card
+          style={styles.card}
+          theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+        >
+          <Card.Title
+            theme={MD3DarkTheme}
+            title={null} // Client's name
+            titleStyle={[{ color: theme.colors.text }, styles.cardTitle]}
+            // TODO: Make username URL
+            subtitle={
+              <View style={styles.subtitleContainer}>
+                <Text style={{ lineHeight: 18 }}>Seen by </Text>
 
-              <Link
-                // href={{ pathname: '../users/123', params: { id: 123 } }}
-                style={{
-                  color: theme.colors.primary,
-                  justifyContent: 'flex-end',
-                  alignItems: 'baseline',
-                }}
-                href={{
-                  pathname: `users/${data?.postedBy}`,
-                  params: { docId: docId },
-                }}
-              >
-                {postData?.displayName}
-              </Link>
-
-              <View
-                style={{ backgroundColor: 'transparent' }}
-                hitSlop={styles.utilHitSlop}
-              ></View>
-            </View>
-          }
-          subtitleStyle={[{ color: theme.colors.text }, styles.cardSubtitle]}
-        />
-
-        <Card.Content>
-          {data?.media?.images && (
-            <Swiper
-              containerStyle={styles.swiper}
-              dot={
-                <View
-                  style={[
-                    styles.dotStyle,
-                    { borderColor: theme.colors.background },
-                  ]}
-                />
-              }
-              activeDot={
-                <View
-                  style={[
-                    styles.activeDotStyle,
-                    {
-                      borderColor: theme.colors.background,
-                      // backgroundColor: 'transparent',
-                    },
-                  ]}
-                />
-              }
-              onIndexChanged={(index: number) =>
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-              }
-            >
-              {data.media.images.map((imgUri: string) => (
-                <Image
-                  style={styles.flex1}
-                  key={imgUri}
-                  source={{
-                    uri: imgUri,
+                <Link
+                  // href={{ pathname: '../users/123', params: { id: 123 } }}
+                  style={{
+                    color: theme.colors.primary,
+                    justifyContent: 'flex-end',
+                    alignItems: 'baseline',
                   }}
-                />
+                  href={{
+                    pathname: `users/${data?.postedBy}`,
+                    params: { docId: docId },
+                  }}
+                >
+                  {data?.postedBy}
+                </Link>
+
+                <View
+                  style={{ backgroundColor: 'transparent' }}
+                  hitSlop={styles.utilHitSlop}
+                ></View>
+              </View>
+            }
+            subtitleStyle={[{ color: theme.colors.text }, styles.cardSubtitle]}
+          />
+
+          <Card.Content>
+            {data?.media?.images && (
+              <Swiper
+                containerStyle={styles.swiper}
+                dot={
+                  <View
+                    style={[
+                      styles.dotStyle,
+                      { borderColor: theme.colors.background },
+                    ]}
+                  />
+                }
+                activeDot={
+                  <View
+                    style={[
+                      styles.activeDotStyle,
+                      {
+                        borderColor: theme.colors.background,
+                        // backgroundColor: 'transparent',
+                      },
+                    ]}
+                  />
+                }
+                onIndexChanged={(index: number) =>
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                }
+              >
+                {data?.media?.images.map((imgUri: string) => (
+                  <Image
+                    style={styles.flex1}
+                    key={imgUri}
+                    source={{
+                      uri: imgUri,
+                    }}
+                  />
+                ))}
+              </Swiper>
+            )}
+
+            {/* TWO COLUMNS of list items */}
+            {/* Recent reviews, listed in order of submission and saying who wrote what, and their own rating */}
+            {/* Phone + prompt to hook into API to call */}
+            {data?.phoneNumber && (
+              <List.Item
+                style={styles.listItem}
+                theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+                title={`(${data?.phoneNumber
+                  ?.toString()
+                  .slice(0, 3)}) ${data?.phoneNumber
+                  ?.toString()
+                  .slice(3, 6)}-${data?.phoneNumber?.toString().slice(6)}`}
+                // description='Item description'
+                left={() => (
+                  <MaterialCommunityIcons
+                    color={theme.colors.primary}
+                    size={24}
+                    name='phone'
+                  />
+                )}
+                onPress={() => handleOptionsMenu(data?.phoneNumber as string)}
+              />
+            )}
+
+            {/* Salon */}
+            <Subheading style={[styles.subtitle, { color: theme.colors.text }]}>
+              Salon
+            </Subheading>
+            <Paragraph style={{ color: theme.colors.text }}>
+              {data?.salonSeenAt
+                ? capitalizeFirstLetter(data.salonSeenAt)
+                : 'N/A'}
+            </Paragraph>
+
+            {/* Formulas */}
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: 'transparent',
+              }}
+            >
+              <Subheading
+                style={[styles.subtitle, { color: theme.colors.text }]}
+              >
+                Formula
+                {data?.formulaUsed?.type &&
+                  ': ' + capitalizeFirstLetter(data?.formulaUsed?.type)}
+              </Subheading>
+              <IconButton
+                icon='clipboard'
+                size={20}
+                iconColor={textCopied ? 'green' : MD3Colors.neutral0} // TODO Better implementation eventually
+                onPress={() => {
+                  handleCopyItem(data?.formulaUsed?.description);
+                }}
+              />
+
+              {/* {isVisible && (
+                <Animated.Text style={[animatedStyle]}>
+                  Sliding Text
+                </Animated.Text>
+              )} */}
+              <TextTransition springConfig={presets.wobbly}>
+                {TEXTS[index % TEXTS.length]}
+              </TextTransition>
+            </View>
+
+            {data?.formulaUsed?.description
+              ?.split('+')
+              .map((item: string, index: number) => (
+                <Chip
+                  key={index}
+                  icon='information'
+                  style={{ marginVertical: 5 }}
+                  // onPress={() => {
+                  //   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).then();
+                  //   copyToClipboard(item.trim());
+                  //   setSnackbarMessage('Item copied!');
+                  //   setSnackbarVisible(true);
+                  // }}
+                >
+                  {item.trim()}
+                </Chip>
               ))}
-            </Swiper>
-          )}
 
-          {/* TWO COLUMNS of list items */}
-          {/* Recent reviews, listed in order of submission and saying who wrote what, and their own rating */}
-          {/* Phone + prompt to hook into API to call */}
-          {data?.phoneNumber && (
-            <List.Item
-              style={styles.listItem}
-              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-              title={`(${data.phoneNumber
-                ?.toString()
-                .slice(0, 3)}) ${data.phoneNumber
-                ?.toString()
-                .slice(3, 6)}-${data.phoneNumber?.toString().slice(6)}`}
-              // description='Item description'
-              left={() => (
-                <MaterialCommunityIcons
-                  color={theme.colors.primary}
-                  size={24}
-                  name='phone'
-                />
-              )}
-              onPress={() => handleOptionsMenu(data.phoneNumber as string)}
-            />
-          )}
-
-          {/* Salon */}
-          <Subheading style={[styles.subtitle, { color: theme.colors.text }]}>
-            Salon
-          </Subheading>
-          <Paragraph style={{ color: theme.colors.text }}>
-            {data?.salonSeenAt ?? 'N/A'}
-          </Paragraph>
-          {/* Comments */}
-          <Subheading style={[styles.subtitle, { color: theme.colors.text }]}>
-            Comments
-          </Subheading>
-          <Paragraph style={{ color: theme.colors.text }}>
-            {data?.comments ?? 'No comments'}
-          </Paragraph>
-        </Card.Content>
-      </Card>
-    </ScrollView>
+            {/* Comments */}
+            <Subheading style={[styles.subtitle, { color: theme.colors.text }]}>
+              Comments
+            </Subheading>
+            <Paragraph style={{ color: theme.colors.text }}>
+              {data?.comments ?? 'No comments'}
+            </Paragraph>
+          </Card.Content>
+        </Card>
+      </ScrollView>
+      {/* <Snackbar
+        visible={snackbarVisible}
+        duration={600}
+        style={{ left: 200, width: 175 }}
+        onDismiss={onDismissSnackBar}
+        action={{
+          label: '',
+          onPress: () => {
+            // Do something
+          },
+        }}
+      >
+        {snackbarMessage}
+      </Snackbar> */}
+    </>
   );
 }
 
@@ -324,6 +497,7 @@ const styles = StyleSheet.create({
   getStartedContainer: {
     // alignItems: 'center',
     // marginHorizontal: 50,
+    // flex: 1,
   },
   cardsContainer: {
     marginHorizontal: 'auto',
@@ -357,6 +531,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontWeight: 'bold',
     fontSize: 20,
+    alignItems: 'baseline',
   },
   subtitleContainer: {
     flexDirection: 'row',

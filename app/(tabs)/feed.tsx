@@ -55,7 +55,7 @@ import {
 import RippleButton from '~/components/RippleButton';
 import { Stack } from 'expo-router';
 import { faker } from '@faker-js/faker';
-import { set } from 'firebase/database';
+import { get, set } from 'firebase/database';
 import { OLD_DATA } from '../../OLD_DATA';
 
 const Feed = () => {
@@ -105,8 +105,6 @@ const Feed = () => {
   const [errors, setErrors] = useState<unknown>();
   const [refreshingData, setRefreshingData] = useState(false);
 
-  // API initalizers
-
   /**
    *  ALL DATA CALLS
    */
@@ -119,36 +117,47 @@ const Feed = () => {
       // GET POSTS
       const recentPosts = query(postsRef, orderBy('createdAt', 'desc'));
       const postSnap = await getDocs(recentPosts);
-      // postSnap.forEach(async post => {
-      //   // also get user Data
-      //   const userRef = doc(db, 'users', post?.data().postedBy);
-
-      //   await getDoc(userRef)
-      //     .then(foo => {
-      //       // ✅ data itself works and grabs data
-      //       const data: FireBasePost = {
-      //         ...post.data(),
-      //         ...foo.data(),
-      //         docId: post.id,
-      //       };
-
-      //       // postData.push(data); // Push the modified object into the list array
-
-      //       if (data) {
-      //         setPosts(prevPosts =>
-      //           prevPosts ? [...prevPosts, data] : [data]
-      //         );
-      //         setInitialDbData(prevPosts =>
-      //           prevPosts ? [...prevPosts, data] : [data]
-      //         );
-      //       }
-      //     })
-      //     .catch(err => console.error(err));
-      // });
-
       postSnap.forEach(post => {
         postData.push({ ...post.data(), docId: post.id }); // Push the modified object into the list array
+        console.log(
+          `{...post.data(), docId: post.id}: ${JSON.stringify(
+            { ...post.data(), docId: post.id },
+            null,
+            2
+          )}`
+        );
       });
+
+      // Construction
+      const postsNewRef = query(postsRef);
+      const userRef = query(usersRef);
+      const postsSnapshot = await getDocs(postsNewRef);
+      const dataSet: (FireBasePost | DocumentData)[] = [];
+
+      postsSnapshot.forEach(async postSnapshot => {
+        const postedBySnapshot = await getDoc(
+          doc(db, 'users', postSnapshot?.data().postedBy)
+        );
+
+        // console.log(
+        //   `FULL RECORD IS: ${JSON.stringify(
+        //     { ...postSnapshot.data(), ...postedBySnapshot.data() },
+        //     null,
+        //     2
+        //   )}`
+        // );
+
+        const fullPostRecord = {
+          ...postSnapshot.data(),
+          ...postedBySnapshot.data(),
+          docId: postSnapshot.id,
+        };
+
+        dataSet.push(fullPostRecord);
+      });
+      // res.json(dataSet);
+
+      // Construction
 
       const users = query(usersRef);
       const usersSnap = await getDocs(users);
@@ -156,7 +165,6 @@ const Feed = () => {
         userData.push({ ...user.data(), userId: user.id });
       });
 
-      const matchedData: DocumentData = {};
       postData.forEach(post => {
         if (userData.includes({ userId: '62JdkwCUwpXoDNMBZjXwN1F2eKzI' })) {
           console.log(`includes: ${post.userId}`);
@@ -185,46 +193,11 @@ const Feed = () => {
         console.log(`found something`);
       }
 
-      // The matched data will be available in the matchedData object
-      // console.log(
-      //   `matchedData: ${JSON.stringify(
-      //     Object.entries(matchedData)[0],
-      //     null,
-      //     2
-      //   )}`
-      // );
+      // The keys of tempVar are the index of that POST and its DAta
+      const tempVar = { ...postData, ...userData };
+      console.log(`tempVar[0]: ${JSON.stringify(tempVar[0], null, 2)}`);
 
-      /* It's gonna look slike
-                
-            "postData": [
-              {
-                "postedBy": "obZ8uZOrsO0g0qcCLVRTC6hWXCBo",
-                "comments": "Wants a hairstyle that will show off her natural curls or waves",
-                "docId": "aLpDv03nl9pF3Pobzy7ju889Ock"
-                ...
-              },
-              ...
-            ],
-
-            "userData": [
-              {
-                "displayName": "Johnpaul",
-                "userId": "62JdkwCUwpXoDNMBZjXwN1F2eKzI"
-                ...
-              },
-              ...
-            ]
-      */
-
-      console.log(
-        `postData and userData: ${JSON.stringify(
-          { postData: postData.slice(0, 2), userData: userData.slice(0, 2) },
-          null,
-          2
-        )}`
-      );
-
-      setPosts(postData);
+      setPosts(dataSet);
     } catch (error) {
       console.error(`Error getting document: \x1b[33m${error}`);
       console.log(`Coal mine canary!`);

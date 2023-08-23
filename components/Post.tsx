@@ -126,6 +126,7 @@ export default function Post({
     const elapsedTimeInWeeks = Math.abs(
       Math.round(elapsedTimeInSeconds / 604800)
     ); // 604800 seconds in a week
+    const elapsedTimeInMonths = Math.abs(Math.round(elapsedTimeInWeeks / 4));
 
     // If it has been longer than 60 seconds, use elapseTimeinMinutes
     // let result: { number: number; unit: string };
@@ -142,37 +143,12 @@ export default function Post({
     if (elapsedTimeInDays >= 7) {
       result = { number: elapsedTimeInWeeks, unit: 'weeks' };
     }
+    if (elapsedTimeInWeeks >= 4) {
+      result = { number: elapsedTimeInMonths, unit: 'months' };
+    }
 
     return result;
   };
-
-  /* 
-      "rating": 4,
-      "createdAt": "2023-04-07T05:53:42.847Z",
-      "comments": "Has a specific event or occasion in mind and wants a hairstyle that will fit the dress code or theme",
-      "postedBy": "DF26Vzgq8gKcBd4Z9qF8mo0RUe4L",
-      "formulaUsed": {
-        "type": "aveda",
-        "description": "30g Light Golden Brown + 20g Honey Blonde + 20g 30 Vol Developer"
-      },
-      "media": {
-        "images": [
-          "https://loremflickr.com/300/300/hairStylist?lock=83937",
-          "https://loremflickr.com/300/300/hairStylist?lock=2800",
-          "https://loremflickr.com/300/300/hairStylist?lock=91815"
-        ],
-        "videos": []
-      },
-      "lastUpdatedAt": {
-        "seconds": 1686769311,
-        "nanoseconds": 46000000
-      },
-      "geolocation": {
-        "lng": "-81.7826",
-        "lat": "26.1909"
-      },
-      "docId": "YbZIZm1FIIaOvJAPoiW3"
-  */
 
   const showActionSheet = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -293,7 +269,7 @@ export default function Post({
           pathname: `posts/${postData?.docId}`,
           params: {
             docId: postData?.docId,
-            postData: postData,
+            // postData: postData,
           },
         })
       }
@@ -310,9 +286,9 @@ export default function Post({
                   color: paperTheme.colors.secondary,
                 }}
               >
-                ⟩⟩ {postData?.postedBy?.slice(-4)}
+                ⟩⟩ {postData?.displayName}
               </Text>
-              <Text style={{ color: theme.colors.text }}>
+              <Text style={{ color: theme.colors.text, fontSize: 10 }}>
                 {/* {postData?.createdAt &&
                     `${getElapsedTime(postData?.createdAt as number)?.number} ${
                       getElapsedTime(postData?.createdAt as number)?.unit
