@@ -1,4 +1,3 @@
-import TextTransition, { presets } from 'react-text-transition';
 import {
   useSharedValue,
   withSpring,
@@ -78,6 +77,16 @@ export default function ClientProfile() {
   const [phoneModalVisible, setPhoneModalVisible] = useState(false);
   const [data, setData] = useState<DocumentData | FireBasePost>();
   const [clientID, setClientID] = useState<string>();
+  const [copiedText, setCopiedText] = useState('');
+  const [textCopied, setTextCopied] = useState(false);
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const onToggleSnackBar = () => setSnackbarVisible(!snackbarVisible);
+  const onDismissSnackBar = () => setSnackbarVisible(false);
+  const [snackbarMessage, setSnackbarMessage] = useState<string>();
+  const [isVisible, setIsVisible] = useState(false);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const [selectedChip, setSelectedChip] = useState<string>();
+  const [showSelected, setShowSelected] = useState(false);
   const { docId, postData }: { docId?: string; postData?: FireBasePost } =
     useLocalSearchParams();
 
@@ -115,7 +124,7 @@ export default function ClientProfile() {
             // await Linking.openURL(`sms:${phoneNumber}?body=${messageBody}`); TODO: This needs to work correctly to set body
             await Linking.openURL(`sms:${phoneNumber}`);
           } else {
-            return;
+            return Promise.reject('Invalid menu option');
           }
         } catch (err) {
           console.error(`menu option error: ${err}`);
@@ -125,7 +134,6 @@ export default function ClientProfile() {
   };
 
   const fetchData = async () => {
-    // const fetchPost
     if (!docId) return console.error(`no doc id!`);
 
     try {
@@ -133,11 +141,17 @@ export default function ClientProfile() {
       const docRef = doc(db, 'posts', docId);
       const docSnap = await getDoc(docRef);
       const docData = docSnap.data();
-      console.log(`docData single: ${JSON.stringify(docData, null, 2)}`);
+      // console.log(`docData single: ${JSON.stringify(docData, null, 2)}`); // has .postedBy
 
       const clientRef = doc(db, 'clients', docSnap?.data()?.clientID);
       const clientSnap = await getDoc(clientRef);
       const clientData = clientSnap.data();
+      // console.log(`clientData: ${JSON.stringify(clientData, null, 2)}`);
+
+      const userRef = doc(db, 'users', docData?.postedBy);
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.data();
+      console.log(`hello: ${JSON.stringify(userData, null, 2)}`);
 
       setClientID(docSnap?.data()?.clientID);
       setData({
@@ -145,8 +159,9 @@ export default function ClientProfile() {
         clientName: clientData?.firstName,
         // Debug step
         ...data,
-        phoneNumber: '1234567890',
-        postedBy: 'Foo Barrington',
+        phoneNumber: clientData?.phoneNumber,
+        postedByDisplayName: userData?.displayName,
+        postedByID: docData?.postedBy,
       });
     } catch (error) {
       console.error(`Error getting docs for post: ${error}`);
@@ -154,40 +169,32 @@ export default function ClientProfile() {
   };
 
   const fetchStylistData = async () => {
-    if (!docId) return;
+    if (!docId) return console.error(`no docId in fetchStylistData`);
 
-    const docRef = doc(db, 'posts', docId);
-    const docSnap = await getDoc(docRef);
+    try {
+      const docRef = doc(db, 'posts', docId);
+      const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-      console.log(
-        `post looking at : ${JSON.stringify(docSnap.data(), null, 2)}`
-      );
+      if (docSnap.exists()) {
+        console.log(
+          `post looking at : ${JSON.stringify(docSnap.data(), null, 2)}`
+        );
 
-      const idOfStylistThatPostedThis = docSnap.data().postedBy;
+        const idOfStylistThatPostedThis = docSnap.data().postedBy;
 
-      // Then look up the users table by `postedBy` field from the doc here
-      const stylistRef = doc(db, 'users', idOfStylistThatPostedThis);
-      const stylistSnap = await getDoc(stylistRef);
-      console.log(
-        `Stylist data: ${JSON.stringify(stylistSnap.data(), null, 2)}`
-      );
-    } else {
-      console.log('No such document!');
+        // Then look up the users table by `postedBy` field from the doc here
+        const stylistRef = doc(db, 'users', idOfStylistThatPostedThis);
+        const stylistSnap = await getDoc(stylistRef);
+        console.log(
+          `Stylist data: ${JSON.stringify(stylistSnap.data(), null, 2)}`
+        );
+      } else {
+        console.log('No such document!');
+      }
+    } catch (error) {
+      console.error(error);
     }
   };
-
-  useEffect(() => {
-    // fetchPost();
-    // getStylistData();
-    // fetchClientData();
-    fetchData();
-    getPosterInfo();
-  }, []);
-
-  useEffect(() => {
-    console.log(`data: ${JSON.stringify(data, null, 2)}`);
-  }, [data]);
 
   // TEMP
   const getPosterInfo = async () => {
@@ -208,82 +215,80 @@ export default function ClientProfile() {
     //   });
     // }
 
-    const userRef = doc(db, 'users', data?.postedBy);
+    const userRef = doc(db, 'users', data?.postedByDisplayName);
     console.log(`userRef: ${JSON.stringify(userRef, null, 2)}`);
+
     try {
       const userDoc = await getDoc(userRef);
       console.log(`userDoc: ${JSON.stringify(userDoc, null, 2)}`);
       // Document was found in the cache. If no cached document exists,
       // an error will be returned to the 'catch' block below.
       console.log('Cached document data:', userDoc.data());
-    } catch (e) {
-      console.log('Error getting cached document:', e);
+    } catch (error) {
+      console.log('Error getting cached document:', error);
     }
   };
-
-  const [copiedText, setCopiedText] = useState('');
-  const [textCopied, setTextCopied] = useState(false);
-
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-
-  const onToggleSnackBar = () => setSnackbarVisible(!snackbarVisible);
-  const onDismissSnackBar = () => setSnackbarVisible(false);
-  const [snackbarMessage, setSnackbarMessage] = useState<string>();
-
-  const [isVisible, setIsVisible] = useState(false);
-  const slideAnim = new Animated.Value(0);
 
   const startAnimation = () => {
     setIsVisible(!isVisible);
 
-    Animated.spring(slideAnim, {
-      toValue: isVisible ? 0 : 1,
-      friction: 6,
-      useNativeDriver: false,
-    }).start(() => {
-      if (!isVisible) {
-        // Slide out after 1000ms (1 second)
-        setTimeout(() => {
-          startAnimation();
-        }, 1000);
-      }
-    });
+    Animated.sequence([
+      Animated.timing(slideAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: false,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        delay: 200,
+        useNativeDriver: false,
+      }),
+    ]).start();
   };
 
-  const animatedStyle = {
-    transform: [
-      {
-        translateY: slideAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [1, 0],
-        }),
-      },
-    ],
+  const handleCopyItem = async (str: string, type?: 'partial') => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      await Clipboard.setStringAsync(str);
+
+      startAnimation();
+      setTextCopied(true);
+      setSelectedChip(str);
+      setSnackbarMessage(
+        type === 'partial' ? 'Item copied' : 'Whole formula copied!'
+      );
+      setIsVisible(true);
+
+      setTimeout(() => {
+        console.log('Delayed for 1 second.');
+        setTextCopied(false);
+      }, 1000);
+    } catch (error) {
+      console.error(`some error in handleCopyItem: ${error}`);
+    }
   };
 
-  const handleCopyItem = async (str: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    await Clipboard.setStringAsync(str)
-      .then(() => {
-        startAnimation();
-        setTextCopied(true);
-        setSnackbarMessage('Whole formula copied!');
-        setIsVisible(true);
-      })
-      .catch(err => console.error(err));
+  const waitASecond = () => {
+    setShowSelected(true);
+    setTimeout(() => {
+      console.log('Delayed for 1 second.');
+      setShowSelected(false);
+    }, 1000);
   };
-
-  const TEXTS = ['Forest', 'Building', 'Tree', 'Color'];
-  const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    const intervalId = setInterval(
-      () => setIndex(index => index + 1),
-      3000 // every 3 seconds
-    );
-    return () => clearTimeout(intervalId);
+    // fetchPost();
+    // getStylistData();
+    // fetchClientData();
+    fetchData();
+    getPosterInfo();
   }, []);
+
+  useEffect(() => {
+    console.log(`data: ${JSON.stringify(data, null, 2)}`);
+  }, [data]);
 
   return (
     <>
@@ -314,11 +319,11 @@ export default function ClientProfile() {
                     alignItems: 'baseline',
                   }}
                   href={{
-                    pathname: `users/${data?.postedBy}`,
-                    params: { docId: docId },
+                    pathname: `users/${data?.postedByDisplayName}`,
+                    params: { userID: data?.postedByID },
                   }}
                 >
-                  {data?.postedBy}
+                  {data?.postedByDisplayName}
                 </Link>
 
                 <View
@@ -376,11 +381,13 @@ export default function ClientProfile() {
               <List.Item
                 style={styles.listItem}
                 theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-                title={`(${data?.phoneNumber
-                  ?.toString()
-                  .slice(0, 3)}) ${data?.phoneNumber
-                  ?.toString()
-                  .slice(3, 6)}-${data?.phoneNumber?.toString().slice(6)}`}
+                // Previous approach when phoneNumber was stored as an entire string
+                // title={`(${data?.phoneNumber
+                //   ?.toString()
+                //   .slice(0, 3)}) ${data?.phoneNumber
+                //   ?.toString()
+                //   .slice(3, 6)}-${data?.phoneNumber?.toString().slice(6)}`}
+                title={data?.phoneNumber}
                 // description='Item description'
                 left={() => (
                   <MaterialCommunityIcons
@@ -418,23 +425,39 @@ export default function ClientProfile() {
                 {data?.formulaUsed?.type &&
                   ': ' + capitalizeFirstLetter(data?.formulaUsed?.type)}
               </Subheading>
-              <IconButton
-                icon='clipboard'
-                size={20}
-                iconColor={textCopied ? 'green' : MD3Colors.neutral0} // TODO Better implementation eventually
-                onPress={() => {
-                  handleCopyItem(data?.formulaUsed?.description);
-                }}
-              />
+              {data?.formulaUsed?.type && (
+                <IconButton
+                  icon='content-copy'
+                  size={20}
+                  iconColor={textCopied ? 'green' : MD3Colors.neutral0} // TODO Better implementation eventually
+                  onPress={() => {
+                    handleCopyItem(data?.formulaUsed?.description);
+                  }}
+                />
+              )}
 
-              {/* {isVisible && (
-                <Animated.Text style={[animatedStyle]}>
-                  Sliding Text
-                </Animated.Text>
-              )} */}
-              <TextTransition springConfig={presets.wobbly}>
-                {TEXTS[index % TEXTS.length]}
-              </TextTransition>
+              {/* <Animated.Text style={[animatedStyle]}>
+                Sliding Text
+              </Animated.Text> */}
+              <Animated.View
+                style={[
+                  // styles.fadingContainer,
+                  {
+                    // Bind opacity to animated value
+                    opacity: slideAnim,
+                    transform: [
+                      {
+                        translateY: slideAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, -10],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              >
+                <Text>{snackbarMessage}</Text>
+              </Animated.View>
             </View>
 
             {data?.formulaUsed?.description
@@ -442,16 +465,16 @@ export default function ClientProfile() {
               .map((item: string, index: number) => (
                 <Chip
                   key={index}
-                  icon='information'
-                  style={{ marginVertical: 5 }}
-                  // onPress={() => {
-                  //   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).then();
-                  //   copyToClipboard(item.trim());
-                  //   setSnackbarMessage('Item copied!');
-                  //   setSnackbarVisible(true);
-                  // }}
+                  selected={
+                    item.trim() === selectedChip?.trim() && showSelected
+                  }
+                  style={{ marginVertical: 5, flex: 1 }}
+                  onPress={() => {
+                    handleCopyItem(item.trim(), 'partial');
+                  }}
                 >
                   {item.trim()}
+                  {/* TODO UI: Later, have the clipboard icon showup and slide out in the chip itself */}
                 </Chip>
               ))}
 

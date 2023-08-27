@@ -170,13 +170,13 @@ const Feed = () => {
           console.log(`includes: ${post.userId}`);
         }
 
-        const userIdToFind = post.postedBy;
+        const userIdToFind = post.postedByDisplayName;
         const doesUserExist = userData.some(
           user => user.userId === userIdToFind
         );
 
         if (doesUserExist) {
-          const userRef = doc(db, 'users', post.postedBy);
+          const userRef = doc(db, 'users', post.postedByDisplayName);
           let result;
           getDoc(userRef).then(foo => {
             // console.log(`found user: ${JSON.stringify(foo.data())}`);

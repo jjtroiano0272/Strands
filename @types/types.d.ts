@@ -57,7 +57,7 @@ export type FireBasePost = {
   docId?: string,
   followers?: [],
   following?: [],
-  postedBy?: string,
+  postedByDisplayName?: string,
   profileImage?: string,
   rating?: number,
   savedPosts?: string[],

@@ -1,10 +1,8 @@
 // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 import { Gyroscope } from 'expo-sensors';
 import { Accelerometer } from 'expo-sensors';
-
 import React, { useEffect, useState } from 'react';
 import { DeviceMotion } from 'expo-sensors';
-
 import * as Haptics from 'expo-haptics';
 import * as ExpoLinking from 'expo-linking';
 import {
@@ -31,7 +29,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import { db } from '~/firebaseConfig';
+import { db, postsRef } from '~/firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import {
   Avatar,
@@ -55,7 +53,7 @@ const NewsDetailsPage = () => {
   const theme = useTheme();
   const auth = getAuth();
   const currentUserID = auth.currentUser?.uid;
-  const { userProfile: uid, docId } = useLocalSearchParams();
+  const { userID: uid, docId } = useLocalSearchParams();
   const [userData, setUserData] = useState<{
     profileImage?: string;
     name?: string;
@@ -66,6 +64,8 @@ const NewsDetailsPage = () => {
     socialMediaLinks?: {
       instagram?: string;
     };
+    displayName?: string;
+    [key: string]: any;
   }>();
   let postsByLoggedInUser: DocumentData[] = [];
   let postsByUserYouAreViewing: DocumentData[] = [];
@@ -92,84 +92,115 @@ const NewsDetailsPage = () => {
   };
 
   const fetchUserPosts = async () => {
-    if (!uid) return;
+    if (!uid) return console.error(`no uid`);
 
-    const postsCollectionRef = collection(db, 'posts');
+    try {
+      // Posts made by the user YOU ARE LOOKING AT
+      const loggedInUserPostsQueryRef = query(
+        postsRef,
+        where('auth.uid', '==', auth?.currentUser?.uid)
+      ); // change uid to one of the clients user has seen
 
-    // Posts made by the user YOU ARE LOOKING AT
-    const queryPosts = query(postsCollectionRef, where('auth.uid', '==', uid));
-
-    const loggedInUserPostsQueryRef = query(
-      postsCollectionRef,
-      where('auth.uid', '==', auth?.currentUser?.uid)
-    ); // change uid to one of the clients user has seen
-    console.log(
-      `\x1b[33mPosts by ${auth?.currentUser?.uid}: ${JSON.stringify(
-        loggedInUserPostsQueryRef,
-        null,
-        2
-      )}`
-    );
-
-    const querySnapshot = await getDocs(queryPosts);
-    const querySnapshotForLoggedInUser = await getDocs(
-      loggedInUserPostsQueryRef
-    );
-
-    // Find clients in common
-    // const compoundQuery = query(
-    //   postsCollectionRef,
-    //   where('auth.uid', '==', uid),
-    //   where('clientName', '==', 'Ettie')
-    // ); // change uid to one of the clients user has seen
-    // const foo = await getDocs(compoundQuery);
-    // console.log(`overlap: ${JSON.stringify(foo.docs, null, 2)}`);
-
-    if (!querySnapshot.empty || !querySnapshotForLoggedInUser.empty) {
-      // Retrieve the first matching document
-      const docSnapshot = querySnapshot.docs[0];
-      postsByUserYouAreViewing = [docSnapshot.data()];
-      postsByLoggedInUser = querySnapshotForLoggedInUser.docs.map(doc =>
-        doc.data()
+      const querySnapshotForLoggedInUser = await getDocs(
+        loggedInUserPostsQueryRef
       );
 
-      setUserData({
-        // TODO This won't break it but it's not a good way to handle it....
-        // profileImage: postsByUserYouAreViewing[0].auth.profileImage,
-        name: postsByUserYouAreViewing[0].auth.displayName,
-        // posts: undefined,
-        numPosts: querySnapshot.docs.length,
-        // following: undefined,
-        // followers: undefined,
-        socialMediaLinks: {
-          instagram: postsByUserYouAreViewing[0]?.socialMediaLinks?.instagram,
-        },
+      const queryPosts = query(postsRef, where('postedBy', '==', uid));
+      const querySnapshot = await getDocs(queryPosts);
+      querySnapshot.forEach(doc => {
+        // doc.data() is never undefined for query doc snapshots
+        console.log(doc.id, ' => ', doc.data());
       });
-    } else {
-      console.log('No matching post found.');
+
+      console.log(
+        `querySnapshot length: ${JSON.stringify(querySnapshot.size, null, 2)}`
+      );
+
+      // Find clients in common
+      // const compoundQuery = query(
+      //   postsCollectionRef,
+      //   where('auth.uid', '==', uid),
+      //   where('clientName', '==', 'Ettie')
+      // ); // change uid to one of the clients user has seen
+      // const foo = await getDocs(compoundQuery);
+      // console.log(`overlap: ${JSON.stringify(foo.docs, null, 2)}`);
+
+      if (!querySnapshot.empty || !querySnapshotForLoggedInUser.empty) {
+        console.log(`Was expecting you...`);
+
+        // Retrieve the first matching document
+        const docSnapshot = querySnapshot.docs[0];
+        postsByUserYouAreViewing = [docSnapshot.data()];
+        postsByLoggedInUser = querySnapshotForLoggedInUser.docs.map(doc =>
+          doc.data()
+        );
+
+        console.log(`numposts SHOULD be ${querySnapshot.size}`);
+
+        const userRef = doc(db, 'users', uid as string);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.data();
+        console.log(`hello userData: ${JSON.stringify(userData, null, 2)}`);
+
+        setUserData({
+          // TODO This won't break it but it's not a good way to handle it....
+          // profileImage: postsByUserYouAreViewing[0].auth.profileImage,
+          // following: undefined,
+          // followers: undefined,
+          // posts: undefined,
+          displayName: userData?.displayName,
+          username: userData?.username,
+          numPosts: querySnapshot?.size,
+          socialMediaLinks: {
+            instagram: postsByUserYouAreViewing[0]?.socialMediaLinks?.instagram,
+          },
+        });
+      } else {
+        console.log('No matching post found.');
+      }
+
+      setClientsInCommon(
+        checkSameValueForKey(
+          postsByLoggedInUser,
+          postsByUserYouAreViewing,
+          'clientName'
+        )
+      );
+
+      console.log(
+        `\x1b[33mclientsInCommon: ${JSON.stringify(clientsInCommon, null, 2)}`
+      );
+    } catch (error) {
+      console.error(`Something wrong in [userProfile]:172: ${error}`);
     }
-
-    setClientsInCommon(
-      checkSameValueForKey(
-        postsByLoggedInUser,
-        postsByUserYouAreViewing,
-        'clientName'
-      )
-    );
-
-    console.log(
-      `\x1b[33mclientsInCommon: ${JSON.stringify(clientsInCommon, null, 2)}`
-    );
   };
 
   const fetchUserData = async () => {
-    if (!uid) return;
+    // const docRef = doc(db, 'posts', docId);
+    // const docSnap = await getDoc(docRef);
+    // const docData = docSnap.data();
+    // // console.log(`docData single: ${JSON.stringify(docData, null, 2)}`); // has .postedBy
 
-    const docRef = doc(db, 'users', uid as string);
-    const docSnap = await getDoc(docRef);
+    // const clientRef = doc(db, 'clients', docSnap?.data()?.clientID);
+    // const clientSnap = await getDoc(clientRef);
+    // const clientData = clientSnap.data();
+    // // console.log(`clientData: ${JSON.stringify(clientData, null, 2)}`);
 
-    if (docSnap.exists()) {
-      // console.log(`docSnap: ${JSON.stringify(docSnap.data(), null, 2)}`);
+    // const userRef = doc(db, 'users', docData?.postedBy);
+    // const userSnap = await getDoc(userRef);
+    // const userData = userSnap.data();
+    // console.log(`hello: ${JSON.stringify(userData, null, 2)}`);
+
+    if (!uid) return console.error(`No uid:[userProfile]`);
+
+    try {
+      const docRef = doc(db, 'users', uid as string);
+      const docSnap = await getDoc(docRef);
+      const docData = docSnap.data();
+
+      console.log(
+        `docSnap in profile: ${JSON.stringify(docSnap.data(), null, 2)}`
+      );
 
       setUserData({
         // ...userData,
@@ -177,8 +208,8 @@ const NewsDetailsPage = () => {
         // profileImage: (docSnap.data() as UserProfile).profileImage,
         ...docSnap.data(),
       });
-    } else {
-      console.error(`Error fetching user's data!`);
+    } catch (error) {
+      console.error(`Error in fetching user's profile data: ${error}`);
     }
   };
 
@@ -240,13 +271,12 @@ const NewsDetailsPage = () => {
   useEffect(() => {
     fetchUserPosts();
     fetchUserData();
-
-    console.log(`docId: ${docId}`);
   }, []);
 
   useEffect(() => {
-    console.log(`userData: ${JSON.stringify(userData, null, 2)}`);
-  }, [userData]);
+    // console.log(`userData: ${JSON.stringify(userData, null, 2)}`);
+    console.log(`both vars: ${JSON.stringify({ uid, docId }, null, 2)}`);
+  }, []);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -291,8 +321,9 @@ const NewsDetailsPage = () => {
 
       {/* User's subtitle of name */}
       <View style={styles.infoContainer}>
-        <Text style={[styles.text, { fontWeight: '200', fontSize: 36 }]}>
+        <Text style={[styles.text, { fontWeight: '300', fontSize: 36 }]}>
           {userData?.displayName}
+          {/* Foo Barrington */}
         </Text>
         {uid !== currentUserID && (
           <View style={styles.dm}>
@@ -309,6 +340,14 @@ const NewsDetailsPage = () => {
         )}
       </View>
 
+      {userData?.username && (
+        <View style={styles.usernameContainer}>
+          <Text style={[styles.text, { fontWeight: '300', fontSize: 14 }]}>
+            @{userData?.username}
+          </Text>
+        </View>
+      )}
+
       {/* Number of user's followers, posts, etc. */}
       <View style={styles.statsContainer}>
         <TouchableOpacity
@@ -316,12 +355,12 @@ const NewsDetailsPage = () => {
           onPress={() =>
             router.push({
               pathname: `/postsByCurrentUser/${uid}`,
-              params: { docId: docId },
+              params: { uid },
             })
           }
         >
           <Text style={[styles.text, { fontSize: 24 }]}>
-            {userData?.numPosts ?? '-'}
+            {userData?.numPosts}
           </Text>
           <Text style={[styles.text, styles.subText]}>Posts</Text>
         </TouchableOpacity>
@@ -336,32 +375,14 @@ const NewsDetailsPage = () => {
             },
           ]}
         >
-          {/* 
-          "profileImage": "https://firebasestorage.googleapis.com/v0/b/yelpforhairstylists.appspot.com/o/post%2F0.55inkkij9fcl?alt=media&token=e79b700e-fb29-4a00-bbba-7b6b99ca63c3",
-          "displayName": "Jonathan Troiano",
-          "username": "jtroiano",
-          "bio": "Up in this SteerBacks, bb!",
-          "followers": [],
-          "following": [],
-          "socialMediaLinks": {
-            "reddit": "",
-            "youtube": "",
-            "instagram": "",
-            "facebook": ""
-          },
-          "savedPosts": [
-            "7PUd1ZtoE4PxKKD8ktED",
-            "7lJ0eOFIzWlUVSKcukYg",
-            "AKEarxBvkAned7iZ8p8y"
-          */}
           <Text style={[styles.text, { fontSize: 24 }]}>
-            {userData?.followers?.length ?? '-'}
+            {userData?.followers?.length ?? '0'}
           </Text>
           <Text style={[styles.text, styles.subText]}>Followers</Text>
         </View>
         <View style={styles.statsBox}>
           <Text style={[styles.text, { fontSize: 24 }]}>
-            {userData?.following?.length ?? '-'}
+            {userData?.following?.length ?? '0'}
           </Text>
           <Text style={[styles.text, styles.subText]}>Following</Text>
         </View>
@@ -516,6 +537,12 @@ const styles = StyleSheet.create({
     width: 300,
     // borderRadius: 100,
     // overflow: 'hidden',
+  },
+  usernameContainer: {
+    alignSelf: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginTop: 16,
   },
   dm: {
     backgroundColor: '#41444B',

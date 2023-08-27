@@ -207,7 +207,7 @@ export default function Post({
         // Go to user's profile
         else if (buttonIndex === 3) {
           router.push({
-            pathname: `users/${postData?.postedBy}`,
+            pathname: `users/${postData?.postedByDisplayName}`,
             // params: { docId: docId },
           });
         } else if (buttonIndex === 0) {

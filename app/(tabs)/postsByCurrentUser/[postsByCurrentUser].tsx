@@ -24,39 +24,57 @@ const UserPosts = () => {
     useState<(DocumentData | { docId?: string })[]>();
 
   const fetchPosts = async () => {
-    if (!uid) return;
+    if (!uid) return console.error(`no uid @ postsByCurrentUser:fetchPosts`);
 
-    const docRef = doc(db, 'posts', uid as string);
-    const docSnap = await getDoc(docRef);
-    const specificData = docSnap.data();
-    console.log(`Data for ${uid}: ${JSON.stringify(specificData, null, 2)}`);
+    try {
+      const docRef = doc(db, 'posts', uid as string);
+      const docSnap = await getDoc(docRef);
+      const specificData = docSnap.data();
+      console.log(`Data for ${uid}: ${JSON.stringify(specificData, null, 2)}`);
 
-    const postsCollectionRef = collection(db, 'posts');
+      const postsCollectionRef = collection(db, 'posts');
 
-    const userPosts = query(
-      postsCollectionRef,
-      where('auth.uid', '==', postsByCurrentUser)
-    );
-    const querySnapshot = await getDocs(userPosts);
-
-    if (!querySnapshot.empty) {
-      const docSnapshot = querySnapshot.docs;
-      const posts: (DocumentData | { docId: string })[] = docSnapshot.map(
-        doc => {
-          return { ...doc.data(), docId: doc.id };
-        }
+      const userPosts = query(
+        postsCollectionRef,
+        where('auth.uid', '==', postsByCurrentUser)
       );
+      const querySnapshot = await getDocs(userPosts);
 
-      setPostsByUser(posts);
+      const posts = query(postsCollectionRef, where('postedBy', '==', uid));
+      const postsSnapshot = await getDocs(posts);
+      console.log(`posts by this MF`);
+      let tempPosts: DocumentData[] = [];
+      postsSnapshot.forEach(doc => {
+        console.log(doc.id, ' => ', doc.data());
+        tempPosts.push(doc.data());
+      });
+      setPostsByUser(tempPosts);
 
-      console.log(`postsByUser: ${JSON.stringify(postsByUser, null, 2)}`);
-    } else {
-      console.error('No matching post found.');
+      // if (!querySnapshot.empty) {
+      //   const docSnapshot = querySnapshot.docs;
+      //   const posts: (DocumentData | { docId: string })[] = docSnapshot.map(
+      //     doc => {
+      //       return { ...doc.data(), docId: doc.id };
+      //     }
+      //   );
+
+      //   setPostsByUser(posts);
+
+      //   console.log(`postsByUser: ${JSON.stringify(postsByUser, null, 2)}`);
+      // } else {
+      //   console.error('No matching post found.');
+      // }
+    } catch (error) {
+      console.error(`Async error in fetchPosts:59`);
     }
   };
 
   useEffect(() => {
     fetchPosts();
+  }, []);
+
+  useEffect(() => {
+    console.log(`now at postsbycurrentuser: ${uid}`);
   }, []);
 
   return postsByUser ? (
