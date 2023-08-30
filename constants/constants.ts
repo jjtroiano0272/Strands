@@ -68,3 +68,45 @@ export const Haptics = {
   Medium: () => ExpoHaptics.impactAsync(ExpoHaptics.ImpactFeedbackStyle.Medium),
   Heavy: () => ExpoHaptics.impactAsync(ExpoHaptics.ImpactFeedbackStyle.Heavy),
 };
+
+export const getElapsedTime = (
+  time1: number,
+  time2: number = Date.now(),
+  format?: string
+) => {
+  const createdAtTimestamp = time1 * 1000;
+
+  const elapsedTimeInSeconds = Math.abs(
+    Math.round((createdAtTimestamp - time2) / 1000)
+  );
+  const elapsedTimeInMinutes = Math.abs(
+    Math.round(elapsedTimeInSeconds / 60)
+  );
+  const elapsedTimeInHours = Math.abs(Math.round(elapsedTimeInMinutes / 60));
+  const elapsedTimeInDays = Math.abs(Math.round(elapsedTimeInHours / 24));
+  const elapsedTimeInWeeks = Math.abs(
+    Math.round(elapsedTimeInSeconds / 604800)
+  ); // 604800 seconds in a week
+  const elapsedTimeInMonths = Math.abs(Math.round(elapsedTimeInWeeks / 4));
+
+  // If it has been longer than 60 seconds, use elapseTimeinMinutes
+  // let result: { number: number; unit: string };
+  let result;
+  if (elapsedTimeInSeconds >= 60) {
+    result = { number: elapsedTimeInMinutes, unit: 'minutes' };
+  }
+  if (elapsedTimeInMinutes >= 60) {
+    result = { number: elapsedTimeInHours, unit: 'hours' };
+  }
+  if (elapsedTimeInHours >= 24) {
+    result = { number: elapsedTimeInDays, unit: 'days' };
+  }
+  if (elapsedTimeInDays >= 7) {
+    result = { number: elapsedTimeInWeeks, unit: 'weeks' };
+  }
+  if (elapsedTimeInWeeks >= 4) {
+    result = { number: elapsedTimeInMonths, unit: 'months' };
+  }
+
+  return result;
+};

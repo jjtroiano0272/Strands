@@ -295,8 +295,8 @@ export default function ClientProfile() {
       <ScrollView style={styles.getStartedContainer}>
         <Stack.Screen options={{ title: `${data?.clientName}` }} />
 
-        <Text>docID: {docId}</Text>
-        <Text>clientID: {clientID}</Text>
+        {/* <Text>docID: {docId}</Text>
+        <Text>clientID: {clientID}</Text> */}
 
         <Card
           style={styles.card}
@@ -311,8 +311,7 @@ export default function ClientProfile() {
               <View style={styles.subtitleContainer}>
                 <Text style={{ lineHeight: 18 }}>Seen by </Text>
 
-                <Link
-                  // href={{ pathname: '../users/123', params: { id: 123 } }}
+                {/* <Link
                   style={{
                     color: theme.colors.primary,
                     justifyContent: 'flex-end',
@@ -329,7 +328,25 @@ export default function ClientProfile() {
                 <View
                   style={{ backgroundColor: 'transparent' }}
                   hitSlop={styles.utilHitSlop}
-                ></View>
+                ></View> */}
+
+                <TouchableOpacity
+                  style={{
+                    justifyContent: 'flex-end',
+                    alignItems: 'baseline',
+                  }}
+                  hitSlop={{ left: 5, right: 50, top: 50, bottom: 40 }}
+                  onPress={() =>
+                    router.push({
+                      pathname: `users/${data?.postedByDisplayName}`,
+                      params: { userID: data?.postedByID },
+                    })
+                  }
+                >
+                  <Text style={{ color: theme.colors.primary }}>
+                    {data?.postedByDisplayName}
+                  </Text>
+                </TouchableOpacity>
               </View>
             }
             subtitleStyle={[{ color: theme.colors.text }, styles.cardSubtitle]}

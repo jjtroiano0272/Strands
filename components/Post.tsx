@@ -90,7 +90,9 @@ export default function Post({
     if (uid) {
       await updateDoc(doc(db, 'users', uid), {
         savedPosts: arrayRemove(postId),
-      }).then(res => `Post updated successfully! ${res}`);
+      })
+        .catch(err => console.error(`error Post:93: ${err}`))
+        .then(res => `Post updated successfully! ${res}`);
     }
 
     setIsSaved(false);
@@ -223,15 +225,19 @@ export default function Post({
     const getClientData = async () => {
       if (!postData?.clientID) return;
 
-      const docRef = doc(db, 'clients', postData?.clientID);
-      const docSnap = await getDoc(docRef);
+      try {
+        const docRef = doc(db, 'clients', postData?.clientID);
+        const docSnap = await getDoc(docRef);
 
-      if (docSnap.exists()) {
-        console.log('Document data:', docSnap.data());
-        setClientData({ ...getClientData, ...docSnap.data() });
-      } else {
-        // docSnap.data() will be undefined in this case
-        console.log('No such document!');
+        if (docSnap.exists()) {
+          console.log('Document data:', docSnap.data());
+          setClientData({ ...getClientData, ...docSnap.data() });
+        } else {
+          // docSnap.data() will be undefined in this case
+          console.log('No such document!');
+        }
+      } catch (error) {
+        console.error(`Error Post:240: ${error}`);
       }
       // 1oLsVwRHB1CsBjBamz0x
     };
@@ -245,14 +251,18 @@ export default function Post({
   const fetchStylistData = async (userID?: string) => {
     if (!userID) return;
 
-    const stylistRef = doc(db, 'users', userID);
-    const stylistSnap = await getDoc(stylistRef);
+    try {
+      const stylistRef = doc(db, 'users', userID);
+      const stylistSnap = await getDoc(stylistRef);
 
-    if (stylistSnap.exists()) {
-      console.log('Stylist data:', stylistSnap.data());
-      setStylistData({ ...stylistData, ...stylistSnap.data() });
-    } else {
-      console.log('No such document!');
+      if (stylistSnap.exists()) {
+        console.log('Stylist data:', stylistSnap.data());
+        setStylistData({ ...stylistData, ...stylistSnap.data() });
+      } else {
+        console.log('No such document!');
+      }
+    } catch (error) {
+      console.error(`Error Post:265 ${error}`);
     }
   };
 
