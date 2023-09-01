@@ -1,38 +1,18 @@
-import {
-  useSharedValue,
-  withSpring,
-  useDerivedValue,
-  useAnimatedStyle,
-  withDelay,
-} from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { faker } from '@faker-js/faker';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
-  Alert,
   Image,
   Linking,
-  Modal,
   Animated,
-  Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import * as ExpoLinking from 'expo-linking';
-import { FireBasePost, IAPIData, SearchParams } from '../../../@types/types';
-import Colors from '../../../constants/Colors';
-import useFetch from '../../../hooks/useFetch';
-import { ExternalLink } from '../../../components/ExternalLink';
-import { MonoText } from '../../../components/StyledText';
+import { FireBasePost } from '../../../@types/types';
 import {
-  Avatar,
-  Button,
   Card,
-  Title,
   Subheading,
   Paragraph,
   MD3LightTheme,
@@ -41,33 +21,14 @@ import {
   Chip,
   IconButton,
   MD3Colors,
-  Snackbar,
 } from 'react-native-paper';
 import { Text, View } from '../../../components/Themed';
-import {
-  Link,
-  Stack,
-  useRouter,
-  useSearchParams,
-  usePathname,
-  useSegments,
-  useNavigation,
-  useLocalSearchParams,
-} from 'expo-router';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { UserContext } from '../../../context/UserContext';
 import Swiper from 'react-native-swiper';
-import {
-  DocumentData,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  getFirestore,
-  query,
-  where,
-} from 'firebase/firestore';
+import { DocumentData, doc, getDoc } from 'firebase/firestore';
 import { db } from '~/firebaseConfig';
 
 export default function ClientProfile() {
@@ -87,20 +48,11 @@ export default function ClientProfile() {
   const slideAnim = useRef(new Animated.Value(0)).current;
   const [selectedChip, setSelectedChip] = useState<string>();
   const [showSelected, setShowSelected] = useState(false);
-  const { docId, postData }: { docId?: string; postData?: FireBasePost } =
-    useLocalSearchParams();
+  const { post: docId } = useLocalSearchParams();
 
-  // TODO These need to be replace with actual data, but will need to be engineered.
-  // For example, user actually needs to come from something like the user context for the actual user.
-  const placeholders = {
-    recipient: faker.name.firstName(),
-    user: faker.name.fullName(),
-    phoneNumber: faker.phone.number('(###) ###-###').toString(),
-  };
-
-  const messageBody = encodeURI(
-    `Hi ${placeholders.recipient} this is ${placeholders.user}. I just wanted to confirm the upcoming appointment with you`
-  );
+  // const messageBody = encodeURI(
+  //   `Hi ${placeholders.recipient} this is ${placeholders.user}. I just wanted to confirm the upcoming appointment with you`
+  // );
 
   const capitalizeFirstLetter = (str: string) => {
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -138,7 +90,7 @@ export default function ClientProfile() {
 
     try {
       // TODO Refactor into one line compound?
-      const docRef = doc(db, 'posts', docId);
+      const docRef = doc(db, 'posts', docId as string);
       const docSnap = await getDoc(docRef);
       const docData = docSnap.data();
       // console.log(`docData single: ${JSON.stringify(docData, null, 2)}`); // has .postedBy
@@ -172,7 +124,7 @@ export default function ClientProfile() {
     if (!docId) return console.error(`no docId in fetchStylistData`);
 
     try {
-      const docRef = doc(db, 'posts', docId);
+      const docRef = doc(db, 'posts', docId as string);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -290,6 +242,11 @@ export default function ClientProfile() {
     console.log(`data: ${JSON.stringify(data, null, 2)}`);
   }, [data]);
 
+  const { post: newDocId } = useLocalSearchParams();
+  useEffect(() => {
+    console.log(`newDocId: ${JSON.stringify(newDocId, null, 2)}`);
+  }, []);
+
   return (
     <>
       <ScrollView style={styles.getStartedContainer}>
@@ -375,9 +332,13 @@ export default function ClientProfile() {
                     ]}
                   />
                 }
-                onIndexChanged={(index: number) =>
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                }
+                onIndexChanged={(index: number) => {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  } catch (error) {
+                    console.error(`Haptic error in onIndexChanged`);
+                  }
+                }}
               >
                 {data?.media?.images.map((imgUri: string) => (
                   <Image
@@ -404,8 +365,8 @@ export default function ClientProfile() {
                 //   .slice(0, 3)}) ${data?.phoneNumber
                 //   ?.toString()
                 //   .slice(3, 6)}-${data?.phoneNumber?.toString().slice(6)}`}
-                title={data?.phoneNumber}
                 // description='Item description'
+                title={data?.phoneNumber}
                 left={() => (
                   <MaterialCommunityIcons
                     color={theme.colors.primary}

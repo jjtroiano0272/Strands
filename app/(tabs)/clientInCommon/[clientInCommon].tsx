@@ -28,34 +28,37 @@ const CommonClient = () => {
 
   const fetchUserData = async () => {
     if (!otherStylistsUid) return;
-
-    const postsCollectionRef = collection(db, 'posts');
-    const queryPosts = query(
-      postsCollectionRef,
-      where('auth.uid', '==', otherStylistsUid)
-    );
-    const loggedInUserPostsQueryRef = query(
-      postsCollectionRef,
-      where('auth.uid', '==', auth?.currentUser?.uid)
-    );
-    const querySnapshot = await getDocs(queryPosts);
-    const querySnapshotForLoggedInUser = await getDocs(
-      loggedInUserPostsQueryRef
-    );
-
-    if (!querySnapshot.empty && !querySnapshotForLoggedInUser.empty) {
-      // Retrieve the first matching document
-      const docSnapshot = querySnapshot.docs[0];
-      const postsByUserYouAreViewing = [docSnapshot.data()];
-      const postsByLoggedInUser = querySnapshotForLoggedInUser.docs.map(doc =>
-        doc.data()
+    try {
+      const postsCollectionRef = collection(db, 'posts');
+      const queryPosts = query(
+        postsCollectionRef,
+        where('auth.uid', '==', otherStylistsUid)
+      );
+      const loggedInUserPostsQueryRef = query(
+        postsCollectionRef,
+        where('auth.uid', '==', auth?.currentUser?.uid)
+      );
+      const querySnapshot = await getDocs(queryPosts);
+      const querySnapshotForLoggedInUser = await getDocs(
+        loggedInUserPostsQueryRef
       );
 
-      // set state
-      setTheirPosts(postsByUserYouAreViewing);
-      setYourPosts(postsByLoggedInUser);
-    } else {
-      console.log('No matching post found.');
+      if (!querySnapshot.empty && !querySnapshotForLoggedInUser.empty) {
+        // Retrieve the first matching document
+        const docSnapshot = querySnapshot.docs[0];
+        const postsByUserYouAreViewing = [docSnapshot.data()];
+        const postsByLoggedInUser = querySnapshotForLoggedInUser.docs.map(doc =>
+          doc.data()
+        );
+
+        // set state
+        setTheirPosts(postsByUserYouAreViewing);
+        setYourPosts(postsByLoggedInUser);
+      } else {
+        console.log('No matching post found.');
+      }
+    } catch (error) {
+      console.error(`Error in clientInCommon`);
     }
   };
 

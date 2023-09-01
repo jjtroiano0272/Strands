@@ -18,7 +18,7 @@ export default () => {
       }}
     >
       <Tabs.Screen
-        name='feed'
+        name='index'
         options={{
           tabBarIcon: ({ color }) => (
             <FontAwesome name='home' size={iconSize} color={color} />
@@ -83,7 +83,7 @@ export default () => {
           href: null,
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name='posts'
         options={{
           tabBarIcon: ({ color }) => (
@@ -92,7 +92,7 @@ export default () => {
           href: null,
           headerShown: false,
         }}
-      />
+      /> */}
       <Tabs.Screen
         name='users'
         options={{

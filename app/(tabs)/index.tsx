@@ -1,12 +1,10 @@
-import { randUser } from '@ngneat/falso';
-import { arrayWithUpdateData } from '../../DATA_TO_UPDATE_WITH';
 import BottomSheet, {
   BottomSheetModal,
   BottomSheetModalProvider,
 } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { FlatList, StyleSheet, useWindowDimensions, Image } from 'react-native';
+import { FlatList, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { useTheme } from '@react-navigation/native';
 import React from 'react';
@@ -14,25 +12,15 @@ import { FireBasePost } from '../../@types/types';
 import Post from '../../components/Post';
 import {
   DocumentData,
-  FieldPath,
   Timestamp,
-  addDoc,
-  collection,
-  deleteDoc,
-  deleteField,
   doc,
-  documentId,
   getDoc,
   getDocs,
   orderBy,
   query,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
-  where,
 } from 'firebase/firestore';
 // import { fetchUser } from '../../redux/actions';
-import { clientsRef, db, postsRef, usersRef } from '~/firebaseConfig';
+import { db, postsRef, usersRef } from '~/firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import {
   Button,
@@ -53,15 +41,13 @@ import {
   springConfig,
 } from '../../constants/constants';
 import RippleButton from '~/components/RippleButton';
-import { Stack } from 'expo-router';
-import { faker } from '@faker-js/faker';
-import { get, set } from 'firebase/database';
-import { OLD_DATA } from '../../OLD_DATA';
+import { Link, Stack, useRouter } from 'expo-router';
 
 const Feed = () => {
   const theme = useTheme();
   const dimensions = useWindowDimensions();
   const top = useSharedValue(dimensions.height / 1.5);
+  const router = useRouter();
 
   const [postsSavedByUser, setPostsSavedByUser] = useState<string[]>();
   const [posts, setPosts] = useState<FireBasePost[]>();
@@ -230,14 +216,19 @@ const Feed = () => {
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    fetchPostsData();
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    setTimeout(() => {
-      setRefreshing(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }, 2000);
+      fetchPostsData();
+
+      setTimeout(() => {
+        setRefreshing(false);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }, 2000);
+    } catch (error) {
+      console.error(`Some error with Haptic async function: ${error}`);
+    }
   }, []);
 
   const handleGesture = useAnimatedGestureHandler({
@@ -265,27 +256,30 @@ const Feed = () => {
     data: FireBasePost[],
     orderByDirection: 'asc' | 'desc' = 'asc'
   ): (FireBasePost | { docId: string })[] | undefined => {
-    if (!data) return;
+    try {
+      if (!data) return;
 
-    return [...data].sort((a, b) => {
-      // const aValue = a[property];
-      const aValue: unknown = a[a.indexOf(property)]; // parse through a for the element whose value is `property`
-      const bValue = b[b.indexOf(property)];
+      return [...data].sort((a, b) => {
+        const aValue: unknown = a[a.indexOf(property)]; // parse through a for the element whose value is `property`
+        const bValue = b[b.indexOf(property)];
 
-      if (aValue && !bValue) {
-        return orderByDirection === 'asc' ? 1 : -1;
-      } else if (!aValue && bValue) {
-        return orderByDirection === 'asc' ? -1 : 1;
-      } else if (aValue && bValue) {
-        if (aValue > bValue) {
+        if (aValue && !bValue) {
           return orderByDirection === 'asc' ? 1 : -1;
-        } else if (aValue < bValue) {
+        } else if (!aValue && bValue) {
           return orderByDirection === 'asc' ? -1 : 1;
+        } else if (aValue && bValue) {
+          if (aValue > bValue) {
+            return orderByDirection === 'asc' ? 1 : -1;
+          } else if (aValue < bValue) {
+            return orderByDirection === 'asc' ? -1 : 1;
+          }
         }
-      }
 
-      return 0;
-    });
+        return 0;
+      });
+    } catch (error) {
+      console.error(`sortByProperty done fucked up somewhere`);
+    }
   };
 
   const getDataSortedBy = (
@@ -373,11 +367,14 @@ const Feed = () => {
     }
 
     // TODO: Might need some catches in here just for data type mismatches
-    const result = posts?.filter(
-      item => Object.keys(item).indexOf(filterName) !== -1
-    );
-
-    setPosts(result);
+    try {
+      const result = posts?.filter(
+        item => Object.keys(item).indexOf(filterName) !== -1
+      );
+      setPosts(result);
+    } catch (error) {
+      console.error(`some indexOf error?`);
+    }
   };
 
   const handleReset = () => {
@@ -408,15 +405,15 @@ const Feed = () => {
         <>
           <BottomSheetModalProvider>
             <FlatList
-              contentContainerStyle={{
-                paddingVertical: 8,
-                paddingHorizontal: 10,
-              }}
               data={posts?.filter(
                 (post: any) =>
                   !selectedFilters?.length ||
                   selectedFilters.every(filter => filter[post])
               )}
+              contentContainerStyle={{
+                paddingVertical: 8,
+                paddingHorizontal: 10,
+              }}
               ListFooterComponent={() =>
                 !errors && posts && posts.length > 0 ? (
                   <>
@@ -528,11 +525,18 @@ const Feed = () => {
               keyExtractor={(_, index) => index.toString()}
               numColumns={2}
               renderItem={({ item }) => (
-                <Post
-                  postData={item}
-                  postsSavedByUser={postsSavedByUser ?? ['']} // TODO: Not a great bulletproof method, but hey it'll work for now.
-                  // postedById={}
-                />
+                <Link
+                  href={{
+                    pathname: '/posts/[post]',
+                    params: { post: '13uptfw2wA7MT5gaojgU' },
+                  }}
+                  asChild
+                >
+                  <Post
+                    postData={item}
+                    postsSavedByUser={postsSavedByUser ?? ['']} // TODO: Not a great bulletproof method, but hey it'll work for now.
+                  />
+                </Link>
               )}
             />
           </BottomSheetModalProvider>

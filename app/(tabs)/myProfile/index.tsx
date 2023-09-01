@@ -9,7 +9,8 @@ import { Stack } from 'expo-router';
 
 import React, { useEffect, useRef, useState } from 'react';
 
-import { Haptics } from '~/constants/constants';
+// import { Haptics } from '~/constants/constants';
+import * as Haptics from 'expo-haptics';
 import * as ExpoLinking from 'expo-linking';
 import {
   StyleSheet,
@@ -279,7 +280,12 @@ const MyProfilePage = () => {
 
         setUploadStatus({ ...uploadStatus, profileImage: 'success' });
         setLoading(false);
-        Haptics.Success;
+
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (error) {
+          console.error(`Haptic error in cons task of myProfile`);
+        }
       })
       .catch(err => {
         setLoading(false);
@@ -397,7 +403,11 @@ const MyProfilePage = () => {
               onPress={() => {
                 if (editable) {
                   handlePickImage();
-                  Haptics.Heavy;
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                  } catch (error) {
+                    console.error(`Haptic error, myProfile/index:409`);
+                  }
                 }
               }}
               style={{

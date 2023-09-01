@@ -52,7 +52,7 @@ export type FireBasePost = {
   bio?: string,
   clientID?: string,
   comments?: string,
-  createdAt?: string, // Maybe with Date type?
+  createdAt?: string | Date,
   displayName?: string,
   docId?: string,
   followers?: [],

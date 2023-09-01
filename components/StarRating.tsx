@@ -12,8 +12,12 @@ export default function StarRating({
   const [ratingChoices, setRatingChoices] = useState([1, 2, 3, 4, 5]);
 
   const handleStarRating = (item: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedRating(item);
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setSelectedRating(item);
+    } catch (error) {
+      console.error(`Error in haptics at handleStarRating`);
+    }
   };
 
   // TODO <UI Level> allow drag and swipe to select rating

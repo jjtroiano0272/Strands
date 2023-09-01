@@ -35,7 +35,7 @@ import {
   useTheme as usePaperTheme,
 } from 'react-native-paper';
 import { Text, View } from './Themed';
-import { Link, useRouter } from 'expo-router';
+import { Link, Stack, useRouter } from 'expo-router';
 import { DarkTheme, useTheme } from '@react-navigation/native';
 import {
   DocumentData,
@@ -60,9 +60,11 @@ import { clientsRef, db } from '~/firebaseConfig';
 export default function Post({
   postData,
   postsSavedByUser,
+  children,
 }: {
   postData: FireBasePost;
   postsSavedByUser: string[];
+  onPress?: () => void;
 }) {
   const theme = useTheme();
   const router = useRouter();
@@ -75,10 +77,14 @@ export default function Post({
   const savePost = async (postId: string) => {
     const uid = getAuth().currentUser?.uid;
 
-    if (uid) {
-      await updateDoc(doc(db, 'users', uid), {
-        savedPosts: arrayUnion(postId),
-      });
+    try {
+      if (uid) {
+        await updateDoc(doc(db, 'users', uid), {
+          savedPosts: arrayUnion(postId),
+        });
+      }
+    } catch (error) {
+      console.error(`Error in Post:savePost() ${error}`);
     }
 
     setIsSaved(true);
@@ -87,12 +93,16 @@ export default function Post({
   const unsavePost = async (postId: string) => {
     const uid = getAuth().currentUser?.uid;
 
-    if (uid) {
-      await updateDoc(doc(db, 'users', uid), {
-        savedPosts: arrayRemove(postId),
-      })
-        .catch(err => console.error(`error Post:93: ${err}`))
-        .then(res => `Post updated successfully! ${res}`);
+    try {
+      if (uid) {
+        await updateDoc(doc(db, 'users', uid), {
+          savedPosts: arrayRemove(postId),
+        });
+
+        console.log(`Post updated successfully! `);
+      }
+    } catch (error) {
+      console.error(`Error in unsaving post: ${error}`);
     }
 
     setIsSaved(false);
@@ -153,7 +163,11 @@ export default function Post({
   };
 
   const showActionSheet = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch (error) {
+      console.error(`Haptic error at Post:166: ${error}`);
+    }
 
     let actionSheetOptions = [
       'Cancel',
@@ -274,15 +288,6 @@ export default function Post({
     <Card
       style={styles.card}
       theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-      onPress={() =>
-        router.push({
-          pathname: `posts/${postData?.docId}`,
-          params: {
-            docId: postData?.docId,
-            // postData: postData,
-          },
-        })
-      }
       onLongPress={showActionSheet}
     >
       <Card.Title
@@ -300,9 +305,9 @@ export default function Post({
               </Text>
               <Text style={{ color: theme.colors.text, fontSize: 10 }}>
                 {/* {postData?.createdAt &&
-                    `${getElapsedTime(postData?.createdAt as number)?.number} ${
-                      getElapsedTime(postData?.createdAt as number)?.unit
-                    } ago`} */}
+                          `${getElapsedTime(postData?.createdAt as number)?.number} ${
+                            getElapsedTime(postData?.createdAt as number)?.unit
+                          } ago`} */}
                 {/* TODO: Offload to its own component and include the handling cases for like '1 weeks ago' */}
                 {postData?.createdAt &&
                   `${

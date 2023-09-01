@@ -21,9 +21,9 @@ const UserPosts = () => {
   const theme = useTheme();
   const router = useRouter();
   const { postsByCurrentUser, uid } = useLocalSearchParams();
-
-  const [postsByUser, setPostsByUser] =
-    useState<(FireBasePost | DocumentData | { docId?: string })[]>();
+  const [postsByUser, setPostsByUser] = useState<
+    (FireBasePost | DocumentData | { docId?: string })[] | undefined
+  >();
 
   const fetchPosts = async () => {
     if (!uid) return console.error(`no uid @ postsByCurrentUser:fetchPosts`);
@@ -144,23 +144,33 @@ const UserPosts = () => {
   //   </>
   // );
 
-  const getFormattedDate = (date: Date | string) => {
-    return new Date(date).toISOString().slice(0, 10).replace(/-/g, '-');
+  const getDateFromPost = (post: FireBasePost) => {
+    if (post?.createdAt) {
+      return new Date(post?.createdAt)
+        .toISOString()
+        .slice(0, 10)
+        .replace(/-/g, '-');
+    } else {
+      throw new Error('Wrong data supplied to getDateFromPost');
+    }
   };
 
   return (
     <FlatList
       data={postsByUser}
-      renderItem={({ item }) => (
+      renderItem={({ item: post }) => (
         <List.Item
           // key={index}
+          // return new Date(item?.createdAt).getFullYear()
+          // description={post?.formula?.description ?? '-'}
           style={{ width: '100%' }}
           theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-          // return new Date(item?.createdAt).getFullYear()
-          title={item?.comments}
+          title={(post as FireBasePost)?.comments}
           titleStyle={{ fontWeight: '600' }}
-          // description={item?.formula?.description ?? '-'}
-          description={getFormattedDate(item?.createdAt)}
+          /* 5mg ritalin twice daily in diabetics long-term */
+          // if you increase the strattera to 50mg, see in one week
+          // Sep 14 next apppointment
+          description={getDateFromPost(post)}
           left={props => {
             return (
               <Avatar.Image
@@ -168,17 +178,19 @@ const UserPosts = () => {
                 size={42}
                 source={{
                   uri:
-                    item?.media?.images?.[0] ??
-                    `https://api.dicebear.com/6.x/notionists/png/seed=${item?.clientName}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
+                    (post as FireBasePost)?.media?.images?.[0] ??
+                    `https://api.dicebear.com/6.x/notionists/png/seed=${
+                      (post as FireBasePost)?.clientName
+                    }&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
                 }}
               />
             );
           }}
           onPress={() =>
             router.push({
-              pathname: `posts/${item.docId}`,
+              pathname: `posts/${post.docId}`,
               params: {
-                docId: item.docId,
+                docId: post.docId,
               },
             })
           }
