@@ -269,19 +269,23 @@ export default function Client() {
   };
 
   const getLocaleDate = (date: Date | string) => {
-    console.log(`date: ${date}`);
+    try {
+      console.log(`date: ${date}`);
 
-    const localeDate = new Date(
-      (date as string).substring(0, (date as string).indexOf('Z'))
-    );
-    const options = {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    };
+      const localeDate = new Date(
+        (date as string).substring(0, (date as string).indexOf('Z'))
+      );
+      const options = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      };
 
-    return localeDate.toLocaleString('en-US', { dateStyle: 'medium' });
+      return localeDate.toLocaleString('en-US', { dateStyle: 'medium' });
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const formatMobileNumber = (text: string) => {
@@ -501,13 +505,13 @@ export default function Client() {
                         await updateDoc(docRef, {
                           phoneNumber: phoneNumber.formatted,
                         });
+
+                        Haptics.Success();
+                        setPhoneNumberUpdated(true);
+                        setEditable(false);
                       } catch (error) {
                         console.error(error);
                       }
-
-                      Haptics.Success();
-                      setPhoneNumberUpdated(true);
-                      setEditable(false);
                     }}
                   />
                 )}

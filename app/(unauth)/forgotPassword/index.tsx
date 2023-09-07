@@ -69,7 +69,11 @@ const ForgotPasswordPage = () => {
   ) => {
     if (!oobCode && !newPassword) return;
 
-    return await confirmPasswordReset(auth, oobCode, newPassword);
+    try {
+      return await confirmPasswordReset(auth, oobCode, newPassword);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const handleResetPassword = async () => {

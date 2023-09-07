@@ -17,13 +17,41 @@ export default () => {
         tabBarActiveTintColor: 'purple',
       }}
     >
-      <Tabs.Screen
+      <Tabs.Screen name='home' options={{ headerShown: false }} />
+      <Tabs.Screen name='list' />
+
+      {/* TURNING OFF THE DISPLAY OF OTHER BOTTOM TABS */}
+      <Tabs.Screen name='clientInCommon' options={{ href: null }} />
+      <Tabs.Screen name='clients' options={{ href: null }} />
+      <Tabs.Screen name='myProfile' options={{ href: null }} />
+      <Tabs.Screen name='posts' options={{ href: null }} />
+      <Tabs.Screen name='postsByCurrentUser' options={{ href: null }} />
+      <Tabs.Screen name='users' options={{ href: null }} />
+
+      <Tabs.Screen name='add' options={{ href: null }} />
+      <Tabs.Screen name='details' options={{ href: null }} />
+      <Tabs.Screen name='messages' options={{ href: null }} />
+      <Tabs.Screen name='save' options={{ href: null }} />
+      <Tabs.Screen name='search' options={{ href: null }} />
+
+      {/* PREVIOUSLY DEFINED AS */}
+      {/* <Tabs.Screen
         name='index'
         options={{
           tabBarIcon: ({ color }) => (
             <FontAwesome name='home' size={iconSize} color={color} />
           ),
           tabBarLabel: 'Home',
+        }}
+      />
+      <Tabs.Screen
+        name='posts'
+        options={{
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name='user-circle' size={iconSize} color={color} />
+          ),
+          tabBarLabel: 'posts',
+          headerShown: false,
         }}
       />
       <Tabs.Screen
@@ -83,7 +111,7 @@ export default () => {
           href: null,
         }}
       />
-      {/* <Tabs.Screen
+      <Tabs.Screen
         name='posts'
         options={{
           tabBarIcon: ({ color }) => (
@@ -92,7 +120,7 @@ export default () => {
           href: null,
           headerShown: false,
         }}
-      /> */}
+      />
       <Tabs.Screen
         name='users'
         options={{
@@ -122,7 +150,7 @@ export default () => {
           href: null,
           headerShown: false,
         }}
-      />
+      /> */}
     </Tabs>
   );
 };

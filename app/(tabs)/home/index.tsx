@@ -3,13 +3,20 @@ import BottomSheet, {
   BottomSheetModalProvider,
 } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { FlatList, StyleSheet, useWindowDimensions } from 'react-native';
-import { Text, View } from '../../components/Themed';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+  useContext,
+} from 'react';
+import { FlatList, StyleSheet, useWindowDimensions, Image } from 'react-native';
+import { Text, View } from '../../../components/Themed';
 import { useTheme } from '@react-navigation/native';
 import React from 'react';
-import { FireBasePost } from '../../@types/types';
-import Post from '../../components/Post';
+import { FireBasePost } from '../../../@types/types';
+import Post from '../../../components/Post';
 import {
   DocumentData,
   Timestamp,
@@ -20,11 +27,12 @@ import {
   query,
 } from 'firebase/firestore';
 // import { fetchUser } from '../../redux/actions';
-import { db, postsRef, usersRef } from '~/firebaseConfig';
-import { getAuth } from 'firebase/auth';
+import { PASS, USER, db, postsRef, usersRef } from '~/firebaseConfig';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import {
   Button,
   Chip,
+  IconButton,
   List,
   MD3DarkTheme,
   MD3LightTheme,
@@ -39,9 +47,12 @@ import {
   sortLabels,
   sortLabelsObj,
   springConfig,
-} from '../../constants/constants';
+} from '../../../constants/constants';
 import RippleButton from '~/components/RippleButton';
 import { Link, Stack, useRouter } from 'expo-router';
+import { useAuth } from '~/context/auth';
+import { UserContext } from '~/context/UserContext';
+import { useHaptics } from '~/hooks/useHaptics';
 
 const Feed = () => {
   const theme = useTheme();
@@ -91,27 +102,29 @@ const Feed = () => {
   const [errors, setErrors] = useState<unknown>();
   const [refreshingData, setRefreshingData] = useState(false);
 
+  const hapticFeedbackLight = useHaptics('light');
+
   /**
    *  ALL DATA CALLS
    */
   // TODO There's a better way to write this so the output gets stored in a var
   const fetchPostsData = async () => {
-    let postData: (FireBasePost | DocumentData)[] = [];
-    let userData: { [key: string]: any }[] = [];
-
     try {
+      let postData: (FireBasePost | DocumentData)[] = [];
+      let userData: { [key: string]: any }[] = [];
+
       // GET POSTS
       const recentPosts = query(postsRef, orderBy('createdAt', 'desc'));
       const postSnap = await getDocs(recentPosts);
       postSnap.forEach(post => {
         postData.push({ ...post.data(), docId: post.id }); // Push the modified object into the list array
-        console.log(
-          `{...post.data(), docId: post.id}: ${JSON.stringify(
-            { ...post.data(), docId: post.id },
-            null,
-            2
-          )}`
-        );
+        // console.log(
+        //   `{...post.data(), docId: post.id}: ${JSON.stringify(
+        //     { ...post.data(), docId: post.id },
+        //     null,
+        //     2
+        //   )}`
+        // );
       });
 
       // Construction
@@ -121,25 +134,29 @@ const Feed = () => {
       const dataSet: (FireBasePost | DocumentData)[] = [];
 
       postsSnapshot.forEach(async postSnapshot => {
-        const postedBySnapshot = await getDoc(
-          doc(db, 'users', postSnapshot?.data().postedBy)
-        );
+        try {
+          const postedBySnapshot = await getDoc(
+            doc(db, 'users', postSnapshot?.data().postedBy)
+          );
 
-        // console.log(
-        //   `FULL RECORD IS: ${JSON.stringify(
-        //     { ...postSnapshot.data(), ...postedBySnapshot.data() },
-        //     null,
-        //     2
-        //   )}`
-        // );
+          // console.log(
+          //   `FULL RECORD IS: ${JSON.stringify(
+          //     { ...postSnapshot.data(), ...postedBySnapshot.data() },
+          //     null,
+          //     2
+          //   )}`
+          // );
 
-        const fullPostRecord = {
-          ...postSnapshot.data(),
-          ...postedBySnapshot.data(),
-          docId: postSnapshot.id,
-        };
+          const fullPostRecord = {
+            ...postSnapshot.data(),
+            ...postedBySnapshot.data(),
+            docId: postSnapshot.id,
+          };
 
-        dataSet.push(fullPostRecord);
+          dataSet.push(fullPostRecord);
+        } catch (error) {
+          console.error(error);
+        }
       });
       // res.json(dataSet);
 
@@ -218,7 +235,8 @@ const Feed = () => {
     setRefreshing(true);
 
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticFeedbackLight;
 
       fetchPostsData();
 
@@ -256,30 +274,35 @@ const Feed = () => {
     data: FireBasePost[],
     orderByDirection: 'asc' | 'desc' = 'asc'
   ): (FireBasePost | { docId: string })[] | undefined => {
-    try {
-      if (!data) return;
+    if (!data) return;
 
-      return [...data].sort((a, b) => {
-        const aValue: unknown = a[a.indexOf(property)]; // parse through a for the element whose value is `property`
-        const bValue = b[b.indexOf(property)];
+    return [...data].sort((a, b) => {
+      let aValue;
+      let bValue;
 
-        if (aValue && !bValue) {
-          return orderByDirection === 'asc' ? 1 : -1;
-        } else if (!aValue && bValue) {
-          return orderByDirection === 'asc' ? -1 : 1;
-        } else if (aValue && bValue) {
-          if (aValue > bValue) {
-            return orderByDirection === 'asc' ? 1 : -1;
-          } else if (aValue < bValue) {
-            return orderByDirection === 'asc' ? -1 : 1;
-          }
+      if (a && b && property) {
+        try {
+          aValue = a[a.indexOf(property)]; // parse through a for the element whose value is `property`
+          bValue = b[b.indexOf(property)];
+        } catch (error) {
+          console.error(`sortByProperty done fucked up somewhere`);
         }
+      }
 
-        return 0;
-      });
-    } catch (error) {
-      console.error(`sortByProperty done fucked up somewhere`);
-    }
+      if (aValue && !bValue) {
+        return orderByDirection === 'asc' ? 1 : -1;
+      } else if (!aValue && bValue) {
+        return orderByDirection === 'asc' ? -1 : 1;
+      } else if (aValue && bValue) {
+        if (aValue > bValue) {
+          return orderByDirection === 'asc' ? 1 : -1;
+        } else if (aValue < bValue) {
+          return orderByDirection === 'asc' ? -1 : 1;
+        }
+      }
+
+      return 0;
+    });
   };
 
   const getDataSortedBy = (
@@ -345,32 +368,35 @@ const Feed = () => {
   }, []);
 
   const handleFilterPress = (filterName: string) => {
-    if (selectedFilters?.includes(filterName)) {
-      const result = selectedFilters.filter(name => name !== filterName);
-      console.warn(
-        `result: ${JSON.stringify(
-          selectedFilters.filter(name => name !== filterName),
-          null,
-          2
-        )}`
-      );
-
-      return setSelectedFilters(
-        selectedFilters.filter(name => name !== filterName)
-      );
-    } else if (!selectedFilters?.includes(filterName)) {
-      return selectedFilters
-        ? setSelectedFilters([...selectedFilters, filterName])
-        : setSelectedFilters([filterName]);
-    } else {
-      // return setMyDbData(initialDbData);
-    }
-
-    // TODO: Might need some catches in here just for data type mismatches
     try {
-      const result = posts?.filter(
-        item => Object.keys(item).indexOf(filterName) !== -1
-      );
+      if (selectedFilters?.includes(filterName)) {
+        const result = selectedFilters.filter(name => name !== filterName);
+        console.warn(
+          `result: ${JSON.stringify(
+            selectedFilters.filter(name => name !== filterName),
+            null,
+            2
+          )}`
+        );
+
+        return setSelectedFilters(
+          selectedFilters.filter(name => name !== filterName)
+        );
+      } else if (!selectedFilters?.includes(filterName)) {
+        return selectedFilters
+          ? setSelectedFilters([...selectedFilters, filterName])
+          : setSelectedFilters([filterName]);
+      } else {
+        // return setMyDbData(initialDbData);
+      }
+
+      // TODO: Might need some catches in here just for data type mismatches
+      let result;
+      if (filterName) {
+        result = posts?.filter(
+          item => Object.keys(item).indexOf(filterName) !== -1
+        );
+      }
       setPosts(result);
     } catch (error) {
       console.error(`some indexOf error?`);
@@ -397,9 +423,68 @@ const Feed = () => {
     console.log(`posts: ${JSON.stringify(posts?.slice(0, 1), null, 2)}`);
   }, [posts]);
 
+  const [count, setCount] = React.useState(0);
+
+  const myAuth = useAuth();
+  const firebaseAuth = getAuth();
+  const userCtx = useContext(UserContext);
+
+  const handleDebugLogin = () => {
+    console.log('debug logging in');
+
+    signInWithEmailAndPassword(firebaseAuth, USER, PASS)
+      .then(res => {
+        console.log(`\x1b[34mlogin res: ${JSON.stringify(res, null, 2)}`);
+        myAuth?.signIn();
+        userCtx?.setIsLoggedIn(true);
+      })
+      // }
+      .catch(err => {
+        console.log(`Sign in error! ${err}`);
+      });
+  };
+
   return (
     <>
-      <Stack.Screen options={{ headerShown: false }} />
+      {/* <Stack.Screen options={{ headerShown: false }} /> */}
+      <Stack.Screen
+        options={{
+          // https://reactnavigation.org/docs/headers#setting-the-header-title
+          title: 'My home',
+          // https://reactnavigation.org/docs/headers#adjusting-header-styles
+          headerStyle: { backgroundColor: '#f4511e' },
+          headerTintColor: '#fff',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+          // https://reactnavigation.org/docs/headers#replacing-the-title-with-a-custom-component
+          headerTitle: props => {
+            return (
+              <Image
+                style={{ width: 50, height: 50 }}
+                source={{ uri: 'https://reactnative.dev/img/tiny_logo.png' }}
+              />
+            );
+          },
+          headerRight: () => (
+            <Button onPress={() => setCount(c => c + 1)}>Update count</Button>
+          ),
+
+          headerShown: true,
+        }}
+      />
+      <Link href='/home/settings' asChild>
+        <Button mode='outlined'>Push Settings</Button>
+      </Link>
+      <Link
+        href={{
+          pathname: '/home/[post]',
+          params: { docId: '13uptfw2wA7MT5gaojgU' },
+        }}
+        asChild
+      >
+        <Button mode='outlined'>Push to Post</Button>
+      </Link>
 
       {!errors ? (
         <>
@@ -527,10 +612,10 @@ const Feed = () => {
               renderItem={({ item }) => (
                 <Link
                   href={{
-                    pathname: '/posts/[post]',
-                    params: { post: '13uptfw2wA7MT5gaojgU' },
+                    pathname: 'posts/13uptfw2wA7MT5gaojgU',
+                    // params: { post: item?.docId },
                   }}
-                  asChild
+                  // asChild
                 >
                   <Post
                     postData={item}
@@ -553,6 +638,16 @@ const Feed = () => {
           </RippleButton>
         </View>
       )}
+
+      <View style={{ alignItems: 'flex-end' }}>
+        <IconButton
+          size={42}
+          icon='debug-step-into'
+          containerColor='red'
+          iconColor='white'
+          onPress={handleDebugLogin}
+        />
+      </View>
     </>
   );
 };

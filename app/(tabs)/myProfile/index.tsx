@@ -71,46 +71,50 @@ const MyProfilePage = () => {
   const fetchUserData = async () => {
     if (!uid) return;
 
-    const userRef = doc(db, 'users', uid as string);
-    const userSnap = await getDoc(userRef);
+    try {
+      const userRef = doc(db, 'users', uid as string);
+      const userSnap = await getDoc(userRef);
 
-    // if (userSnap.exists()) {
-    //   setData({ ...data, user: userSnap.data() as UserProfile });
-    //   console.log('setUserData reached!');
-    // } else {
-    //   console.error(`Error fetching user's data!`);
-    // }
+      // if (userSnap.exists()) {
+      //   setData({ ...data, user: userSnap.data() as UserProfile });
+      //   console.log('setUserData reached!');
+      // } else {
+      //   console.error(`Error fetching user's data!`);
+      // }
 
-    // get user's posts
-    const postsRef = collection(db, 'posts');
-    const q = query(
-      postsRef,
-      where('auth.uid', '==', auth?.currentUser?.uid)
-      // orderBy('createdAt')
-    );
-    const querySnapshot = await getDocs(q);
-    const postsData: DocumentData[] = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+      // get user's posts
+      const postsRef = collection(db, 'posts');
+      const q = query(
+        postsRef,
+        where('auth.uid', '==', auth?.currentUser?.uid)
+        // orderBy('createdAt')
+      );
+      const querySnapshot = await getDocs(q);
+      const postsData: DocumentData[] = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
 
-    // Compound query for recent activity
-    // const recentActivityRef = collection(db, 'posts');
-    // const newquery = query(
-    //   postsRef,
-    //   where('auth.uid', '==', auth?.currentUser?.uid)
-    // );
-    // const fooSnapshot = await getDocs(newquery);
-    // const postsData: DocumentData[] = querySnapshot.docs.map(doc => ({
-    //   id: doc.id,
-    //   ...doc.data(),
-    // }));
+      // Compound query for recent activity
+      // const recentActivityRef = collection(db, 'posts');
+      // const newquery = query(
+      //   postsRef,
+      //   where('auth.uid', '==', auth?.currentUser?.uid)
+      // );
+      // const fooSnapshot = await getDocs(newquery);
+      // const postsData: DocumentData[] = querySnapshot.docs.map(doc => ({
+      //   id: doc.id,
+      //   ...doc.data(),
+      // }));
 
-    setData({
-      ...data,
-      user: userSnap.data() as UserProfile,
-      posts: postsData,
-    });
+      setData({
+        ...data,
+        user: userSnap.data() as UserProfile,
+        posts: postsData,
+      });
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // Replace `instagram://user?username=USERNAME` with the Instagram link you want to open
@@ -271,8 +275,12 @@ const MyProfilePage = () => {
     if (blob) {
       // run the task code blelow
     }
-
-    const downloadURL = await getDownloadURL(ref(storage, 'post/' + randID));
+    let downloadURL;
+    try {
+      downloadURL = await getDownloadURL(ref(storage, 'post/' + randID));
+    } catch (error) {
+      console.error(error);
+    }
 
     const task = uploadBytes(storageRef, blob!)
       .then(snapshot => {
@@ -296,9 +304,13 @@ const MyProfilePage = () => {
       });
 
     if (uid) {
-      await updateDoc(doc(db, 'users', uid), {
-        profileImage: downloadURL,
-      });
+      try {
+        await updateDoc(doc(db, 'users', uid), {
+          profileImage: downloadURL,
+        });
+      } catch (error) {
+        console.error(error);
+      }
     }
 
     console.log(`downloadURL: ${downloadURL}`);
@@ -331,11 +343,15 @@ const MyProfilePage = () => {
       const uid = getAuth().currentUser?.uid;
 
       if (uid) {
-        await updateDoc(doc(db, 'users', uid), {
-          displayName: data?.user?.displayName,
-          bio: data?.user?.bio,
-          // foo: data?.user?.profileImage,
-        });
+        try {
+          await updateDoc(doc(db, 'users', uid), {
+            displayName: data?.user?.displayName,
+            bio: data?.user?.bio,
+            // foo: data?.user?.profileImage,
+          });
+        } catch (error) {
+          console.error(error);
+        }
       }
     }
   };

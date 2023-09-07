@@ -157,157 +157,166 @@ export default function save() {
   const handleImageUpload = async () => {
     setLoading(true);
 
-    /** Posts are organized by userID, then it shows the actual post. */
-    const storage = getStorage();
-    const auth = getAuth();
-    const dbDestinationPath = `post/${
-      auth.currentUser?.uid
-    }/${Math.random().toString(36)}`;
-    const storageRef = ref(storage, dbDestinationPath);
+    try {
+      /** Posts are organized by userID, then it shows the actual post. */
+      const storage = getStorage();
+      const auth = getAuth();
+      const dbDestinationPath = `post/${
+        auth.currentUser?.uid
+      }/${Math.random().toString(36)}`;
+      const storageRef = ref(storage, dbDestinationPath);
+      let blob: void | Blob;
 
-    if (imgUris.length === 1) {
-      const blob = await fetch(imgUris[0])
-        .then(async res => await res.blob())
-        .catch(err =>
-          console.error(`Failed to fetch blob from imgUris: ${err}`)
-        );
+      if (imgUris.length === 1) {
+        try {
+          blob = await fetch(imgUris[0])
+            .then(async res => await res.blob())
+            .catch(err =>
+              console.error(`Failed to fetch blob from imgUris: ${err}`)
+            );
+        } catch (error) {
+          console.error(error);
+        }
 
-      const task = uploadBytes(storageRef, blob!); // TODO Is this good practice to use non-null assertion?
-      console.log(`task: ${JSON.stringify(task, null, 2)}`);
+        const task = uploadBytes(storageRef, blob!); // TODO Is this good practice to use non-null assertion?
+        console.log(`task: ${JSON.stringify(task, null, 2)}`);
 
-      task
-        .then(snapshot => {
-          console.log('Does this mean it was successful?');
-          console.log(`metadata: ${snapshot.metadata}`);
+        task
+          .then(snapshot => {
+            console.log('Does this mean it was successful?');
+            console.log(`metadata: ${snapshot.metadata}`);
 
-          setPostSuccess(true);
-          setLoading(false);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setPostSuccess(true);
+            setLoading(false);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-          // navigate user back to previous page/route
-          router.replace('/home');
-        })
-        .catch(err => {
-          setLoading(false);
-          setTimeout(() => {
-            setPostSuccess(false);
-          }, 2000);
-          console.error(`error uploading! ${err}`);
-        });
-
-      // TODO Get rid of nested functions
-      // TODO Get rid of, refactor this  because this is the one that posts to the wrong directory
-      // (async () => {
-      //   const downloadURL = await getDownloadURL((await task).ref).catch(err =>
-      //     console.error(`error in downloadURL: ${err}`)
-      //   );
-
-      //   const db = getFirestore();
-      //   const currentUser = getAuth().currentUser;
-      //   const postsRef = collection(db, 'posts');
-      //   const userPostsRef = collection(
-      //     doc(postsRef, currentUser?.uid),
-      //     'userPosts'
-      //   );
-
-      //   const newPost = {
-      //     downloadURL: downloadURL,
-      //     caption: 'hard coded caption for testing purposes',
-      //     creation: serverTimestamp(),
-      //   };
-
-      //   addDoc(userPostsRef, newPost);
-      // })();
-
-      let downloadURL;
-      try {
-        downloadURL = await getDownloadURL((await task).ref);
-      } catch {
-        (err: any) => console.error(`error in getting download URL: ${err}`);
-      }
-
-      const postsRef = collection(db, 'posts');
-      addDoc(postsRef, {
-        auth: {
-          displayName: auth.currentUser?.displayName,
-          uid: auth.currentUser?.uid,
-        },
-        createdAt: serverTimestamp(), // TODO: Isn't this handled automatically, serverside?
-        comments: comments.length > 0 ? comments : null,
-        rating: selectedUserRating,
-        isSeasonal: isSeasonal,
-        productsUsed: productsDropdownValue,
-        downloadURL: downloadURL,
-        // Only include if location services are permitted?
-        geolocation: {
-          lat: lat,
-          lng: lng,
-        },
-        formula: {
-          type: formulaValue, // e.g. AVEDA, Redken, etc.
-          description: formulaDescription, // Actual user comments about the formulation
-        },
-      })
-        .then(res => {
-          setSnackbarMessage(`Posted successfully!`);
-        })
-        .catch(err => {
-          setSnackbarMessage(`Error posting! ${err}`);
-        });
-    }
-
-    if (imgUris.length > 1) {
-      // Elements in imgUris look like
-      // "file:///var/mobile/Containers/Data/Application/6BD76F07-7E63-44DA-A409-E4EC93762834/Library/Caches/ExponentExperienceData/%2540jonathan.troiano%252FYelpForHairStylists/ImagePicker/75264F55-F27A-4126-AC3F-E126D30849BA.jpg",
-
-      imgUris.map(uri => {
-        fetch(uri)
-          .then(async res => {
-            const blob = await res.blob();
-
-            if (blob !== null) {
-              console.log(`blob: ${JSON.stringify(blob)}`);
-
-              console.log(
-                `Before entering blobArr ternary. blobArr truthiness: ${
-                  blobArr ? true : false
-                }`
-              );
-
-              blobArr
-                ? setBlobArr([...blobArr, blob]) // Probably origin of 'cannot convert null'
-                : setBlobArr([blob]); // Probably origin of 'cannot convert null'
-            }
+            // navigate user back to previous page/route
+            router.replace('/home');
           })
           .catch(err => {
             setLoading(false);
-            setSnackbarMessage('Whoopsies');
-            return console.error(`Error in promise: ${err}`);
+            setTimeout(() => {
+              setPostSuccess(false);
+            }, 2000);
+            console.error(`error uploading! ${err}`);
           });
-      });
 
-      // const uploadFiles = async (files: Blob[]) => {
+        // TODO Get rid of nested functions
+        // TODO Get rid of, refactor this  because this is the one that posts to the wrong directory
+        // (async () => {
+        //   const downloadURL = await getDownloadURL((await task).ref).catch(err =>
+        //     console.error(`error in downloadURL: ${err}`)
+        //   );
 
-      const promises = [];
+        //   const db = getFirestore();
+        //   const currentUser = getAuth().currentUser;
+        //   const postsRef = collection(db, 'posts');
+        //   const userPostsRef = collection(
+        //     doc(postsRef, currentUser?.uid),
+        //     'userPosts'
+        //   );
 
-      for (const file of blobArr) {
-        const fileName = file.name;
-        const storageRef = ref(storage, fileName);
+        //   const newPost = {
+        //     downloadURL: downloadURL,
+        //     caption: 'hard coded caption for testing purposes',
+        //     creation: serverTimestamp(),
+        //   };
 
-        const uploadTask = uploadBytes(storageRef, file);
-        promises.push(uploadTask);
+        //   addDoc(userPostsRef, newPost);
+        // })();
+
+        let downloadURL;
+        try {
+          downloadURL = await getDownloadURL((await task).ref);
+        } catch {
+          (err: any) => console.error(`error in getting download URL: ${err}`);
+        }
+
+        const postsRef = collection(db, 'posts');
+        addDoc(postsRef, {
+          auth: {
+            displayName: auth.currentUser?.displayName,
+            uid: auth.currentUser?.uid,
+          },
+          createdAt: serverTimestamp(), // TODO: Isn't this handled automatically, serverside?
+          comments: comments.length > 0 ? comments : null,
+          rating: selectedUserRating,
+          isSeasonal: isSeasonal,
+          productsUsed: productsDropdownValue,
+          downloadURL: downloadURL,
+          // Only include if location services are permitted?
+          geolocation: {
+            lat: lat,
+            lng: lng,
+          },
+          formula: {
+            type: formulaValue, // e.g. AVEDA, Redken, etc.
+            description: formulaDescription, // Actual user comments about the formulation
+          },
+        })
+          .then(res => {
+            setSnackbarMessage(`Posted successfully!`);
+          })
+          .catch(err => {
+            setSnackbarMessage(`Error posting! ${err}`);
+          });
       }
 
-      await Promise.all(promises)
-        .then(res => console.log(`I think it all worked?\n${res}`))
-        .catch(err => {
-          console.error(`Error in resolving Promise.all: ${err}`);
-          setSnackbarMessage(err);
+      if (imgUris.length > 1) {
+        // Elements in imgUris look like
+        // "file:///var/mobile/Containers/Data/Application/6BD76F07-7E63-44DA-A409-E4EC93762834/Library/Caches/ExponentExperienceData/%2540jonathan.troiano%252FYelpForHairStylists/ImagePicker/75264F55-F27A-4126-AC3F-E126D30849BA.jpg",
+
+        imgUris.map(uri => {
+          fetch(uri)
+            .then(async res => {
+              const blob = await res.blob();
+
+              if (blob !== null) {
+                console.log(`blob: ${JSON.stringify(blob)}`);
+
+                console.log(
+                  `Before entering blobArr ternary. blobArr truthiness: ${
+                    blobArr ? true : false
+                  }`
+                );
+
+                blobArr
+                  ? setBlobArr([...blobArr, blob]) // Probably origin of 'cannot convert null'
+                  : setBlobArr([blob]); // Probably origin of 'cannot convert null'
+              }
+            })
+            .catch(err => {
+              setLoading(false);
+              setSnackbarMessage('Whoopsies');
+              return console.error(`Error in promise: ${err}`);
+            });
         });
 
-      console.log('Files uploaded successfully');
-      // };
-      // uploadFiles(blobArr);
+        // const uploadFiles = async (files: Blob[]) => {
+
+        const promises = [];
+
+        for (const file of blobArr) {
+          const fileName = file.name;
+          const storageRef = ref(storage, fileName);
+
+          const uploadTask = uploadBytes(storageRef, file);
+          promises.push(uploadTask);
+        }
+
+        await Promise.all(promises)
+          .then(res => console.log(`I think it all worked?\n${res}`))
+          .catch(err => {
+            console.error(`Error in resolving Promise.all: ${err}`);
+            setSnackbarMessage(err);
+          });
+
+        console.log('Files uploaded successfully');
+        // };
+        // uploadFiles(blobArr);
+      }
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -327,10 +336,10 @@ export default function save() {
 
   useEffect(() => {
     if (blobArr && blobArr.length > 0) {
-      const uploadFiles = async (files: Blob[]) => {
-        // ...
-      };
-      uploadFiles(blobArr);
+      // const uploadFiles = async (files: Blob[]) => {
+      //   // ...
+      // };
+      // uploadFiles(blobArr);
     }
   }, [blobArr]);
 

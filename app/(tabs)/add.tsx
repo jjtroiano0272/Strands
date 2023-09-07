@@ -71,15 +71,20 @@ export default function Add() {
 
   // TODO You probably don't need to write this async since takePictureAsync already is a Promise
   const handleTakePicture = async () => {
-    if (camera) {
-      const res = camera._onCameraReady();
-
-      await camera
-        .takePictureAsync()
-        .then(res => setSelectedImages([res.uri]))
-        .catch(err => console.error(`Error when taking picture! ${err}`));
-    } else {
-      console.error(`Camera unavaible! Or something.`);
+    try {
+      if (camera) {
+        const res = camera._onCameraReady();
+  
+        await camera
+          .takePictureAsync()
+          .then(res => setSelectedImages([res.uri]))
+          .catch(err => console.error(`Error when taking picture! ${err}`));
+      } else {
+        console.error(`Camera unavaible! Or something.`);
+      }
+    } catch (error) {
+      console.error(error);
+      
     }
   };
 
@@ -128,7 +133,7 @@ export default function Add() {
       router.push({
         // pathname: './save',
         // TODO For some reason this acts as replace() and not push()....
-        pathname: '/home/add/save',
+        pathname: ' /add/save',
         params: {
           imgUris,
         },

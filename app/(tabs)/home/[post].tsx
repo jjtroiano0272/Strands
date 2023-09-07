@@ -1,3 +1,4 @@
+import { useAuth } from '../../../context/auth';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import React, { useContext, useEffect, useRef, useState } from 'react';
@@ -29,10 +30,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { UserContext } from '../../../context/UserContext';
 import Swiper from 'react-native-swiper';
 import { DocumentData, doc, getDoc } from 'firebase/firestore';
-import { db } from '~/firebaseConfig';
+import { PASS, USER, db } from '~/firebaseConfig';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function ClientProfile() {
-  const userCtx = useContext(UserContext);
   const router = useRouter();
   const theme = useTheme();
   const [phoneModalVisible, setPhoneModalVisible] = useState(false);
@@ -48,7 +49,9 @@ export default function ClientProfile() {
   const slideAnim = useRef(new Animated.Value(0)).current;
   const [selectedChip, setSelectedChip] = useState<string>();
   const [showSelected, setShowSelected] = useState(false);
-  const { post: docId } = useLocalSearchParams();
+  const { docId } = useLocalSearchParams();
+
+  const firebaseAuth = getAuth();
 
   // const messageBody = encodeURI(
   //   `Hi ${placeholders.recipient} this is ${placeholders.user}. I just wanted to confirm the upcoming appointment with you`
@@ -242,18 +245,17 @@ export default function ClientProfile() {
     console.log(`data: ${JSON.stringify(data, null, 2)}`);
   }, [data]);
 
-  const { post: newDocId } = useLocalSearchParams();
-  useEffect(() => {
-    console.log(`newDocId: ${JSON.stringify(newDocId, null, 2)}`);
-  }, []);
-
   return (
     <>
       <ScrollView style={styles.getStartedContainer}>
-        <Stack.Screen options={{ title: `${data?.clientName}` }} />
+        <Stack.Screen
+          options={{
+            title: `${data?.clientName}`,
+          }}
+        />
 
-        {/* <Text>docID: {docId}</Text>
-        <Text>clientID: {clientID}</Text> */}
+        <Text>docID: {docId}</Text>
+        {/* <Text>clientID: {clientID}</Text> */}
 
         <Card
           style={styles.card}

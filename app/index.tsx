@@ -69,7 +69,7 @@ import { DarkTheme, useTheme } from '@react-navigation/native';
 import { PASS, USER, firebaseConfig } from '~/firebaseConfig';
 import { UserContext } from '../context/UserContext';
 import { Auth as SignInWithPopup } from '../components/auth/Auth';
-import { Link, Stack, useRouter } from 'expo-router';
+import { Link, Redirect, Stack, useRouter } from 'expo-router';
 import { useAuth } from '../context/auth';
 import { SAMLAuthProvider, GoogleAuthProvider } from 'firebase/auth';
 // import { BubbleBackground } from '../components/AnimatedBackground';
@@ -211,114 +211,127 @@ export default function LoginPage() {
   }, [snackbarVisible]);
 
   return (
-    <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>
-      {/* <Stack.Screen options={{ headerShown: false }} /> */}
+    // <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>
+    //   {/* <Stack.Screen options={{ headerShown: false }} /> */}
 
-      <TextInput
-        style={styles.input}
-        theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-        placeholder='email'
-        keyboardType='email-address'
-        onChangeText={email => setEmail(email)}
-        error={!!emailError}
-        onBlur={validateEmail}
-      />
-      <HelperText type='error' visible={!!emailError}>
-        Email address is invalid!
-      </HelperText>
+    //   <TextInput
+    //     style={styles.input}
+    //     theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+    //     placeholder='email'
+    //     keyboardType='email-address'
+    //     onChangeText={email => setEmail(email)}
+    //     error={!!emailError}
+    //     onBlur={validateEmail}
+    //   />
+    //   <HelperText type='error' visible={!!emailError}>
+    //     Email address is invalid!
+    //   </HelperText>
 
-      <TextInput
-        style={styles.input}
-        theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-        placeholder='password'
-        keyboardType='visible-password'
-        onChangeText={password => setPassword(password)}
-        error={!!passwordError}
-        onBlur={validatePassword}
-        secureTextEntry={true}
-      />
-      <HelperText type='error' visible={!!emailError}>
-        Email address is invalid!
-      </HelperText>
+    //   <TextInput
+    //     style={styles.input}
+    //     theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+    //     placeholder='password'
+    //     keyboardType='visible-password'
+    //     onChangeText={password => setPassword(password)}
+    //     error={!!passwordError}
+    //     onBlur={validatePassword}
+    //     secureTextEntry={true}
+    //   />
+    //   <HelperText type='error' visible={!!emailError}>
+    //     Email address is invalid!
+    //   </HelperText>
 
-      {/* TODO: To go back to normal, ONLY keep this button */}
-      <RippleButton
-        style={{ width: 300 }}
-        mode='contained'
-        contentStyle={{ padding: 10 }}
-        onPress={handleLogin}
-        onLongPress={handleDebugLogin} // TODO: DON'T LEAVE THIS OPEN
-      >
-        Login
-      </RippleButton>
-      <Link href='/register' asChild>
-        <Button
-          style={{ margin: 10, width: 300 }}
-          contentStyle={{ padding: 20 }}
-        >
-          Register
-        </Button>
-      </Link>
-      {/* <SignInWithPopup /> */}
-      {/* <Button onPress={handleSSOLogin}>Foo</Button> */}
+    //   {/* TODO: To go back to normal, ONLY keep this button */}
 
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          paddingHorizontal: 50,
-          width: '100%',
-        }}
-      >
-        {['google', 'microsoft', 'apple'].map((provider: string) => (
-          <React.Fragment key={provider}>
-            <RippleButton
-              onPress={() => console.log('hi')}
-              style={{ borderRadius: 50 }}
-            >
-              <IconButton
-                icon={provider}
-                animated={true}
-                theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-                iconColor='#ccc'
-                size={42}
-                // onPress={() => handleSSOLogin(provider)}
-              />
-            </RippleButton>
-          </React.Fragment>
-        ))}
-      </View>
-      <View
-        style={{
-          bottom: -100, // TODO: Not a good way to do this but I don't wanna research the whole junk right now
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-        }}
-      >
-        <Button onPress={() => router.push('forgotPassword')}>
-          <Text variant='labelSmall' style={{ color: '#121212' }}>
-            Forgot password?
-          </Text>
-        </Button>
-      </View>
+    //   <Link replace href='/(tabs)' asChild>
+    //     <RippleButton
+    //       style={{ width: 300 }}
+    //       mode='contained'
+    //       contentStyle={{ padding: 10 }}
+    //       onPress={handleDebugLogin}
+    //     >
+    //       Login NEWROUTES
+    //     </RippleButton>
+    //   </Link>
+    //   {/* <RippleButton
+    //     style={{ width: 300 }}
+    //     mode='contained'
+    //     contentStyle={{ padding: 10 }}
+    //     onPress={handleLogin}
+    //     onLongPress={handleDebugLogin} // TODO: DON'T LEAVE THIS OPEN
+    //   >
+    //     Login
+    //   </RippleButton> */}
 
-      <Snackbar
-        visible={snackbarVisible}
-        duration={3000}
-        onDismiss={onDismissSnackBar}
-        theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-        action={{
-          label: 'OK',
-          onPress: () => {
-            // Do something
-          },
-        }}
-      >
-        {errors}
-      </Snackbar>
+    //   <Link href='/register' asChild>
+    //     <Button
+    //       style={{ margin: 10, width: 300 }}
+    //       contentStyle={{ padding: 20 }}
+    //     >
+    //       Register
+    //     </Button>
+    //   </Link>
+    //   {/* <SignInWithPopup /> */}
+    //   {/* <Button onPress={handleSSOLogin}>Foo</Button> */}
 
-      {/* <AnimatedBackground /> */}
-    </Pressable>
+    //   <View
+    //     style={{
+    //       flexDirection: 'row',
+    //       justifyContent: 'space-between',
+    //       paddingHorizontal: 50,
+    //       width: '100%',
+    //     }}
+    //   >
+    //     {['google', 'microsoft', 'apple'].map((provider: string) => (
+    //       <React.Fragment key={provider}>
+    //         <RippleButton
+    //           onPress={() => console.log('hi')}
+    //           style={{ borderRadius: 50 }}
+    //         >
+    //           <IconButton
+    //             icon={provider}
+    //             animated={true}
+    //             theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+    //             iconColor='#ccc'
+    //             size={42}
+    //             // onPress={() => handleSSOLogin(provider)}
+    //           />
+    //         </RippleButton>
+    //       </React.Fragment>
+    //     ))}
+    //   </View>
+    //   <View
+    //     style={{
+    //       bottom: -100, // TODO: Not a good way to do this but I don't wanna research the whole junk right now
+    //       justifyContent: 'flex-end',
+    //       alignItems: 'center',
+    //     }}
+    //   >
+    //     <Button onPress={() => router.push('forgotPassword')}>
+    //       <Text variant='labelSmall' style={{ color: '#121212' }}>
+    //         Forgot password?
+    //       </Text>
+    //     </Button>
+    //   </View>
+
+    //   <Snackbar
+    //     visible={snackbarVisible}
+    //     duration={3000}
+    //     onDismiss={onDismissSnackBar}
+    //     theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+    //     action={{
+    //       label: 'OK',
+    //       onPress: () => {
+    //         // Do something
+    //       },
+    //     }}
+    //   >
+    //     {errors}
+    //   </Snackbar>
+
+    //   {/* <AnimatedBackground /> */}
+    // </Pressable>
+    <Redirect href='(tabs)/home' />
   );
 }
 

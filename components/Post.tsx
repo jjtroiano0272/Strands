@@ -60,7 +60,6 @@ import { clientsRef, db } from '~/firebaseConfig';
 export default function Post({
   postData,
   postsSavedByUser,
-  children,
 }: {
   postData: FireBasePost;
   postsSavedByUser: string[];
@@ -72,7 +71,7 @@ export default function Post({
   const paperTheme = usePaperTheme();
   const [isSaved, setIsSaved] = useState(false);
 
-  // console.log(`postData: ${JSON.stringify(postData, null, 2)}`);
+  // // console.log(`postData: ${JSON.stringify(postData, null, 2)}`);
 
   const savePost = async (postId: string) => {
     const uid = getAuth().currentUser?.uid;
@@ -99,7 +98,7 @@ export default function Post({
           savedPosts: arrayRemove(postId),
         });
 
-        console.log(`Post updated successfully! `);
+        // console.log(`Post updated successfully! `);
       }
     } catch (error) {
       console.error(`Error in unsaving post: ${error}`);
@@ -111,13 +110,13 @@ export default function Post({
   const unsub =
     uid &&
     onSnapshot(doc(db, 'users', uid), doc => {
-      // console.log(
+      // // console.log(
       //   'Current data: ',
       //   JSON.stringify(doc?.data()?.savedPosts, null, 2)
       // );
 
       const source = doc.metadata.hasPendingWrites ? 'Local' : 'Server';
-      // console.log(source, ' data: ', JSON.stringify(doc.data(), null, 2));
+      // // console.log(source, ' data: ', JSON.stringify(doc.data(), null, 2));
     });
 
   const getElapsedTime = (
@@ -244,20 +243,20 @@ export default function Post({
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-          console.log('Document data:', docSnap.data());
+          // console.log('Document data:', docSnap.data());
           setClientData({ ...getClientData, ...docSnap.data() });
         } else {
           // docSnap.data() will be undefined in this case
-          console.log('No such document!');
+          // console.log('No such document!');
         }
+
+        getClientData();
+        fetchStylistData();
       } catch (error) {
         console.error(`Error Post:240: ${error}`);
       }
       // 1oLsVwRHB1CsBjBamz0x
     };
-
-    getClientData();
-    fetchStylistData();
   }, []);
 
   const [stylistData, setStylistData] = useState<DocumentData>();
@@ -270,10 +269,10 @@ export default function Post({
       const stylistSnap = await getDoc(stylistRef);
 
       if (stylistSnap.exists()) {
-        console.log('Stylist data:', stylistSnap.data());
+        // console.log('Stylist data:', stylistSnap.data());
         setStylistData({ ...stylistData, ...stylistSnap.data() });
       } else {
-        console.log('No such document!');
+        // console.log('No such document!');
       }
     } catch (error) {
       console.error(`Error Post:265 ${error}`);
@@ -281,7 +280,7 @@ export default function Post({
   };
 
   useEffect(() => {
-    console.log(`postData of Post.tsx: ${JSON.stringify(postData, null, 2)}`);
+    // console.log(`postData of Post.tsx: ${JSON.stringify(postData, null, 2)}`);
   }, []);
 
   return (
@@ -311,10 +310,13 @@ export default function Post({
                 {/* TODO: Offload to its own component and include the handling cases for like '1 weeks ago' */}
                 {postData?.createdAt &&
                   `${
-                    getElapsedTime(Date.parse(postData?.createdAt) / 1000)
-                      ?.number
+                    getElapsedTime(
+                      Date.parse(postData?.createdAt as string) / 1000
+                    )?.number
                   } ${
-                    getElapsedTime(Date.parse(postData?.createdAt) / 1000)?.unit
+                    getElapsedTime(
+                      Date.parse(postData?.createdAt as string) / 1000
+                    )?.unit
                   } ago`}
               </Text>
             </View>

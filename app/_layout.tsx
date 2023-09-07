@@ -29,7 +29,7 @@ export {
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '/home',
+  initialRouteName: 'index',
 };
 
 export default function RootLayout() {
@@ -40,7 +40,10 @@ export default function RootLayout() {
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
-    if (error) throw error;
+    if (error) {
+      console.error(`Error in root layout: ${error}`);
+      throw error;
+    }
   }, [error]);
 
   return (
@@ -73,7 +76,7 @@ function RootLayoutNav() {
       <AuthProvider>
         {/* <UserProvider> */}
 
-        <Stack
+        {/* <Stack
           screenOptions={{
             headerRight: () => (
               <>
@@ -101,8 +104,23 @@ function RootLayoutNav() {
             ),
             headerTitle: '',
           }}
+        > */}
+        <Stack
+          // https://reactnavigation.org/docs/headers#sharing-common-options-across-screens
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: '#f4511e',
+            },
+            headerTintColor: '#fff',
+            headerTitleStyle: {
+              fontWeight: 'bold',
+            },
+          }}
         >
-          <SafeAreaView>
+          {/* Optionally configure static options outside the route. */}
+          <Stack.Screen name='(tabs)' />
+        </Stack>
+        {/* <SafeAreaView>
             <Stack.Screen
               name='login'
               options={{ headerTitle: 'Login', headerShown: true }}
@@ -114,8 +132,8 @@ function RootLayoutNav() {
                 headerShown: true,
               }}
             />
+            <Stack.Screen name='(tabs)' options={{ headerShown: true }} />
             <Stack.Screen name='modal' options={{ presentation: 'modal' }} />
-            {/* <Stack.Screen name='(tabs)' options={{ headerShown: true }} /> */}
             <Stack.Screen
               name='filtersModal'
               options={{
@@ -123,8 +141,8 @@ function RootLayoutNav() {
                 contentStyle: { backgroundColor: 'red' },
               }}
             />
-          </SafeAreaView>
-        </Stack>
+          </SafeAreaView> */}
+        {/* </Stack> */}
 
         {/* </UserProvider> */}
       </AuthProvider>
