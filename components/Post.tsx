@@ -60,10 +60,11 @@ import { clientsRef, db } from '~/firebaseConfig';
 export default function Post({
   postData,
   postsSavedByUser,
+  onPressArgs,
 }: {
   postData: FireBasePost;
   postsSavedByUser: string[];
-  onPress?: () => void;
+  onPressArgs: any;
 }) {
   const theme = useTheme();
   const router = useRouter();
@@ -233,30 +234,24 @@ export default function Post({
   };
 
   const [clientData, setClientData] = useState<DocumentData>();
+  const getClientData = async () => {
+    if (!postData?.clientID) return console.error(`no clientID on postData`);
+
+    const clientsRef = doc(db, 'clients', postData?.clientID);
+
+    await getDoc(clientsRef)
+      .then(docSnap => {
+        docSnap.id === '0offP5pWtN7yXbNNzP48' &&
+          console.warn('Client data:', docSnap.data());
+
+        setClientData({ ...getClientData, ...docSnap.data() });
+      })
+      .catch(err => console.error(`No such document! ${err}`));
+  };
 
   useEffect(() => {
-    const getClientData = async () => {
-      if (!postData?.clientID) return;
-
-      try {
-        const docRef = doc(db, 'clients', postData?.clientID);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          // console.log('Document data:', docSnap.data());
-          setClientData({ ...getClientData, ...docSnap.data() });
-        } else {
-          // docSnap.data() will be undefined in this case
-          // console.log('No such document!');
-        }
-
-        getClientData();
-        fetchStylistData();
-      } catch (error) {
-        console.error(`Error Post:240: ${error}`);
-      }
-      // 1oLsVwRHB1CsBjBamz0x
-    };
+    getClientData();
+    fetchStylistData();
   }, []);
 
   const [stylistData, setStylistData] = useState<DocumentData>();
@@ -281,6 +276,7 @@ export default function Post({
 
   useEffect(() => {
     // console.log(`postData of Post.tsx: ${JSON.stringify(postData, null, 2)}`);
+    console.log(`onPressArgs: ${JSON.stringify(onPressArgs, null, 2)}`);
   }, []);
 
   return (
@@ -288,20 +284,35 @@ export default function Post({
       style={styles.card}
       theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
       onLongPress={showActionSheet}
+      onPress={() => router.push(onPressArgs)}
     >
       <Card.Title
         title={clientData?.firstName}
         titleStyle={{ color: theme.colors.text }}
+        titleVariant='titleLarge'
         subtitle={
           <>
             <View style={{ backgroundColor: 'transparent' }}>
-              <Text
-                style={{
-                  color: paperTheme.colors.secondary,
-                }}
+              <View
+                style={{ flexDirection: 'row', backgroundColor: 'transparent' }}
               >
-                ⟩⟩ {postData?.displayName}
-              </Text>
+                <Avatar.Image
+                  style={{ marginRight: 10 }}
+                  size={24}
+                  source={{
+                    uri:
+                      postData?.profileImage ??
+                      `https://api.dicebear.com/6.x/lorelei/png/seed=${postData?.docId}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
+                  }}
+                />
+                <Text
+                  style={{
+                    color: paperTheme.colors.secondary,
+                  }}
+                >
+                  {postData?.displayName}
+                </Text>
+              </View>
               <Text style={{ color: theme.colors.text, fontSize: 10 }}>
                 {/* {postData?.createdAt &&
                           `${getElapsedTime(postData?.createdAt as number)?.number} ${
@@ -323,17 +334,17 @@ export default function Post({
           </>
         }
         // TODO: Have the DB autogenerate the image if the user doesn't have profileimage
-        left={props => (
-          <Avatar.Image
-            {...props}
-            size={36}
-            source={{
-              uri:
-                postData?.profileImage ??
-                `https://api.dicebear.com/6.x/lorelei/png/seed=${postData?.docId}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
-            }}
-          />
-        )}
+        // left={props => (
+        //   <Avatar.Image
+        //     {...props}
+        //     size={36}
+        //     source={{
+        //       uri:
+        //         postData?.profileImage ??
+        //         `https://api.dicebear.com/6.x/lorelei/png/seed=${postData?.docId}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
+        //     }}
+        //   />
+        // )}
         right={props =>
           // TODO Make a banner, not a button
           postsSavedByUser?.includes(postData?.docId || '') && (

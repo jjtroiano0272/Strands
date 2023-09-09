@@ -450,41 +450,36 @@ const Feed = () => {
       <Stack.Screen
         options={{
           // https://reactnavigation.org/docs/headers#setting-the-header-title
-          title: 'My home',
+          // title: 'My home',
+          headerTitle: '',
           // https://reactnavigation.org/docs/headers#adjusting-header-styles
-          headerStyle: { backgroundColor: '#f4511e' },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
+          // headerStyle: { backgroundColor: '#f4511e' },
+          // headerTintColor: '#fff',
+          // headerTitleStyle: {
+          //   fontWeight: 'bold',
+          // },
           // https://reactnavigation.org/docs/headers#replacing-the-title-with-a-custom-component
-          headerTitle: props => {
-            return (
-              <Image
-                style={{ width: 50, height: 50 }}
-                source={{ uri: 'https://reactnative.dev/img/tiny_logo.png' }}
-              />
-            );
-          },
+          // headerTitle: props => {
+          //   return (
+          //     <Image
+          //       style={{ width: 50, height: 50 }}
+          //       source={{ uri: 'https://reactnative.dev/img/tiny_logo.png' }}
+          //     />
+          //   );
+          // },
           headerRight: () => (
-            <Button onPress={() => setCount(c => c + 1)}>Update count</Button>
+            <Button
+              icon='debug-step-into'
+              onPress={handleDebugLogin}
+              mode='outlined'
+            >
+              debug Login
+            </Button>
           ),
 
           headerShown: true,
         }}
       />
-      <Link href='/home/settings' asChild>
-        <Button mode='outlined'>Push Settings</Button>
-      </Link>
-      <Link
-        href={{
-          pathname: '/home/[post]',
-          params: { docId: '13uptfw2wA7MT5gaojgU' },
-        }}
-        asChild
-      >
-        <Button mode='outlined'>Push to Post</Button>
-      </Link>
 
       {!errors ? (
         <>
@@ -610,18 +605,14 @@ const Feed = () => {
               keyExtractor={(_, index) => index.toString()}
               numColumns={2}
               renderItem={({ item }) => (
-                <Link
-                  href={{
-                    pathname: 'posts/13uptfw2wA7MT5gaojgU',
-                    // params: { post: item?.docId },
+                <Post
+                  postData={item}
+                  postsSavedByUser={postsSavedByUser ?? ['']} // TODO: Not a great bulletproof method, but hey it'll work for now.
+                  onPressArgs={{
+                    pathname: '/home/[post]',
+                    params: { docId: item?.docId },
                   }}
-                  // asChild
-                >
-                  <Post
-                    postData={item}
-                    postsSavedByUser={postsSavedByUser ?? ['']} // TODO: Not a great bulletproof method, but hey it'll work for now.
-                  />
-                </Link>
+                />
               )}
             />
           </BottomSheetModalProvider>
@@ -639,15 +630,7 @@ const Feed = () => {
         </View>
       )}
 
-      <View style={{ alignItems: 'flex-end' }}>
-        <IconButton
-          size={42}
-          icon='debug-step-into'
-          containerColor='red'
-          iconColor='white'
-          onPress={handleDebugLogin}
-        />
-      </View>
+      <View style={{ alignItems: 'flex-end' }}></View>
     </>
   );
 };

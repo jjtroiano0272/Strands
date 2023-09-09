@@ -17,7 +17,16 @@ export default () => {
         tabBarActiveTintColor: 'purple',
       }}
     >
-      <Tabs.Screen name='home' options={{ headerShown: false }} />
+      <Tabs.Screen
+        name='home'
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name='home' size={iconSize} color={color} />
+          ),
+          tabBarLabel: 'Home',
+        }}
+      />
       <Tabs.Screen name='list' />
 
       {/* TURNING OFF THE DISPLAY OF OTHER BOTTOM TABS */}
