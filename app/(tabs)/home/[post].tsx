@@ -22,6 +22,7 @@ import {
   Chip,
   IconButton,
   MD3Colors,
+  Snackbar,
 } from 'react-native-paper';
 import { Text, View } from '../../../components/Themed';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
@@ -49,6 +50,7 @@ export default function ClientProfile() {
   const slideAnim = useRef(new Animated.Value(0)).current;
   const [selectedChip, setSelectedChip] = useState<string>();
   const [showSelected, setShowSelected] = useState(false);
+  const [phoneSnackbarVisible, setPhoneSnackbarVisible] = useState(false);
   const { docId } = useLocalSearchParams();
 
   const firebaseAuth = getAuth();
@@ -62,7 +64,12 @@ export default function ClientProfile() {
   };
 
   const handleOptionsMenu = (phoneNumber: string) => {
-    const menuOptions = ['Call', 'Text', 'Cancel'];
+    const menuOptions = [
+      `Call ${data?.clientName}`,
+      `Text ${data?.clientName}`,
+      `Copy phone number`,
+      'Cancel',
+    ];
 
     // Show the action sheet to the user
     ActionSheetIOS.showActionSheetWithOptions(
@@ -71,14 +78,22 @@ export default function ClientProfile() {
         cancelButtonIndex: menuOptions.length - 1,
       },
       async (index: number) => {
-        // if else method
         try {
-          if (menuOptions[index] === 'Call') {
+          // Call client
+          if (menuOptions[index] === menuOptions[0]) {
             await Linking.openURL(`tel:${phoneNumber}`);
-          } else if (menuOptions[index] === 'Text') {
+          }
+          // Call client
+          else if (menuOptions[index] === menuOptions[1]) {
             // await Linking.openURL(`sms:${phoneNumber}?body=${messageBody}`); TODO: This needs to work correctly to set body
             await Linking.openURL(`sms:${phoneNumber}`);
-          } else {
+          }
+          // Copy phone number
+          else if (menuOptions[index] === menuOptions[2]) {
+            handleCopyPhoneNumber(phoneNumber);
+          }
+          // Nothing selected?
+          else {
             return Promise.reject('Invalid menu option');
           }
         } catch (err) {
@@ -225,6 +240,16 @@ export default function ClientProfile() {
     }
   };
 
+  const handleCopyPhoneNumber = async (str: string) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Clipboard.setStringAsync(str);
+      setPhoneSnackbarVisible(true);
+    } catch (error) {
+      console.error(`some error in handleCopyItem: ${error}`);
+    }
+  };
+
   const waitASecond = () => {
     setShowSelected(true);
     setTimeout(() => {
@@ -251,10 +276,19 @@ export default function ClientProfile() {
         <Stack.Screen
           options={{
             title: `${data?.clientName}`,
+            headerRight: () => (
+              <IconButton
+                icon='phone'
+                iconColor={textCopied ? 'green' : theme.colors.primary}
+                mode={textCopied ? 'outlined' : undefined}
+                size={24}
+                onPress={() => handleOptionsMenu(data?.phoneNumber as string)}
+              />
+            ),
           }}
         />
 
-        <Text>docID: {docId}</Text>
+        {/* <Text>docID: {docId}</Text> */}
         {/* <Text>clientID: {clientID}</Text> */}
 
         <Card
@@ -357,17 +391,10 @@ export default function ClientProfile() {
             {/* TWO COLUMNS of list items */}
             {/* Recent reviews, listed in order of submission and saying who wrote what, and their own rating */}
             {/* Phone + prompt to hook into API to call */}
-            {data?.phoneNumber && (
+            {/* {data?.phoneNumber && (
               <List.Item
                 style={styles.listItem}
                 theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-                // Previous approach when phoneNumber was stored as an entire string
-                // title={`(${data?.phoneNumber
-                //   ?.toString()
-                //   .slice(0, 3)}) ${data?.phoneNumber
-                //   ?.toString()
-                //   .slice(3, 6)}-${data?.phoneNumber?.toString().slice(6)}`}
-                // description='Item description'
                 title={data?.phoneNumber}
                 left={() => (
                   <MaterialCommunityIcons
@@ -377,6 +404,18 @@ export default function ClientProfile() {
                   />
                 )}
                 onPress={() => handleOptionsMenu(data?.phoneNumber as string)}
+              />
+            )} */}
+
+            {!data?.phoneNumber && (
+              <List.Item
+                style={styles.listItem}
+                theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+                title='No phone number listed'
+                left={() => (
+                  <MaterialCommunityIcons color='#ccc' size={24} name='phone' />
+                )}
+                // onPress={() => handleOptionsMenu(data?.phoneNumber as string)}
               />
             )}
 
@@ -468,20 +507,21 @@ export default function ClientProfile() {
           </Card.Content>
         </Card>
       </ScrollView>
-      {/* <Snackbar
-        visible={snackbarVisible}
+      <Snackbar
+        visible={phoneSnackbarVisible}
         duration={600}
-        style={{ left: 200, width: 175 }}
-        onDismiss={onDismissSnackBar}
+        // style={{ left: 200, width: 175 }}
+        onDismiss={() => setPhoneSnackbarVisible(false)}
         action={{
           label: '',
           onPress: () => {
             // Do something
+            null;
           },
         }}
       >
-        {snackbarMessage}
-      </Snackbar> */}
+        Phone number copied
+      </Snackbar>
     </>
   );
 }
