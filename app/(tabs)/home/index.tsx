@@ -1,3 +1,4 @@
+import { Skeleton } from 'moti/skeleton';
 import BottomSheet, {
   BottomSheetModal,
   BottomSheetModalProvider,
@@ -10,8 +11,16 @@ import {
   useRef,
   useMemo,
   useContext,
+  useReducer,
 } from 'react';
-import { FlatList, StyleSheet, useWindowDimensions, Image } from 'react-native';
+import { MotiView } from 'moti';
+import {
+  FlatList,
+  StyleSheet,
+  useWindowDimensions,
+  Image,
+  Pressable,
+} from 'react-native';
 import { Text, View } from '../../../components/Themed';
 import { useTheme } from '@react-navigation/native';
 import React from 'react';
@@ -431,6 +440,7 @@ const Feed = () => {
 
   const handleDebugLogin = () => {
     console.log('debug logging in');
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     signInWithEmailAndPassword(firebaseAuth, USER, PASS)
       .then(res => {
@@ -443,6 +453,12 @@ const Feed = () => {
         console.log(`Sign in error! ${err}`);
       });
   };
+
+  const [dark, toggle] = useReducer(s => !s, true);
+
+  const colorMode = dark ? 'dark' : 'light';
+
+  const Spacer = ({ height = 16 }) => <View style={{ height }} />;
 
   return (
     <>
@@ -468,21 +484,27 @@ const Feed = () => {
           //   );
           // },
           headerRight: () => (
-            <Button
+            <RippleButton
               icon='debug-step-into'
               onPress={handleDebugLogin}
               mode='outlined'
-            >
-              debug Login
-            </Button>
+              size={12}
+              iconColor='red'
+            />
           ),
-
-          headerShown: true,
         }}
       />
 
       {!errors ? (
         <>
+          {/* <MotiView
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ type: 'timing' }}
+          >
+            <Text>Hello World!</Text>
+          </MotiView> */}
+
           <BottomSheetModalProvider>
             <FlatList
               data={posts?.filter(
@@ -605,17 +627,36 @@ const Feed = () => {
               keyExtractor={(_, index) => index.toString()}
               numColumns={2}
               renderItem={({ item }) => (
-                <Post
-                  postData={item}
-                  postsSavedByUser={postsSavedByUser ?? ['']} // TODO: Not a great bulletproof method, but hey it'll work for now.
-                  onPressArgs={{
-                    pathname: '/home/[post]',
-                    params: { docId: item?.docId },
-                  }}
-                />
+                <>
+                  <MotiView
+                    transition={{
+                      type: 'timing',
+                    }}
+                    // style={{
+                    //   flex: 1,
+                    //   justifyContent: 'center',
+                    //   padding: 16,
+                    // }}
+                    style={{ backgroundColor: 'transparent' }}
+                    // animate={{ backgroundColor: !dark ? '#ccc' : '#ffffff' }}
+                  >
+                    <Post
+                      postData={item}
+                      postsSavedByUser={postsSavedByUser ?? ['']} // TODO: Not a great bulletproof method, but hey it'll work for now.
+                      onPressArgs={{
+                        pathname: '/home/[post]',
+                        params: { docId: item?.docId },
+                      }}
+                      loading={!!item}
+                    />
+                  </MotiView>
+                </>
               )}
             />
           </BottomSheetModalProvider>
+          {/* <Button buttonColor='red' textColor='white' onPress={toggle}>
+            Flip skele theme
+          </Button> */}
         </>
       ) : (
         <View

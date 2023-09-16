@@ -33,6 +33,7 @@ import Swiper from 'react-native-swiper';
 import { DocumentData, doc, getDoc } from 'firebase/firestore';
 import { PASS, USER, db } from '~/firebaseConfig';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { Skeleton } from 'moti/skeleton';
 
 export default function ClientProfile() {
   const router = useRouter();
@@ -51,9 +52,8 @@ export default function ClientProfile() {
   const [selectedChip, setSelectedChip] = useState<string>();
   const [showSelected, setShowSelected] = useState(false);
   const [phoneSnackbarVisible, setPhoneSnackbarVisible] = useState(false);
-  const { docId } = useLocalSearchParams();
-
   const firebaseAuth = getAuth();
+  const { docId } = useLocalSearchParams();
 
   // const messageBody = encodeURI(
   //   `Hi ${placeholders.recipient} this is ${placeholders.user}. I just wanted to confirm the upcoming appointment with you`
@@ -295,218 +295,207 @@ export default function ClientProfile() {
           style={styles.card}
           theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
         >
-          <Card.Title
-            theme={MD3DarkTheme}
-            title={null} // Client's name
-            titleStyle={[{ color: theme.colors.text }, styles.cardTitle]}
-            // TODO: Make username URL
-            subtitle={
-              <View style={styles.subtitleContainer}>
-                <Text style={{ lineHeight: 18 }}>Seen by </Text>
+          <Skeleton.Group show={!Boolean(data)}>
+            <Card.Title
+              theme={MD3DarkTheme}
+              title={null} // Client's name
+              titleStyle={[{ color: theme.colors.text }, styles.cardTitle]}
+              subtitle={
+                <View style={styles.subtitleContainer}>
+                  <Text style={{ lineHeight: 18 }}>Seen by </Text>
 
-                {/* <Link
-                  style={{
-                    color: theme.colors.primary,
-                    justifyContent: 'flex-end',
-                    alignItems: 'baseline',
-                  }}
-                  href={{
-                    pathname: `users/${data?.postedByDisplayName}`,
-                    params: { userID: data?.postedByID },
-                  }}
-                >
-                  {data?.postedByDisplayName}
-                </Link>
-
-                <View
-                  style={{ backgroundColor: 'transparent' }}
-                  hitSlop={styles.utilHitSlop}
-                ></View> */}
-
-                <TouchableOpacity
-                  style={{
-                    justifyContent: 'flex-end',
-                    alignItems: 'baseline',
-                  }}
-                  hitSlop={{ left: 5, right: 50, top: 50, bottom: 40 }}
-                  onPress={() =>
-                    router.push({
-                      pathname: `users/${data?.postedByDisplayName}`,
-                      params: { userID: data?.postedByID },
-                    })
-                  }
-                >
-                  <Text style={{ color: theme.colors.primary }}>
-                    {data?.postedByDisplayName}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            }
-            subtitleStyle={[{ color: theme.colors.text }, styles.cardSubtitle]}
-          />
-
-          <Card.Content>
-            {data?.media?.images && (
-              <Swiper
-                containerStyle={styles.swiper}
-                dot={
-                  <View
-                    style={[
-                      styles.dotStyle,
-                      { borderColor: theme.colors.background },
-                    ]}
-                  />
-                }
-                activeDot={
-                  <View
-                    style={[
-                      styles.activeDotStyle,
-                      {
-                        borderColor: theme.colors.background,
-                        // backgroundColor: 'transparent',
-                      },
-                    ]}
-                  />
-                }
-                onIndexChanged={(index: number) => {
-                  try {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  } catch (error) {
-                    console.error(`Haptic error in onIndexChanged`);
-                  }
-                }}
-              >
-                {data?.media?.images.map((imgUri: string) => (
-                  <Image
-                    style={styles.flex1}
-                    key={imgUri}
-                    source={{
-                      uri: imgUri,
+                  <TouchableOpacity
+                    style={{
+                      justifyContent: 'flex-end',
+                      alignItems: 'baseline',
                     }}
-                  />
-                ))}
-              </Swiper>
-            )}
+                    hitSlop={{ left: 5, right: 50, top: 50, bottom: 40 }}
+                    onPress={() =>
+                      router.push({
+                        pathname: `users/${data?.postedByDisplayName}`,
+                        params: { userID: data?.postedByID },
+                      })
+                    }
+                  >
+                    <Skeleton colorMode='light'>
+                      {data?.postedByDisplayName ? (
+                        <Text style={{ color: theme.colors.primary }}>
+                          {data?.postedByDisplayName}
+                        </Text>
+                      ) : null}
+                    </Skeleton>
+                  </TouchableOpacity>
+                </View>
+              }
+              subtitleStyle={[
+                { color: theme.colors.text },
+                styles.cardSubtitle,
+              ]}
+            />
 
-            {/* TWO COLUMNS of list items */}
-            {/* Recent reviews, listed in order of submission and saying who wrote what, and their own rating */}
-            {/* Phone + prompt to hook into API to call */}
-            {/* {data?.phoneNumber && (
-              <List.Item
-                style={styles.listItem}
-                theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-                title={data?.phoneNumber}
-                left={() => (
-                  <MaterialCommunityIcons
-                    color={theme.colors.primary}
-                    size={24}
-                    name='phone'
-                  />
-                )}
-                onPress={() => handleOptionsMenu(data?.phoneNumber as string)}
-              />
-            )} */}
+            <Card.Content>
+              <Skeleton colorMode='light'>
+                {data?.media?.images ? (
+                  <Swiper
+                    containerStyle={styles.swiper}
+                    dot={
+                      <View
+                        style={[
+                          styles.dotStyle,
+                          { borderColor: theme.colors.background },
+                        ]}
+                      />
+                    }
+                    activeDot={
+                      <View
+                        style={[
+                          styles.activeDotStyle,
+                          {
+                            borderColor: theme.colors.background,
+                            // backgroundColor: 'transparent',
+                          },
+                        ]}
+                      />
+                    }
+                    onIndexChanged={(index: number) => {
+                      try {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      } catch (error) {
+                        console.error(`Haptic error in onIndexChanged`);
+                      }
+                    }}
+                  >
+                    {data?.media?.images
+                      ? data?.media?.images.map((imgUri: string) => (
+                          <Image
+                            style={styles.flex1}
+                            key={imgUri}
+                            source={{
+                              uri: imgUri,
+                            }}
+                          />
+                        ))
+                      : null}
+                  </Swiper>
+                ) : null}
+              </Skeleton>
 
-            {!data?.phoneNumber && (
-              <List.Item
-                style={styles.listItem}
-                theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-                title='No phone number listed'
-                left={() => (
-                  <MaterialCommunityIcons color='#ccc' size={24} name='phone' />
-                )}
-                // onPress={() => handleOptionsMenu(data?.phoneNumber as string)}
-              />
-            )}
+              {/* TWO COLUMNS of list items */}
+              {/* Recent reviews, listed in order of submission and saying who wrote what, and their own rating */}
 
-            {/* Salon */}
-            <Subheading style={[styles.subtitle, { color: theme.colors.text }]}>
-              Salon
-            </Subheading>
-            <Paragraph style={{ color: theme.colors.text }}>
-              {data?.salonSeenAt
-                ? capitalizeFirstLetter(data.salonSeenAt)
-                : 'N/A'}
-            </Paragraph>
-
-            {/* Formulas */}
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: 'transparent',
-              }}
-            >
+              {!data?.phoneNumber && (
+                <List.Item
+                  style={styles.listItem}
+                  theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+                  title='No phone number listed'
+                  left={() => (
+                    <MaterialCommunityIcons
+                      color='#ccc'
+                      size={24}
+                      name='phone'
+                    />
+                  )}
+                  // onPress={() => handleOptionsMenu(data?.phoneNumber as string)}
+                />
+              )}
+              {/* Salon */}
               <Subheading
                 style={[styles.subtitle, { color: theme.colors.text }]}
               >
-                Formula
-                {data?.formulaUsed?.type &&
-                  ': ' + capitalizeFirstLetter(data?.formulaUsed?.type)}
+                Salon
               </Subheading>
-              {data?.formulaUsed?.type && (
-                <IconButton
-                  icon='content-copy'
-                  size={20}
-                  iconColor={textCopied ? 'green' : MD3Colors.neutral0} // TODO Better implementation eventually
-                  onPress={() => {
-                    handleCopyItem(data?.formulaUsed?.description);
-                  }}
-                />
-              )}
-
-              {/* <Animated.Text style={[animatedStyle]}>
-                Sliding Text
-              </Animated.Text> */}
-              <Animated.View
-                style={[
-                  // styles.fadingContainer,
-                  {
-                    // Bind opacity to animated value
-                    opacity: slideAnim,
-                    transform: [
-                      {
-                        translateY: slideAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0, -10],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
+              <Skeleton colorMode='light'>
+                <Paragraph style={{ color: theme.colors.text }}>
+                  {data?.salonSeenAt
+                    ? capitalizeFirstLetter(data.salonSeenAt)
+                    : 'N/A'}
+                </Paragraph>
+              </Skeleton>
+              {/* Formulas */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: 'transparent',
+                }}
               >
-                <Text>{snackbarMessage}</Text>
-              </Animated.View>
-            </View>
-
-            {data?.formulaUsed?.description
-              ?.split('+')
-              .map((item: string, index: number) => (
-                <Chip
-                  key={index}
-                  selected={
-                    item.trim() === selectedChip?.trim() && showSelected
-                  }
-                  style={{ marginVertical: 5, flex: 1 }}
-                  onPress={() => {
-                    handleCopyItem(item.trim(), 'partial');
-                  }}
+                <Subheading
+                  style={[styles.subtitle, { color: theme.colors.text }]}
                 >
-                  {item.trim()}
-                  {/* TODO UI: Later, have the clipboard icon showup and slide out in the chip itself */}
-                </Chip>
-              ))}
-
-            {/* Comments */}
-            <Subheading style={[styles.subtitle, { color: theme.colors.text }]}>
-              Comments
-            </Subheading>
-            <Paragraph style={{ color: theme.colors.text }}>
-              {data?.comments ?? 'No comments'}
-            </Paragraph>
-          </Card.Content>
+                  Formula
+                  <Skeleton colorMode='light'>
+                    <Text>
+                      {data?.formulaUsed?.type &&
+                        ': ' + capitalizeFirstLetter(data?.formulaUsed?.type)}
+                    </Text>
+                  </Skeleton>
+                </Subheading>
+                {data?.formulaUsed?.type && (
+                  <IconButton
+                    icon='content-copy'
+                    size={20}
+                    iconColor={textCopied ? 'green' : MD3Colors.neutral0} // TODO Better implementation eventually
+                    onPress={() => {
+                      handleCopyItem(data?.formulaUsed?.description);
+                    }}
+                  />
+                )}
+                {/* <Animated.Text style={[animatedStyle]}>
+                    Sliding Text
+                  </Animated.Text> */}
+                <Animated.View
+                  style={[
+                    // styles.fadingContainer,
+                    {
+                      // Bind opacity to animated value
+                      opacity: slideAnim,
+                      transform: [
+                        {
+                          translateY: slideAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, -10],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <Text>{snackbarMessage}</Text>
+                </Animated.View>
+              </View>
+              {data?.formulaUsed?.description
+                ?.split('+')
+                .map((item: string, index: number) => (
+                  <Chip
+                    key={index}
+                    selected={
+                      item.trim() === selectedChip?.trim() && showSelected
+                    }
+                    style={{ marginVertical: 5, flex: 1 }}
+                    onPress={() => {
+                      handleCopyItem(item.trim(), 'partial');
+                    }}
+                  >
+                    {item.trim()}
+                    {/* TODO UI: Later, have the clipboard icon showup and slide out in the chip itself */}
+                  </Chip>
+                ))}
+              {/* Comments */}
+              <Subheading
+                style={[styles.subtitle, { color: theme.colors.text }]}
+              >
+                Comments
+              </Subheading>
+              <Skeleton colorMode='light'>
+                <Paragraph style={{ color: theme.colors.text }}>
+                  {data?.comments ?? 'No comments'}
+                </Paragraph>
+              </Skeleton>
+            </Card.Content>
+          </Skeleton.Group>
         </Card>
       </ScrollView>
+
       <Snackbar
         visible={phoneSnackbarVisible}
         duration={600}

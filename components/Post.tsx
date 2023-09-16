@@ -56,15 +56,18 @@ import { style } from 'd3';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getDatabase, ref, child, push, update } from 'firebase/database';
 import { clientsRef, db } from '~/firebaseConfig';
+import { Skeleton } from 'moti/skeleton';
 
 export default function Post({
   postData,
   postsSavedByUser,
   onPressArgs,
+  loading,
 }: {
   postData: FireBasePost;
   postsSavedByUser: string[];
   onPressArgs: any;
+  loading: boolean;
 }) {
   const theme = useTheme();
   const router = useRouter();
@@ -286,83 +289,119 @@ export default function Post({
       onLongPress={showActionSheet}
       onPress={() => router.push(onPressArgs)}
     >
-      <Card.Title
-        title={clientData?.firstName}
-        titleStyle={{ color: theme.colors.text }}
-        titleVariant='titleLarge'
-        subtitle={
-          <>
-            <View style={{ backgroundColor: 'transparent' }}>
-              <View
-                style={{ flexDirection: 'row', backgroundColor: 'transparent' }}
-              >
-                <Avatar.Image
-                  style={{ marginRight: 10 }}
-                  size={24}
-                  source={{
-                    uri:
-                      postData?.profileImage ??
-                      `https://api.dicebear.com/6.x/lorelei/png/seed=${postData?.docId}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
-                  }}
-                />
-                <Text
+      <Skeleton.Group show={!loading}>
+        <Card.Title
+          title={
+            <Skeleton colorMode='light'>
+              {clientData?.firstName ? (
+                <Text style={{ fontSize: 24 }}>{clientData?.firstName}</Text>
+              ) : null}
+            </Skeleton>
+          }
+          titleStyle={{ color: theme.colors.text }}
+          titleVariant='titleLarge'
+          subtitle={
+            <>
+              <View style={{ backgroundColor: 'transparent' }}>
+                <View
                   style={{
-                    color: paperTheme.colors.secondary,
+                    flexDirection: 'row',
+                    backgroundColor: 'transparent',
                   }}
                 >
-                  {postData?.displayName}
-                </Text>
+                  <Skeleton
+                    radius={50}
+                    height={24}
+                    width={24}
+                    colorMode='light'
+                  >
+                    {postData?.profileImage ? (
+                      <Avatar.Image
+                        style={{ marginRight: 10 }}
+                        size={24}
+                        source={{
+                          uri:
+                            postData?.profileImage ??
+                            `https://api.dicebear.com/6.x/lorelei/png/seed=${postData?.docId}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
+                        }}
+                      />
+                    ) : null}
+                  </Skeleton>
+                  <Skeleton colorMode='light'>
+                    {postData?.displayName ? (
+                      <Text
+                        style={{
+                          color: paperTheme.colors.secondary,
+                        }}
+                      >
+                        {postData?.displayName}
+                      </Text>
+                    ) : null}
+                  </Skeleton>
+                </View>
+                <Skeleton colorMode='light'>
+                  {postData?.createdAt ? (
+                    <Text style={{ color: theme.colors.text, fontSize: 10 }}>
+                      {/* {postData?.createdAt &&
+                                `${getElapsedTime(postData?.createdAt as number)?.number} ${
+                                  getElapsedTime(postData?.createdAt as number)?.unit
+                                } ago`} */}
+                      {/* TODO: Offload to its own component and include the handling cases for like '1 weeks ago' */}
+                      {postData?.createdAt &&
+                        `${
+                          getElapsedTime(
+                            Date.parse(postData?.createdAt as string) / 1000
+                          )?.number
+                        } ${
+                          getElapsedTime(
+                            Date.parse(postData?.createdAt as string) / 1000
+                          )?.unit
+                        } ago`}
+                    </Text>
+                  ) : null}
+                </Skeleton>
               </View>
-              <Text style={{ color: theme.colors.text, fontSize: 10 }}>
-                {/* {postData?.createdAt &&
-                          `${getElapsedTime(postData?.createdAt as number)?.number} ${
-                            getElapsedTime(postData?.createdAt as number)?.unit
-                          } ago`} */}
-                {/* TODO: Offload to its own component and include the handling cases for like '1 weeks ago' */}
-                {postData?.createdAt &&
-                  `${
-                    getElapsedTime(
-                      Date.parse(postData?.createdAt as string) / 1000
-                    )?.number
-                  } ${
-                    getElapsedTime(
-                      Date.parse(postData?.createdAt as string) / 1000
-                    )?.unit
-                  } ago`}
-              </Text>
-            </View>
-          </>
-        }
-        // TODO: Have the DB autogenerate the image if the user doesn't have profileimage
-        // left={props => (
-        //   <Avatar.Image
-        //     {...props}
-        //     size={36}
-        //     source={{
-        //       uri:
-        //         postData?.profileImage ??
-        //         `https://api.dicebear.com/6.x/lorelei/png/seed=${postData?.docId}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
-        //     }}
-        //   />
-        // )}
-        right={props =>
-          // TODO Make a banner, not a button
-          postsSavedByUser?.includes(postData?.docId || '') && (
-            <Avatar.Icon
-              {...props}
-              style={{ backgroundColor: 'transparent', top: -30 }}
-              color={theme.colors.primary}
-              size={20}
-              icon='bookmark'
+            </>
+          }
+          // TODO: Have the DB autogenerate the image if the user doesn't have profileimage
+          // left={props => (
+          //   <Avatar.Image
+          //     {...props}
+          //     size={36}
+          //     source={{
+          //       uri:
+          //         postData?.profileImage ??
+          //         `https://api.dicebear.com/6.x/lorelei/png/seed=${postData?.docId}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`,
+          //     }}
+          //   />
+          // )}
+          right={props =>
+            // TODO Make a banner, not a button
+            postsSavedByUser?.includes(postData?.docId || '') && (
+              <Avatar.Icon
+                {...props}
+                style={{ backgroundColor: 'transparent', top: -30 }}
+                color={theme.colors.primary}
+                size={20}
+                icon='bookmark'
+              />
+            )
+          }
+        />
+        {/* TODO: This will need to be read from the app-wide theme */}
+        <Skeleton height={195} width='100%' colorMode='light'>
+          {/* data ? data : null */}
+          {postData?.media?.images ? (
+            <Card.Cover
+              source={{
+                uri: postData?.media?.images
+                  ? postData?.media?.images[0]
+                  : undefined,
+              }}
             />
-          )
-        }
-      />
-      <Card.Cover
-        source={{
-          uri: postData?.media?.images ? postData?.media?.images[0] : undefined,
-        }}
-      />
+          ) : null}
+        </Skeleton>
+      </Skeleton.Group>
     </Card>
   );
 }

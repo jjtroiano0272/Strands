@@ -77,6 +77,8 @@ import Particles from 'react-particles';
 import { AnimatedBackground } from '../components/AnimatedBackground';
 import { getSeedData } from '../utils/getSeedData';
 import RippleButton from '~/components/RippleButton';
+import 'react-native-reanimated';
+import 'react-native-gesture-handler';
 // import ParticleAnimation from 'react-particle-animation';
 
 export default function LoginPage() {

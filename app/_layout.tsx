@@ -118,7 +118,8 @@ function RootLayoutNav() {
           }}
         >
           {/* Optionally configure static options outside the route. */}
-          <Stack.Screen name='(tabs)' />
+          {/* Set the topmost header */}
+          <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
         </Stack>
         {/* <SafeAreaView>
             <Stack.Screen
