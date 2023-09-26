@@ -27,6 +27,16 @@ export default () => {
           tabBarLabel: 'Home',
         }}
       />
+      <Tabs.Screen
+        name='search'
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name='search' size={iconSize} color={color} />
+          ),
+          tabBarLabel: 'Search',
+        }}
+      />
       <Tabs.Screen name='list' />
 
       {/* TURNING OFF THE DISPLAY OF OTHER BOTTOM TABS */}
@@ -41,7 +51,7 @@ export default () => {
       <Tabs.Screen name='details' options={{ href: null }} />
       <Tabs.Screen name='messages' options={{ href: null }} />
       <Tabs.Screen name='save' options={{ href: null }} />
-      <Tabs.Screen name='search' options={{ href: null }} />
+      {/* <Tabs.Screen name='search' options={{ href: null }} /> */}
 
       {/* PREVIOUSLY DEFINED AS */}
       {/* <Tabs.Screen

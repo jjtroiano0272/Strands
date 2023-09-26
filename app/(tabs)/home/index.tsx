@@ -484,13 +484,29 @@ const Feed = () => {
           //   );
           // },
           headerRight: () => (
-            <RippleButton
-              icon='debug-step-into'
-              onPress={handleDebugLogin}
-              mode='outlined'
-              size={12}
-              iconColor='red'
-            />
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+                // backgroundColor: 'transparent',
+              }}
+            >
+              <RippleButton
+                icon='filter-outline'
+                onPress={handlePresentModalPress}
+                // mode='
+                size={16}
+                // iconColor='red'
+              />
+              <RippleButton
+                icon='debug-step-into'
+                onPress={handleDebugLogin}
+                mode='outlined'
+                size={12}
+                iconColor='red'
+              />
+            </View>
           ),
         }}
       />
@@ -519,13 +535,6 @@ const Feed = () => {
               ListFooterComponent={() =>
                 !errors && posts && posts.length > 0 ? (
                   <>
-                    <Button
-                      mode='outlined'
-                      onPress={handlePresentModalPress}
-                      contentStyle={{ borderRadius: 50 }}
-                    >
-                      Sort Results
-                    </Button>
                     <BottomSheetModal
                       backgroundStyle={{
                         backgroundColor: theme.colors.background,

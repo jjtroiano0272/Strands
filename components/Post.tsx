@@ -334,32 +334,11 @@ export default function Post({
                           color: paperTheme.colors.secondary,
                         }}
                       >
-                        {postData?.displayName}
+                        seen by {postData?.displayName}
                       </Text>
                     ) : null}
                   </Skeleton>
                 </View>
-                <Skeleton colorMode='light'>
-                  {postData?.createdAt ? (
-                    <Text style={{ color: theme.colors.text, fontSize: 10 }}>
-                      {/* {postData?.createdAt &&
-                                `${getElapsedTime(postData?.createdAt as number)?.number} ${
-                                  getElapsedTime(postData?.createdAt as number)?.unit
-                                } ago`} */}
-                      {/* TODO: Offload to its own component and include the handling cases for like '1 weeks ago' */}
-                      {postData?.createdAt &&
-                        `${
-                          getElapsedTime(
-                            Date.parse(postData?.createdAt as string) / 1000
-                          )?.number
-                        } ${
-                          getElapsedTime(
-                            Date.parse(postData?.createdAt as string) / 1000
-                          )?.unit
-                        } ago`}
-                    </Text>
-                  ) : null}
-                </Skeleton>
               </View>
             </>
           }
@@ -392,13 +371,57 @@ export default function Post({
         <Skeleton height={195} width='100%' colorMode='light'>
           {/* data ? data : null */}
           {postData?.media?.images ? (
-            <Card.Cover
-              source={{
-                uri: postData?.media?.images
-                  ? postData?.media?.images[0]
-                  : undefined,
-              }}
-            />
+            <>
+              <Card.Cover
+                source={{
+                  uri: postData?.media?.images
+                    ? postData?.media?.images[0]
+                    : undefined,
+                }}
+              />
+
+              <View
+                style={{
+                  position: 'absolute',
+                  // top: 0,
+                  // left: 0,
+                  right: 10,
+                  bottom: 10,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  padding: 10,
+                  // backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                  borderRadius: 20,
+                  opacity: 0.75,
+                }}
+              >
+                <Text
+                  style={{ color: 'white', fontSize: 20, fontWeight: 'bold' }}
+                >
+                  <Skeleton colorMode='light'>
+                    {postData?.createdAt ? (
+                      <Text style={{ color: theme.colors.text, fontSize: 10 }}>
+                        {/* {postData?.createdAt &&
+                                `${getElapsedTime(postData?.createdAt as number)?.number} ${
+                                  getElapsedTime(postData?.createdAt as number)?.unit
+                                } ago`} */}
+                        {/* TODO: Offload to its own component and include the handling cases for like '1 weeks ago' */}
+                        {postData?.createdAt &&
+                          `${
+                            getElapsedTime(
+                              Date.parse(postData?.createdAt as string) / 1000
+                            )?.number
+                          } ${
+                            getElapsedTime(
+                              Date.parse(postData?.createdAt as string) / 1000
+                            )?.unit
+                          } ago`}
+                      </Text>
+                    ) : null}
+                  </Skeleton>
+                </Text>
+              </View>
+            </>
           ) : null}
         </Skeleton>
       </Skeleton.Group>
