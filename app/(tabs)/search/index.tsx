@@ -10,7 +10,29 @@ import {
   Image,
   View,
   SafeAreaView,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
+  Pressable,
 } from 'react-native';
+import {
+  ActivityIndicator,
+  Avatar,
+  Chip,
+  IconButton,
+  List,
+  MD3DarkTheme,
+  MD3LightTheme,
+  Modal,
+  Portal,
+  Searchbar,
+  TextInput,
+  Provider as ModalProvider,
+  Paragraph,
+  Title,
+} from 'react-native-paper';
 import { Text } from '../../../components/Themed';
 import { useTheme } from '@react-navigation/native';
 import { ScrollView } from 'react-native';
@@ -25,17 +47,6 @@ import {
   where,
 } from 'firebase/firestore';
 import { db, postsRef, usersRef } from '~/firebaseConfig';
-import {
-  ActivityIndicator,
-  Avatar,
-  Chip,
-  IconButton,
-  List,
-  MD3DarkTheme,
-  MD3LightTheme,
-  Searchbar,
-  TextInput,
-} from 'react-native-paper';
 import React from 'react';
 
 export type User = {
@@ -104,7 +115,7 @@ const Search = () => {
 
   const searchUsers = async (search: string) => {
     try {
-      setSearchingForUsers(true);
+      setIsSearching(true);
 
       // FIREBASE 9 METHODOLOGY
       // Ultimately it should have multiple OR conditions with
@@ -144,7 +155,7 @@ const Search = () => {
       // MERGE ALL RESULTS
       setSearchResults(finalResult);
 
-      setSearchingForUsers(false);
+      setIsSearching(false);
       // console.log(`users: ${JSON.stringify(localUsers)}`);
     } catch (error) {
       console.error(error);
@@ -164,7 +175,7 @@ const Search = () => {
     // return `https://www.gravatar.com/avatar/${hash}`;
     return `https://api.dicebear.com/6.x/lorelei/png/seed=${value}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4`;
   };
-  const [searchingForUsers, setSearchingForUsers] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -239,9 +250,20 @@ const Search = () => {
     setSelectedSearchField(field);
     setAccordionOpen(false);
   };
+  const handleFilterFieldPress = (field: string) => {
+    setSelectedSearchField(field);
+    hideModal();
+  };
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const showModal = () => setModalVisible(true);
+  const hideModal = () => setModalVisible(false);
+
+  const SCREEN_WIDTH = Dimensions.get('window').width;
+  const SCREEN_HEIGHT = Dimensions.get('window').height;
 
   return (
-    <>
+    <ModalProvider>
       <SafeAreaView>
         {/* <TextInput
           // style={styles.input}
@@ -258,63 +280,33 @@ const Search = () => {
         <Searchbar
           placeholder='Search users or posts'
           onChangeText={setSearchQuery}
+          loading={isSearching}
           value={searchQuery}
           right={() => (
             <>
+              {selectedSearchField !== 'username' && (
+                <Chip
+                  icon='information'
+                  onClose={() => {
+                    console.error('hi there');
+                    setSelectedSearchField('username');
+                  }}
+                >
+                  {selectedSearchField}
+                </Chip>
+              )}
+              <IconButton icon='filter-variant' onPress={showModal} />
               <IconButton
-                icon='filter-variant'
-                onPress={() => setAccordionOpen(!accordionOpen)}
+                icon='close'
+                onPress={() => {
+                  setIsSearching(false);
+                  setSearchQuery('');
+                }}
               />
-              <IconButton icon='close' onPress={() => console.log('hi')} />
             </>
           )}
           // clearIcon={() => <IconButton icon='filter-variant' />}
         />
-
-        <List.Accordion
-          title={
-            // selectedSearchField === 'username' ? (
-            //   <Text>Search by...</Text>
-            // ) : (
-            //   <Chip>{selectedSearchField}</Chip>
-            // )
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              <Text>Filter: </Text>
-              <Chip>{selectedSearchField}</Chip>
-            </View>
-          }
-          onPress={() => setAccordionOpen(!accordionOpen)}
-          expanded={accordionOpen}
-          left={props => <List.Icon {...props} icon='filter-variant' />}
-        >
-          {availableFields.map(field => (
-            <List.Item
-              title={
-                field.displayField ?? capitalizeFirstLetter(field.firebaseField)
-              }
-              left={props => (
-                <List.Icon
-                  {...props}
-                  icon='folder'
-                  color={
-                    field.firebaseField === selectedSearchField
-                      ? 'blue'
-                      : 'gray'
-                  }
-                />
-              )}
-              onPress={() => {
-                handleAccordionPress(field.firebaseField);
-              }}
-            />
-          ))}
-        </List.Accordion>
 
         <FlatList
           // refreshing={refreshing}
@@ -362,20 +354,99 @@ const Search = () => {
             />
           )}
           ListEmptyComponent={
-            searchingForUsers ? (
-              <ActivityIndicator animating={true} size='large' />
-            ) : null
+            <Pressable
+              onPress={() => Keyboard.dismiss()}
+              style={{
+                // TODO This actually has some artefacts, but eh whatever. It fixes the problem more than other solutions have yet.
+                height: SCREEN_HEIGHT * 0.8,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={
+                  {
+                    // flexGrow: 1,
+                    // flex: 1,
+                    // marginTop: 50, // TODO this isn't a good solution, but not worth spending time on a UI issue right now
+                  }
+                }
+              >
+                {searchQuery && !searchResults ? (
+                  <Text>Nothing found!</Text>
+                ) : (
+                  <Text></Text>
+                )}
+              </KeyboardAvoidingView>
+            </Pressable>
           }
-          contentContainerStyle={
-            !searchResults && {
-              flexGrow: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }
-          }
+          // contentContainerStyle={
+          //   !searchResults && {
+          //     // flexGrow: 1,
+          //     // flex: 1,
+          //     height: windowHeight * 1,
+          //     justifyContent: 'center',
+          //     alignItems: 'center',
+          //   }
+          // }
         />
+
+        <Portal>
+          <Modal
+            visible={modalVisible}
+            onDismiss={hideModal}
+            contentContainerStyle={{
+              backgroundColor: 'white',
+              padding: 20,
+              marginHorizontal: 20,
+              borderRadius: 25,
+            }}
+          >
+            <View
+              style={{
+                justifyContent: 'center',
+                alignItems: 'center',
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+              }}
+            >
+              <Title style={{ marginBottom: 16 }}>Search by...</Title>
+            </View>
+            <View
+              style={{
+                justifyContent: 'center',
+                alignItems: 'center',
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                // margin: 50,
+                // flex: 1,
+              }}
+            >
+              {availableFields.map(field => (
+                <Chip
+                  icon='information'
+                  selected={
+                    field.firebaseField === selectedSearchField ? true : false
+                  }
+                  selectedColor={
+                    field.firebaseField === selectedSearchField
+                      ? 'blue'
+                      : 'black'
+                  }
+                  showSelectedOverlay
+                  onPress={() => handleFilterFieldPress(field.firebaseField)}
+                  style={{ margin: 4 }}
+                >
+                  {field.displayField ??
+                    capitalizeFirstLetter(field.firebaseField)}
+                </Chip>
+              ))}
+            </View>
+          </Modal>
+        </Portal>
       </SafeAreaView>
-    </>
+    </ModalProvider>
   );
 };
 
