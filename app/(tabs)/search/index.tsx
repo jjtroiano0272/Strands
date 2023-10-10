@@ -288,7 +288,6 @@ const Search = () => {
                 <Chip
                   icon='information'
                   onClose={() => {
-                    console.error('hi there');
                     setSelectedSearchField('username');
                   }}
                 >
@@ -342,13 +341,13 @@ const Search = () => {
               }}
               onPress={() =>
                 router.push({
-                  // pathname: `clients/${clientData?.firstName}${clientData?.lastName}`,
-                  pathname: `users/${user?.userID}`, // Geraldine
+                  pathname: `/search/[userProfile]`, // Geraldine
                   params: {
-                    // clientID: postData?.clientID,
-                    // userID: user?.userID,
                     userID: user?.userID,
                   },
+
+                  // pathname: '/home/[post]',
+                  // params: { docId: item?.docId },
                 })
               }
             />
@@ -429,12 +428,17 @@ const Search = () => {
                   selected={
                     field.firebaseField === selectedSearchField ? true : false
                   }
-                  selectedColor={
+                  // selectedColor={
+                  //   field.firebaseField === selectedSearchField
+                  //     ? 'blue'
+                  //     : 'black'
+                  // }
+                  mode={
                     field.firebaseField === selectedSearchField
-                      ? 'blue'
-                      : 'black'
+                      ? 'flat'
+                      : 'outlined'
                   }
-                  showSelectedOverlay
+                  // showSelectedOverlay
                   onPress={() => handleFilterFieldPress(field.firebaseField)}
                   style={{ margin: 4 }}
                 >

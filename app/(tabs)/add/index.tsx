@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Image,
   Alert,
+  ScrollView,
 } from 'react-native';
 import React, { useEffect, useState, Suspense } from 'react';
 import { Stack, useNavigation, useRouter } from 'expo-router';
@@ -27,6 +28,7 @@ import { uuidv4 } from '@firebase/util';
 import ButtonWithRipple from '~/components/RippleButton';
 import RippleButton from '~/components/RippleButton';
 import Swiper from 'react-native-swiper';
+import { useHaptics } from '~/hooks/useHaptics';
 
 export default function Add() {
   const theme = useTheme();
@@ -34,7 +36,7 @@ export default function Add() {
   const route = useRoute();
   const [type, setType] = useState(CameraType.back);
   const [camera, setCamera] = useState<Camera | null>(null);
-  const [selectedImages, setSelectedImages] = useState<string[]>();
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
   // const [imagePaths, setImagePaths] = useState<string[] | null>(null);
   const [fetchingData, setFetchingData] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -74,17 +76,16 @@ export default function Add() {
     try {
       if (camera) {
         const res = camera._onCameraReady();
-  
+
         await camera
           .takePictureAsync()
-          .then(res => setSelectedImages([res.uri]))
+          .then(res => setSelectedImages([...selectedImages, res.uri]))
           .catch(err => console.error(`Error when taking picture! ${err}`));
       } else {
-        console.error(`Camera unavaible! Or something.`);
+        console.error(`Camera unavailable! Or something.`);
       }
     } catch (error) {
       console.error(error);
-      
     }
   };
 
@@ -133,7 +134,7 @@ export default function Add() {
       router.push({
         // pathname: './save',
         // TODO For some reason this acts as replace() and not push()....
-        pathname: ' /add/save',
+        pathname: ' /savePost',
         params: {
           imgUris,
         },
@@ -160,17 +161,102 @@ export default function Add() {
     })();
   }, []);
 
+  const removeImage = (uri: string) => {
+    // setSelectedImages()
+    const smallerArr = selectedImages.filter(imgPath => imgPath !== uri);
+    console.log(`remove image function for image ${smallerArr}`);
+    setSelectedImages(smallerArr);
+  };
+
+  const [selectedImagesConcatenated, setSelectedImagesConcatenated] =
+    useState('');
+
+  useEffect(() => {
+    console.log(`selectedImages: ${JSON.stringify(selectedImages, null, 2)}`);
+    setSelectedImagesConcatenated(selectedImages.join(','));
+  }, [selectedImages]);
+
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, justifyContent: 'flex-end' }}>
       <Stack.Screen options={{ headerShown: false }} />
 
       <Camera
-        style={styles.camera}
+        style={[styles.camera, { position: 'relative' }]}
         type={type}
         ratio={'1:1'}
-        // ref={ref => setCamera(ref)}
+        ref={ref => setCamera(ref)}
       >
-        <View style={styles.buttonContainer}>
+        {selectedImages && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              // padding: 16,
+              flexDirection: 'row',
+              padding: 16,
+              position: 'absolute',
+              bottom: 0, // Position at the bottom of the screen
+              left: 0,
+              right: 0,
+            }}
+          >
+            {selectedImages.map((uri, index) => (
+              <View
+                key={index}
+                style={{
+                  flexDirection: 'row',
+                  width: 100, // Set the width of each card
+                  height: 100,
+                  marginRight: 16, // Adjust as needed for spacing
+                  backgroundColor: 'white', // Adjust card styling as needed
+                  borderRadius: 8, // Add borderRadius for card appearance
+                  shadowColor: '#000',
+                  shadowOffset: {
+                    width: 0,
+                    height: 2,
+                  },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 3.84,
+                  elevation: 5,
+                }}
+              >
+                <Image
+                  key={index}
+                  source={{ uri: uri }}
+                  style={{ width: '100%', height: '100%' }}
+                />
+                <IconButton
+                  key={uri}
+                  style={{
+                    position: 'absolute',
+                    top: -20,
+                    right: -20,
+                    // backgroundColor: 'transparent',
+                    // padding: 10,
+                  }}
+                  icon='close'
+                  mode='contained'
+                  // underlayColor='red'
+                  // containerColor='red'
+                  // iconColor='#ccc'
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    removeImage(uri);
+                  }}
+                  size={15}
+                />
+              </View>
+            ))}
+          </ScrollView>
+        )}
+
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+          }}
+        >
           <View
             style={{
               // TODO Calculate contrast numerically
@@ -204,45 +290,29 @@ export default function Add() {
               onPress={handlePickImage}
               size={20}
             />
+
+            {selectedImages.length > 0 && (
+              <IconButton
+                // mode='contained'
+                icon={'page-next'}
+                iconColor='#ccc'
+                onPress={() =>
+                  router.push({
+                    // pathname: '/home/[post]',
+                    pathname: '/add/savePost',
+                    // Looks like
+                    // 'file:///var/mobile/Containers/Data/Application/7FF5DA39-5FA0-4426-882D-C1183F859A01/Library/Caches/ExponentExperienceData/%2540jonathan.troiano%252FStrands/Camera/F130A70D-81C2-4FB7-9A9E-405ADABEE555.jpg';
+                    params: {
+                      imgUris: encodeURIComponent(selectedImagesConcatenated),
+                    },
+                    // params: { id: 86, other: 'anything you want here' },
+                  })
+                }
+                size={42}
+              />
+            )}
           </View>
         </View>
-
-        {selectedImages && (
-          <View style={{ flex: 0.3, justifyContent: 'flex-end' }}>
-            {/* <IconButton
-              icon='cancel'
-              mode='contained'
-              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-              // iconColor={MD3Colors.error50}
-              size={20}
-              onPress={() => setImage(null)}
-            /> */}
-
-            <RippleButton
-              mode='contained'
-              onPress={() => handleSaveImage()}
-              loading={fetchingData}
-            >
-              SAVE
-            </RippleButton>
-
-            {/* TODO Will probably need a redesign of this for better UX */}
-            <Swiper
-              // containerStyle={{ flex: 1 }}
-              containerStyle={{ height: 300, width: '100%', borderRadius: 30 }}
-              onIndexChanged={() => Haptics.ImpactFeedbackStyle.Light}
-              showsPagination={selectedImages.length < 2 && false}
-            >
-              {selectedImages.map((uri, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: uri }}
-                  style={{ width: '100%', height: '100%' }}
-                />
-              ))}
-            </Swiper>
-          </View>
-        )}
       </Camera>
     </View>
   );

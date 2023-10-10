@@ -244,8 +244,8 @@ export default function Post({
 
     await getDoc(clientsRef)
       .then(docSnap => {
-        docSnap.id === '0offP5pWtN7yXbNNzP48' &&
-          console.warn('Client data:', docSnap.data());
+        // docSnap.id === '0offP5pWtN7yXbNNzP48' &&
+        //   console.warn('Client data:', docSnap.data());
 
         setClientData({ ...getClientData, ...docSnap.data() });
       })
@@ -279,7 +279,7 @@ export default function Post({
 
   useEffect(() => {
     // console.log(`postData of Post.tsx: ${JSON.stringify(postData, null, 2)}`);
-    console.log(`onPressArgs: ${JSON.stringify(onPressArgs, null, 2)}`);
+    // console.log(`onPressArgs: ${JSON.stringify(onPressArgs, null, 2)}`);
   }, []);
 
   return (

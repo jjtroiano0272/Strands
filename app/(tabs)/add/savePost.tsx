@@ -14,7 +14,7 @@ import {
   Platform,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { RouteProp, useRoute, useTheme } from '@react-navigation/native';
 import {
   Button,
@@ -79,7 +79,12 @@ export default function save() {
   const theme = useTheme();
   const route = useRoute<RouteProp<Record<string, RouteParams>, string>>();
   const router = useRouter();
-  const imgUris = route.params.imgUris.split(',');
+  // const imgUris = route.params.imgUris.split(',');
+  // const imgUris = ['https://loremflickr.com/320/240'];
+  const searchParams = useLocalSearchParams() as { imgUris: string };
+  // const imageFoos = imgUris.split(',');
+  const imgUris = searchParams?.imgUris?.split(',');
+
   const [newImgUris, setNewImgUris] = useState<string[] | null>(null);
 
   const [comments, setComments] = useState<string>('');
@@ -331,8 +336,9 @@ export default function save() {
   // { caption, createdAt, mediaUrl (points to fireStore) }
 
   useEffect(() => {
+    console.log(`imgUris: ${JSON.stringify(imgUris, null, 2)}`);
     console.log(`newImgUris: ${JSON.stringify(newImgUris, null, 2)}`);
-  }, [newImgUris]);
+  }, [newImgUris, imgUris]);
 
   useEffect(() => {
     if (blobArr && blobArr.length > 0) {
@@ -348,11 +354,17 @@ export default function save() {
   }, [fieldValue]);
 
   return (
-    <ModalProvider>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView>
+    <ScrollView>
+      <Stack.Screen
+        options={{
+          title: `saving`,
+        }}
+      />
+
+      <ModalProvider>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <Pressable
             onPress={() => Keyboard.dismiss()}
             style={{
@@ -363,22 +375,33 @@ export default function save() {
               paddingHorizontal: 10,
             }}
           >
-            <Stack.Screen options={{ headerShown: false }} />
+            {/* <Stack.Screen options={{ headerShown: false }} /> */}
             {/* {imgUri && <Image source={{ uri: imgUri, height: 300, width: 300 }} />} */}
             <Swiper
               // containerStyle={{ flex: 1 }}
+              // swiper: { flex: 1, aspectRatio: 1, borderRadius: 30 },
               containerStyle={{ height: 300, width: '100%', borderRadius: 30 }}
-              onIndexChanged={() => Haptics.ImpactFeedbackStyle.Light}
+              onIndexChanged={(index: number) => {
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch (error) {
+                  console.error(`Haptic error in onIndexChanged`);
+                }
+              }}
             >
-              {imgUris.map((uri, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: uri }}
-                  style={{ width: '100%', height: '100%' }}
-                />
-              ))}
+              {imgUris
+                ? imgUris.map((uri, index) => (
+                    <Image
+                      key={index}
+                      source={{ uri: uri }}
+                      style={{ width: '100%', height: '100%' }}
+                    />
+                  ))
+                : null}
             </Swiper>
+
             {/* <StarRating /> */}
+
             {/* Hair type */}
             <DropDownPicker
               theme={!theme.dark ? 'LIGHT' : 'DARK'}
@@ -520,7 +543,7 @@ export default function save() {
             <List.Item
               theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
               style={{ width: '100%' }}
-              title='Client is seasonal'
+              title='This client is seasonal'
               right={props => (
                 <Switch
                   value={isSeasonal}
@@ -576,8 +599,8 @@ export default function save() {
               {snackbarMessage}
             </Snackbar>
           </Pressable>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </ModalProvider>
+        </KeyboardAvoidingView>
+      </ModalProvider>
+    </ScrollView>
   );
 }

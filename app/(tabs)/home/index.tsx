@@ -39,6 +39,7 @@ import {
 import { PASS, USER, db, postsRef, usersRef } from '~/firebaseConfig';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import {
+  Badge,
   Button,
   Chip,
   IconButton,
@@ -368,6 +369,7 @@ const Feed = () => {
     // setPosts(result);
   };
 
+  const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
   const handlePresentModalPress = () => {
     bottomSheetModalRef?.current?.present();
   };
@@ -377,44 +379,37 @@ const Feed = () => {
   }, []);
 
   const handleFilterPress = (filterName: string) => {
+    // const result = selectedFilters.filter(name => name !== filterName);
+    let result;
+
     try {
       if (selectedFilters?.includes(filterName)) {
-        const result = selectedFilters.filter(name => name !== filterName);
-        console.warn(
-          `result: ${JSON.stringify(
-            selectedFilters.filter(name => name !== filterName),
-            null,
-            2
-          )}`
-        );
-
         return setSelectedFilters(
           selectedFilters.filter(name => name !== filterName)
         );
-      } else if (!selectedFilters?.includes(filterName)) {
+      } else {
         return selectedFilters
           ? setSelectedFilters([...selectedFilters, filterName])
           : setSelectedFilters([filterName]);
-      } else {
-        // return setMyDbData(initialDbData);
       }
 
       // TODO: Might need some catches in here just for data type mismatches
-      let result;
       if (filterName) {
         result = posts?.filter(
           item => Object.keys(item).indexOf(filterName) !== -1
         );
       }
+
       setPosts(result);
     } catch (error) {
-      console.error(`some indexOf error?`);
+      console.error(`Error in handleFilterPress: ${error}`);
     }
   };
 
-  const handleReset = () => {
-    getDataSortedBy(null);
-    setSelectedFilters(null);
+  const handleResetFilters = () => {
+    // getDataSortedBy(null);
+    // setSelectedFilters(null);
+    setSelectedFilterFoo('');
   };
 
   const filteredData = selectedFilters?.length
@@ -427,10 +422,6 @@ const Feed = () => {
     fetchPostsData();
     // fetchUserData();
   }, []);
-
-  useEffect(() => {
-    console.log(`posts: ${JSON.stringify(posts?.slice(0, 1), null, 2)}`);
-  }, [posts]);
 
   const [count, setCount] = React.useState(0);
 
@@ -459,6 +450,42 @@ const Feed = () => {
   const colorMode = dark ? 'dark' : 'light';
 
   const Spacer = ({ height = 16 }) => <View style={{ height }} />;
+
+  // Per the tutorial
+  const [selectedFilterFoo, setSelectedFilterFoo] = useState<string>('');
+  const [order, setOrder] = useState<'ASC' | 'DESC'>('ASC');
+  const toggleOrder = () => {
+    const newOrder = order === 'ASC' ? 'DESC' : 'ASC';
+    setOrder(newOrder);
+  };
+
+  const postListFiltered = posts?.filter(post => {
+    return Object.keys(post)
+      .toString()
+      .toLowerCase()
+      .includes(selectedFilterFoo?.toLowerCase());
+  });
+
+  const [sortByField, setSortByField] = useState<string>();
+  const postListSorted = postListFiltered?.sort((a, b) => {
+    if (order === 'ASC') {
+      return a?.title?.localeCompare(b.title);
+    }
+    return b?.title?.localeCompare(a.title);
+  });
+  // const postListSorted = postListFiltered;
+
+  useEffect(() => {
+    console.log(
+      `selectedFilterFoo: ${JSON.stringify(selectedFilterFoo, null, 2)}`
+    );
+  }, [selectedFilterFoo]);
+
+  useEffect(() => {
+    console.log(
+      `sorting by: ${JSON.stringify(sortByField, null, 2)}, ${order}`
+    );
+  }, [sortByField]);
 
   return (
     <>
@@ -492,6 +519,16 @@ const Feed = () => {
                 // backgroundColor: 'transparent',
               }}
             >
+              {/* <Badge
+                visible={!!selectedFilterFoo}
+                size={10}
+                style={{
+                  backgroundColor: 'blue',
+                  position: 'absolute',
+                  top: 5,
+                  left: 10,
+                }}
+              /> */}
               <RippleButton
                 icon='filter-outline'
                 onPress={handlePresentModalPress}
@@ -522,113 +559,200 @@ const Feed = () => {
           </MotiView> */}
 
           <BottomSheetModalProvider>
+            {selectedFilterFoo && (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: 'transparent',
+                  marginTop: 10,
+                }}
+              >
+                <Text>Filtering by: </Text>
+                <Chip
+                  // icon='information'
+                  // selected={selectedFilters?.includes(label.varName)}
+                  mode='flat'
+                >
+                  {selectedFilterFoo}
+                </Chip>
+                <IconButton
+                  icon='close'
+                  size={12}
+                  onPress={handleResetFilters}
+                />
+              </View>
+            )}
+
             <FlatList
-              data={posts?.filter(
-                (post: any) =>
-                  !selectedFilters?.length ||
-                  selectedFilters.every(filter => filter[post])
-              )}
+              data={
+                //   posts?.filter(
+                //   (post: any) =>
+                //     !selectedFilters?.length ||
+                //     selectedFilters.every(filter => filter[post])
+                // )
+                postListSorted
+              }
               contentContainerStyle={{
                 paddingVertical: 8,
                 paddingHorizontal: 10,
               }}
+              ListEmptyComponent={
+                selectedFilterFoo ? (
+                  <View
+                    style={{
+                      flex: 1,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: 'transparent',
+                    }}
+                  >
+                    <Text>
+                      Nothing matches this filter: {selectedFilterFoo}
+                    </Text>
+                    <Button
+                      mode='outlined'
+                      onPress={handleResetFilters}
+                      style={{ marginVertical: 20 }}
+                    >
+                      RESET
+                    </Button>
+                  </View>
+                ) : null
+              }
               ListFooterComponent={() =>
                 !errors && posts && posts.length > 0 ? (
-                  <>
-                    <BottomSheetModal
-                      backgroundStyle={{
-                        backgroundColor: theme.colors.background,
-                        // backgroundColor: 'red',
+                  <BottomSheetModal
+                    backgroundStyle={{
+                      backgroundColor: theme.colors.background,
+                      // backgroundColor: 'red',
+                    }}
+                    handleIndicatorStyle={{
+                      backgroundColor: theme.colors.text,
+                    }}
+                    index={0}
+                    snapPoints={snapPoints}
+                    ref={bottomSheetModalRef}
+                    enablePanDownToClose={true}
+                    onChange={handleSheetChanges}
+                    // style={{ padding: 20 }}
+                  >
+                    <Text style={styles.sectionHeaderText}>Sort by</Text>
+                    {sortLabelsObj
+                      .filter(x => x.displayName !== null)
+                      .map((label, index: number) => (
+                        <List.Item
+                          key={index}
+                          style={{ width: '100%' }}
+                          theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+                          title={label.displayName}
+                          left={props => (
+                            <List.Icon
+                              {...props}
+                              icon={label.icon}
+                              color={
+                                label?.varName ===
+                                dataIsCurrentlySortedBy?.property
+                                  ? theme?.colors.primary
+                                  : ''
+                              }
+                            />
+                          )}
+                          right={props => {
+                            // if (
+                            //   label.varName ===
+                            //   dataIsCurrentlySortedBy?.property
+                            // ) {
+                            //   if (dataIsCurrentlySortedBy.orderByDirection) {
+                            //     return (
+                            //       <List.Icon
+                            //         {...props}
+                            //         icon={'sort-ascending'}
+                            //       />
+                            //     );
+                            //   } else {
+                            //     return (
+                            //       <List.Icon
+                            //         {...props}
+                            //         icon={'sort-descending'}
+                            //       />
+                            //     );
+                            //   }
+                            // }
+                            // return <List.Icon {...props} icon={''} />;
+
+                            if (
+                              sortByField === label.varName &&
+                              order === 'ASC'
+                            ) {
+                              return (
+                                <List.Icon {...props} icon={'sort-ascending'} />
+                              );
+                            }
+                            if (
+                              sortByField === label.varName &&
+                              order === 'DESC'
+                            ) {
+                              return (
+                                <List.Icon
+                                  {...props}
+                                  icon={'sort-descending'}
+                                />
+                              );
+                            }
+                          }}
+                          // onPress={() => getDataSortedBy(label.varName)}
+                          onPress={() => {
+                            setSortByField(label.varName);
+                            toggleOrder();
+                          }}
+                        />
+                      ))}
+
+                    <Text style={styles.sectionHeaderText}>Filter</Text>
+                    <View
+                      style={{
+                        // flex: 1,
+                        flexDirection: 'row',
+                        flexWrap: 'wrap',
+                        backgroundColor: 'transparent',
+                        paddingHorizontal: 10,
                       }}
-                      handleIndicatorStyle={{
-                        backgroundColor: theme.colors.text,
-                      }}
-                      index={0}
-                      snapPoints={snapPoints}
-                      ref={bottomSheetModalRef}
-                      enablePanDownToClose={true}
-                      onChange={handleSheetChanges}
                     >
-                      <Text>Sort by</Text>
                       {sortLabelsObj
                         .filter(x => x.displayName !== null)
                         .map((label, index: number) => (
-                          <List.Item
+                          <Chip
+                            // icon='information'
+                            // selected={selectedFilters?.includes(label.varName)}
                             key={index}
-                            style={{ width: '100%' }}
-                            theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-                            title={label.displayName}
-                            left={props => (
-                              <List.Icon
-                                {...props}
-                                icon={label.icon}
-                                color={
-                                  label?.varName ===
-                                  dataIsCurrentlySortedBy?.property
-                                    ? theme?.colors.primary
-                                    : ''
-                                }
-                              />
-                            )}
-                            right={props => {
-                              if (
-                                label.varName ===
-                                dataIsCurrentlySortedBy?.property
-                              ) {
-                                if (dataIsCurrentlySortedBy.orderByDirection) {
-                                  return (
-                                    <List.Icon
-                                      {...props}
-                                      icon={'sort-ascending'}
-                                    />
-                                  );
-                                } else {
-                                  return (
-                                    <List.Icon
-                                      {...props}
-                                      icon={'sort-descending'}
-                                    />
-                                  );
-                                }
-                              }
-                              return <List.Icon {...props} icon={''} />;
-                            }}
-                            onPress={() => getDataSortedBy(label.varName)}
-                          />
+                            style={{ margin: 5 }}
+                            onPress={() => setSelectedFilterFoo(label.varName)}
+                            showSelectedOverlay={true}
+                            mode={
+                              selectedFilterFoo?.includes(label.varName)
+                                ? 'flat'
+                                : 'outlined'
+                            }
+                          >
+                            {label.displayName}
+                          </Chip>
                         ))}
-                      <Text>Filter</Text>
-                      <View
-                        style={{
-                          flex: 1,
-                          flexDirection: 'row',
-                          flexWrap: 'wrap',
-                        }}
-                      >
-                        {sortLabelsObj
-                          .filter(x => x.displayName !== null)
-                          .map((label, index: number) => (
-                            <Chip
-                              key={index}
-                              style={{ margin: 5 }}
-                              onPress={() => handleFilterPress(label.varName)}
-                              // icon='information'
-                              // selected={selectedFilters?.includes(label.varName)}
-                              mode={
-                                selectedFilters?.includes(label.varName)
-                                  ? 'flat'
-                                  : 'outlined'
-                              }
-                              showSelectedOverlay={true}
-                            >
-                              {label.displayName}
-                            </Chip>
-                          ))}
-                      </View>
-                      <Button mode='outlined' onPress={handleReset}>
+                    </View>
+                    <View
+                      style={{
+                        flex: 1,
+                        backgroundColor: 'transparent',
+                        justifyContent: 'center',
+                        marginHorizontal: 15,
+                      }}
+                    >
+                      <Button mode='outlined' onPress={handleResetFilters}>
                         RESET
                       </Button>
-                    </BottomSheetModal>
-                  </>
+                    </View>
+                  </BottomSheetModal>
                 ) : null
               }
               refreshing={refreshing}
@@ -728,6 +852,12 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 24,
     textAlign: 'center',
+  },
+  sectionHeaderText: {
+    fontSize: 24,
+    fontWeight: '600',
+    marginHorizontal: 12,
+    marginVertical: 12,
   },
   helpContainer: {
     marginTop: 15,

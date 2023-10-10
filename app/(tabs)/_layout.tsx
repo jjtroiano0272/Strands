@@ -4,6 +4,8 @@ import { Tabs, useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { getAuth } from 'firebase/auth';
+import { useHaptics } from '~/hooks/useHaptics';
+import { active } from 'd3';
 
 export default () => {
   const iconSize = 24;
@@ -22,8 +24,16 @@ export default () => {
         options={{
           headerShown: false,
           tabBarIcon: ({ color }) => (
-            <FontAwesome name='home' size={iconSize} color={color} />
+            <FontAwesome
+              name='home'
+              size={iconSize}
+              color={color}
+              // onPress={() =>
+              //   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+              // }
+            />
           ),
+
           tabBarLabel: 'Home',
         }}
       />
@@ -37,8 +47,29 @@ export default () => {
           tabBarLabel: 'Search',
         }}
       />
-      <Tabs.Screen name='list' />
+      <Tabs.Screen
+        name='add'
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <FontAwesome
+              name='plus'
+              size={iconSize}
+              color={focused ? 'red' : color}
+            />
+          ),
+          tabBarLabel: '',
+        }}
+      />
 
+      {/*  */}
+      {/*  */}
+      {/*  */}
+      {/*  */}
+      {/*  */}
+      {/*  */}
+      {/*  */}
+      {/*  */}
       {/* TURNING OFF THE DISPLAY OF OTHER BOTTOM TABS */}
       <Tabs.Screen name='clientInCommon' options={{ href: null }} />
       <Tabs.Screen name='clients' options={{ href: null }} />
@@ -47,10 +78,10 @@ export default () => {
       <Tabs.Screen name='postsByCurrentUser' options={{ href: null }} />
       <Tabs.Screen name='users' options={{ href: null }} />
 
-      <Tabs.Screen name='add' options={{ href: null }} />
+      {/* <Tabs.Screen name='add' options={{ href: null }} /> */}
       <Tabs.Screen name='details' options={{ href: null }} />
       <Tabs.Screen name='messages' options={{ href: null }} />
-      <Tabs.Screen name='save' options={{ href: null }} />
+      {/* <Tabs.Screen name='save' options={{ href: null }} /> */}
       {/* <Tabs.Screen name='search' options={{ href: null }} /> */}
 
       {/* PREVIOUSLY DEFINED AS */}
