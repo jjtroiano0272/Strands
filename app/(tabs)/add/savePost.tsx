@@ -12,6 +12,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -47,6 +48,11 @@ import {
   DocumentReference,
   Timestamp,
 } from 'firebase/firestore';
+import {
+  MultipleSelectList,
+  SelectList,
+} from 'react-native-dropdown-select-list';
+
 import { getAuth, User } from 'firebase/auth';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -95,9 +101,6 @@ export default function save() {
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [dropDownOpen, setDropDownOpen] = useState([
-    { id: 'products', open: false },
-  ]);
   const [productsDropdownOpen, setProductsDropdownOpen] =
     useState<boolean>(false);
   const [formulaDropdownOpen, setFormulaDropdownOpen] = useState(false);
@@ -151,11 +154,25 @@ export default function save() {
   const [selectedUserRating, setSelectedUserRating] = useState<number | null>(
     null
   );
-  const labels = labelsConst;
+  const hairTypeLabelsArr = labelsConst;
   const hairTypeImages = hairTypeImagesConst;
-  const labelObjs = labels.map(label => ({ label, value: label }));
-  const [items, setItems] = useState(labelObjs);
-  const [blobArr, setBlobArr] = useState<any>(null);
+  const hairTypesConst = [
+    { id: '2A', uri: require('../../../assets/images/hairType_2A.png') },
+    { id: '2B', uri: require('../../../assets/images/hairType_2B.png') },
+    { id: '2C', uri: require('../../../assets/images/hairType_2C.png') },
+    { id: '3A', uri: require('../../../assets/images/hairType_3A.png') },
+    { id: '3B', uri: require('../../../assets/images/hairType_3B.png') },
+    { id: '3C', uri: require('../../../assets/images/hairType_3C.png') },
+    { id: '4A', uri: require('../../../assets/images/hairType_4A.png') },
+    { id: '4B', uri: require('../../../assets/images/hairType_4B.png') },
+    { id: '4C', uri: require('../../../assets/images/hairType_4C.png') },
+  ];
+  const hairTypeLabelsObj = hairTypeLabelsArr.map(label => ({
+    label,
+    value: label,
+  }));
+  const [hairTypeLabels, setHairTypeLabels] = useState(hairTypeLabelsObj);
+  const [blobArr, setBlobArr] = useState<Blob[]>([]);
   const [formData, setFormData] = useState<FireBasePost | null>(null);
   const [lat, lng] = useGeoLocation();
 
@@ -172,31 +189,37 @@ export default function save() {
       const storageRef = ref(storage, dbDestinationPath);
       let blob: void | Blob;
 
+      // Gets here succesfully
       if (imgUris.length === 1) {
+        console.warn(`inside first if`);
+
         try {
           blob = await fetch(imgUris[0])
             .then(async res => await res.blob())
             .catch(err =>
               console.error(`Failed to fetch blob from imgUris: ${err}`)
             );
+          console.warn(`Got to the blob try`);
         } catch (error) {
-          console.error(error);
+          console.error(`Error inside fetching blob: ${error}`);
         }
 
         const task = uploadBytes(storageRef, blob!); // TODO Is this good practice to use non-null assertion?
         console.log(`task: ${JSON.stringify(task, null, 2)}`);
 
+        console.warn(`211`);
         task
           .then(snapshot => {
             console.log('Does this mean it was successful?');
             console.log(`metadata: ${snapshot.metadata}`);
 
+            console.warn(`217`);
             setPostSuccess(true);
             setLoading(false);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
             // navigate user back to previous page/route
-            router.replace('/home');
+            console.warn(`Sign post 224`);
           })
           .catch(err => {
             setLoading(false);
@@ -233,6 +256,7 @@ export default function save() {
         let downloadURL;
         try {
           downloadURL = await getDownloadURL((await task).ref);
+          console.warn(`Sign post 261`);
         } catch {
           (err: any) => console.error(`error in getting download URL: ${err}`);
         }
@@ -240,15 +264,15 @@ export default function save() {
         const postsRef = collection(db, 'posts');
         addDoc(postsRef, {
           auth: {
-            displayName: auth.currentUser?.displayName,
-            uid: auth.currentUser?.uid,
+            displayName: auth?.currentUser?.displayName ?? null,
+            uid: auth?.currentUser?.uid ?? null,
           },
           createdAt: serverTimestamp(), // TODO: Isn't this handled automatically, serverside?
           comments: comments.length > 0 ? comments : null,
           rating: selectedUserRating,
           isSeasonal: isSeasonal,
           productsUsed: productsDropdownValue,
-          downloadURL: downloadURL,
+          downloadURL: downloadURL ?? null,
           // Only include if location services are permitted?
           geolocation: {
             lat: lat,
@@ -260,7 +284,15 @@ export default function save() {
           },
         })
           .then(res => {
-            setSnackbarMessage(`Posted successfully!`);
+            console.warn(`Sign post 289`);
+
+            router.replace({
+              pathname: '/home',
+              params: {
+                snackbarMessage: `Image uploaded successfully`,
+              },
+            });
+            // setSnackbarMessage(`Posted successfully!`);
           })
           .catch(err => {
             setSnackbarMessage(`Error posting! ${err}`);
@@ -276,19 +308,11 @@ export default function save() {
             .then(async res => {
               const blob = await res.blob();
 
-              if (blob !== null) {
-                console.log(`blob: ${JSON.stringify(blob)}`);
+              console.log(
+                `BlobArr (expected falsy): ${blobArr ? true : false}`
+              );
 
-                console.log(
-                  `Before entering blobArr ternary. blobArr truthiness: ${
-                    blobArr ? true : false
-                  }`
-                );
-
-                blobArr
-                  ? setBlobArr([...blobArr, blob]) // Probably origin of 'cannot convert null'
-                  : setBlobArr([blob]); // Probably origin of 'cannot convert null'
-              }
+              setBlobArr(prev => [...prev, blob]);
             })
             .catch(err => {
               setLoading(false);
@@ -299,16 +323,20 @@ export default function save() {
 
         // const uploadFiles = async (files: Blob[]) => {
 
-        const promises = [];
+        console.warn(`Before promises`);
 
+        const promises = [];
         for (const file of blobArr) {
+          console.warn(`inside blobArr iter fn`);
           const fileName = file.name;
           const storageRef = ref(storage, fileName);
 
           const uploadTask = uploadBytes(storageRef, file);
           promises.push(uploadTask);
+          console.warn(`end of blobArr iter fn`);
         }
 
+        console.warn(`Before promise all`);
         await Promise.all(promises)
           .then(res => console.log(`I think it all worked?\n${res}`))
           .catch(err => {
@@ -316,20 +344,26 @@ export default function save() {
             setSnackbarMessage(err);
           });
 
-        console.log('Files uploaded successfully');
+        router.replace({
+          pathname: '/home',
+          params: {
+            snackbarMessage: `${imgUris.length} files uploaded successfully`,
+          },
+        });
+        // setSnackbarMessage('All files uploaded successfully');
+
         // };
         // uploadFiles(blobArr);
       }
     } catch (error) {
-      console.error(error);
+      setLoading(false);
+      console.error(`Error in image upload: ${error}`);
     }
   };
 
   const handleShowModal = () => setModalVisible(true);
 
   const handleHideModal = () => setModalVisible(false);
-
-  const onDismissSnackBar = () => setSnackbarVisible(false);
 
   // TODO Possibly saving post as posts/userPosts
   // posts contains user id, then click through that id to find all posts by that id
@@ -347,17 +381,32 @@ export default function save() {
       // };
       // uploadFiles(blobArr);
     }
+
+    console.log(`blobArr: ${JSON.stringify(blobArr, null, 2)}`);
   }, [blobArr]);
 
   useEffect(() => {
     console.log(`fieldValue: ${JSON.stringify(fieldValue, null, 2)}`);
   }, [fieldValue]);
 
+  const [selected, setSelected] = useState([]);
+  const [hairTypeHelpVisible, setHairTypeHelpVisible] = useState(false);
+
+  const data = [
+    { key: '1', value: 'Mobiles', disabled: true },
+    { key: '2', value: 'Appliances' },
+    { key: '3', value: 'Cameras' },
+    { key: '4', value: 'Computers', disabled: true },
+    { key: '5', value: 'Vegetables' },
+    { key: '6', value: 'Diary Products' },
+    { key: '7', value: 'Drinks' },
+  ];
+
   return (
     <ScrollView>
       <Stack.Screen
         options={{
-          title: `saving`,
+          title: ``,
         }}
       />
 
@@ -402,75 +451,46 @@ export default function save() {
 
             {/* <StarRating /> */}
 
-            {/* Hair type */}
+            <List.Item
+              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+              style={{ width: '100%' }}
+              title='This client is seasonal'
+              right={props => (
+                <Switch
+                  value={isSeasonal}
+                  onChange={() => setIsSeasonal(!isSeasonal)}
+                />
+              )}
+            />
+            <MultipleSelectList
+              setSelected={(val: any) => setSelected(val)}
+              data={productsList}
+              save='value'
+              placeholder='Products used'
+              label='Products used'
+              // onSelect={() => alert(selected)}
+            />
             <DropDownPicker
+              placeholder='Hair type'
+              listMode='MODAL'
               theme={!theme.dark ? 'LIGHT' : 'DARK'}
               badgeDotColors={badgeColors}
-              items={items}
+              items={hairTypeLabels}
               max={2}
               mode='BADGE'
               multiple={true}
               open={dropdownOpen}
-              placeholder='Hair type'
-              setItems={setItems}
-              setOpen={() =>
-                setDropdownVisible({ ...dropdownVisible, hairType: true })
-              }
+              setItems={setHairTypeLabels}
+              setOpen={() => {
+                // setDropdownVisible({ ...dropdownVisible, hairType: true });
+                // handleShowModal();
+                setDropdownOpen(true);
+                console.log(`Opened hair type dropdown`);
+              }}
+              onClose={() => setDropdownOpen(false)}
               setValue={setDropdownValue}
               value={dropdownValue}
             />
-            <DropDownPicker
-              style={{ marginVertical: 20 }}
-              theme={!theme.dark ? 'LIGHT' : 'DARK'}
-              badgeDotColors={badgeColors}
-              items={productsList}
-              mode='BADGE'
-              multiple={true}
-              open={productsDropdownOpen}
-              placeholder='Products used'
-              setItems={setProductsList}
-              setOpen={setProductsDropdownOpen}
-              setValue={setProductsDropdownValue}
-              value={productsDropdownValue}
-            />
-            {/* FORMULA
-            formulaUsed: {
-              type: 'aveda', // may also have RedKen, ... It will be selected from an array in dropdown
-              // Could be anywhere from 1-n items
-              quantities: [
-                {
-                  amount: 0, // number
-                  unit: 'g', // string
-                  product: 'productFoo', //string
-                },
-              ],
-            }
-            */}
-            {/* FORMULA A */}
-            {/* <View style={{ flexDirection: 'row' }}>
-              <TextInput
-                keyboardType='decimal-pad'
-                onChangeText={text =>
-                  // TODO If the Float comes out as having a trailing decimal but no mantissa after field is de-sele
-                  setFieldValue({ ...fieldValue, quantity: parseFloat(text) })
-                }
-              />
-              <Picker
-                style={{ width: 100 }}
-                selectedValue={fieldValue}
-                onValueChange={itemValue => {
-                  setFieldValue({ ...fieldValue, unit: itemValue });
-                  console.log(
-                    `parsing thorugh units: ${JSON.stringify(itemValue, null, 2)}`
-                  );
-                }}
-              >
-                {['grams', 'ml', 'oz'].map(element => (
-                  <Picker.Item label={element} value={element} />
-                ))}
-              </Picker>
-            </View> */}
-            {/* FORMULA Bs */}
             {/* TODO If you press the same thing twice, it removes it from the list */}
             <DropDownPicker
               style={{ marginVertical: 20 }}
@@ -486,10 +506,13 @@ export default function save() {
               multiple={true}
               max={1}
               placeholder='Type of formula'
+              listMode='SCROLLVIEW'
               onSelectItem={() => setFormulaDropdownOpen(false)}
             />
+
             <TextInput
-              style={{ width: '100%' }}
+              style={styles.inputComponent}
+              mode='outlined'
               label={`Formula description (like 'Base: 30g 6n 10g IB 8g oy...')`}
               keyboardType='default'
               onChangeText={text => setFormulaDescription(text)}
@@ -499,12 +522,22 @@ export default function save() {
             />
             {/* TODO Plus button here that adds another field */}
             <TextInput
-              style={{ width: '100%' }}
+              style={styles.inputComponent}
+              mode='outlined'
               theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
               label='Salon'
               value={salon}
               onChangeText={text => setSalon(text)}
               multiline={true}
+            />
+            <TextInput
+              style={styles.inputComponent}
+              mode='outlined'
+              label='Comments'
+              value={comments}
+              onChangeText={text => setComments(text)}
+              multiline={true}
+              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
             />
             <Portal>
               <Modal visible={modalVisible} onDismiss={handleHideModal}>
@@ -513,11 +546,13 @@ export default function save() {
                     justifyContent: 'center',
                     alignItems: 'center',
                     flexWrap: 'wrap',
+                    flexDirection: 'row',
                   }}
                 >
                   {/* TODO Optimize by using aither SVG or putting Skeleton on them until loaded FULLY */}
-                  {hairTypeImages.map(image => (
+                  {hairTypesConst.map(image => (
                     <TouchableOpacity
+                      style={{ width: '33%' }}
                       key={image.id}
                       onPress={() => {
                         dropdownValue === null
@@ -526,13 +561,11 @@ export default function save() {
                         setModalVisible(false);
                       }}
                     >
-                      {/* <Image key={image.id} source={{ uri: '' }} /> */}
-                      <Button
-                        mode='contained'
-                        contentStyle={{ padding: 20, margin: 10 }}
-                      >
-                        {image.id}
-                      </Button>
+                      <Image
+                        key={image.id}
+                        source={image?.uri}
+                        style={{ height: 100, width: 100 }}
+                      />
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -540,28 +573,11 @@ export default function save() {
               </Modal>
             </Portal>
             {/* TODO: Maybe make its down component? */}
-            <List.Item
-              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-              style={{ width: '100%' }}
-              title='This client is seasonal'
-              right={props => (
-                <Switch
-                  value={isSeasonal}
-                  onChange={() => setIsSeasonal(!isSeasonal)}
-                />
-              )}
-            />
-            <TextInput
-              style={{ width: '100%' }}
-              label='Comments'
-              value={comments}
-              onChangeText={text => setComments(text)}
-              multiline={true}
-              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-            />
           </Pressable>
-          <Pressable
-            onPress={() => Keyboard.dismiss()}
+
+          {/* POST/UPLOAD BUTTON */}
+
+          <View
             style={{
               paddingVertical: 30,
               paddingHorizontal: 10,
@@ -584,23 +600,36 @@ export default function save() {
                 ? 'Posted successfully!'
                 : null}
             </Button>
-            <Snackbar
-              visible={snackbarVisible}
-              duration={3000}
-              onDismiss={onDismissSnackBar}
-              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-              action={{
-                label: 'OK',
-                onPress: () => {
-                  // Do something
-                },
-              }}
-            >
-              {snackbarMessage}
-            </Snackbar>
-          </Pressable>
+          </View>
+
+          <Snackbar
+            visible={snackbarVisible}
+            duration={3000}
+            onDismiss={() => setSnackbarVisible(false)}
+            theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+            action={{
+              label: 'OK',
+              onPress: () => {
+                setSnackbarVisible(false);
+              },
+            }}
+          >
+            {snackbarMessage}
+          </Snackbar>
         </KeyboardAvoidingView>
       </ModalProvider>
     </ScrollView>
   );
 }
+
+// inputsContainer
+const styles = StyleSheet.create({
+  inputsContainer: {
+    paddingVertical: 20,
+    width: '100%',
+  },
+  inputComponent: {
+    marginVertical: 10,
+    width: '100%',
+  },
+});

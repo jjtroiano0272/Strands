@@ -210,14 +210,15 @@ export default function Add() {
                   marginRight: 16, // Adjust as needed for spacing
                   backgroundColor: 'white', // Adjust card styling as needed
                   borderRadius: 8, // Add borderRadius for card appearance
-                  shadowColor: '#000',
-                  shadowOffset: {
-                    width: 0,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 3.84,
-                  elevation: 5,
+                  // shadowColor: '#000',
+                  // shadowOffset: {
+                  //   width: 0,
+                  //   height: 2,
+                  // },
+                  // shadowOpacity: 0.25,
+                  // shadowRadius: 3.84,
+                  // elevation: 5,
+                  
                 }}
               >
                 <Image

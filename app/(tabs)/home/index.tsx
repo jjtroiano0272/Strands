@@ -46,6 +46,7 @@ import {
   List,
   MD3DarkTheme,
   MD3LightTheme,
+  Snackbar,
 } from 'react-native-paper';
 import {
   useAnimatedGestureHandler,
@@ -59,12 +60,15 @@ import {
   springConfig,
 } from '../../../constants/constants';
 import RippleButton from '~/components/RippleButton';
-import { Link, Stack, useRouter } from 'expo-router';
+import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '~/context/auth';
 import { UserContext } from '~/context/UserContext';
 import { useHaptics } from '~/hooks/useHaptics';
 
 const Feed = () => {
+  const searchParams = useLocalSearchParams() as { snackbarMessage: string };
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+
   const theme = useTheme();
   const dimensions = useWindowDimensions();
   const top = useSharedValue(dimensions.height / 1.5);
@@ -487,6 +491,10 @@ const Feed = () => {
     );
   }, [sortByField]);
 
+  useEffect(() => {
+    searchParams?.snackbarMessage && setSnackbarVisible(true);
+  }, [searchParams]);
+
   return (
     <>
       {/* <Stack.Screen options={{ headerShown: false }} /> */}
@@ -495,6 +503,8 @@ const Feed = () => {
           // https://reactnavigation.org/docs/headers#setting-the-header-title
           // title: 'My home',
           headerTitle: '',
+          headerStyle: { backgroundColor: 'transparent' },
+
           // https://reactnavigation.org/docs/headers#adjusting-header-styles
           // headerStyle: { backgroundColor: '#f4511e' },
           // headerTintColor: '#fff',
@@ -516,7 +526,7 @@ const Feed = () => {
                 flexDirection: 'row',
                 justifyContent: 'center',
                 alignItems: 'center',
-                // backgroundColor: 'transparent',
+                backgroundColor: 'transparent',
               }}
             >
               {/* <Badge
@@ -793,7 +803,12 @@ const Feed = () => {
         </>
       ) : (
         <View
-          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'transparent',
+          }}
         >
           <RippleButton
             style={{ padding: 50, borderRadius: 100 }}
@@ -804,7 +819,18 @@ const Feed = () => {
         </View>
       )}
 
-      <View style={{ alignItems: 'flex-end' }}></View>
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        // action={{
+        //   label: 'OK',
+        //   onPress: () => {
+        //     // Do something
+        //   },
+        // }}
+      >
+        {searchParams?.snackbarMessage}
+      </Snackbar>
     </>
   );
 };
