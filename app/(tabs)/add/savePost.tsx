@@ -271,6 +271,7 @@ export default function save() {
         try {
           downloadURL = await getDownloadURL((await task).ref);
           console.warn(`Sign post 261`);
+          console.log(`downloadURL: ${JSON.stringify(downloadURL, null, 2)}`);
         } catch {
           (err: any) => console.error(`error in getting download URL: ${err}`);
         }
@@ -336,6 +337,7 @@ export default function save() {
               pathname: '/home',
               params: {
                 snackbarMessage: `Image uploaded successfully`,
+                seePostID: res.id,
               },
             });
             // setSnackbarMessage(`Posted successfully!`);
@@ -770,6 +772,7 @@ export default function save() {
             }}
           >
             <Button
+              disabled={clientName?.length < 1}
               mode='contained'
               onPress={handleImageUpload}
               loading={loading}

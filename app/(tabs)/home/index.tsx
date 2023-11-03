@@ -67,7 +67,10 @@ import { useHaptics } from '~/hooks/useHaptics';
 import { FirebaseError } from 'firebase/app';
 
 const Feed = () => {
-  const searchParams = useLocalSearchParams() as { snackbarMessage: string };
+  const searchParams = useLocalSearchParams() as {
+    snackbarMessage: string;
+    seePostID?: string;
+  };
   const [snackbarVisible, setSnackbarVisible] = useState(false);
 
   const theme = useTheme();
@@ -971,12 +974,20 @@ NEWEST POST
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
-        // action={{
-        //   label: 'OK',
-        //   onPress: () => {
-        //     // Do something
-        //   },
-        // }}
+        action={{
+          label: 'See Post',
+          onPress: () => {
+            // Do something
+            console.log(`new post id: ${searchParams?.seePostID}`);
+            // searchParams?.seePostID
+            router.push({
+              pathname: '/home/[post]',
+              params: {
+                docId: searchParams?.seePostID,
+              },
+            });
+          },
+        }}
       >
         {printErrors()}
       </Snackbar>

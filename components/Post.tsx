@@ -146,6 +146,9 @@ export default function Post({
     // If it has been longer than 60 seconds, use elapseTimeinMinutes
     // let result: { number: number; unit: string };
     let result;
+    if (elapsedTimeInSeconds < 60) {
+      result = 'Just now';
+    }
     if (elapsedTimeInSeconds >= 60) {
       result = { number: elapsedTimeInMinutes, unit: 'minutes' };
     }
@@ -296,12 +299,32 @@ export default function Post({
     );
   }, []);
 
-  const returnCreatedAt = (date: string |Date | {"seconds": number; "nanoseconds": number}) => {
-    if (date instanceof Date) {
-      return 'date';
-      
-    } else if (typeof date === 'string') {
-      return 'string';
+  type Timestamp = { seconds: number; nanoseconds: number };
+  const returnCreatedAt = (date: string | Timestamp | Date) => {
+    if (typeof date === 'string' || date instanceof Timestamp) {
+      const timestamp =
+        typeof date === 'string' ? Date.parse(date) / 1000 : date.seconds;
+      const elapsedTime = getElapsedTime(timestamp);
+
+      if (elapsedTime instanceof Object) {
+        return (
+          <Text style={{ color: theme.colors.text, fontSize: 10 }}>
+            {`${elapsedTime?.number} ${elapsedTime?.unit} ago`}
+          </Text>
+        );
+      } else if (typeof elapsedTime === 'string') {
+        return (
+          <Text style={{ color: theme.colors.text, fontSize: 10 }}>
+            Just now
+          </Text>
+        );
+      }
+
+      return (
+        <Text style={{ color: theme.colors.text, fontSize: 10 }}>
+          {/* {elapsedTime?. && `${elapsedTime?.number} ${elapsedTime?.unit} ago`} */}
+        </Text>
+      );
     }
   };
 
