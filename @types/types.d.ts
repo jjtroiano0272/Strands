@@ -187,3 +187,4 @@ declare module 'react-particle-backgrounds' {
   function foo(): void;
   export = foo;
 }
+

@@ -1,7 +1,12 @@
+import MultiSelect from 'react-native-multiple-select';
+import algoliasearch from 'algoliasearch/lite';
+import { InstantSearch } from 'react-instantsearch-core';
+import { SearchBox } from 'react-instantsearch';
 import { Picker } from '@react-native-picker/picker';
 import * as Haptics from 'expo-haptics';
 import Swiper from 'react-native-swiper';
 import SwiperNumber from 'react-native-swiper';
+import Carousel from 'react-native-reanimated-carousel';
 import {
   View,
   Text,
@@ -12,6 +17,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Dimensions,
   StyleSheet,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
@@ -30,6 +36,9 @@ import {
   Checkbox,
   Switch,
   List,
+  Chip,
+  MD3Colors,
+  Icon,
 } from 'react-native-paper';
 // Firebase 8 imports
 // import firebase from 'firebase';
@@ -47,6 +56,10 @@ import {
   doc,
   DocumentReference,
   Timestamp,
+  query,
+  where,
+  QuerySnapshot,
+  DocumentData,
 } from 'firebase/firestore';
 import {
   MultipleSelectList,
@@ -59,7 +72,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { firebase } from '@react-native-firebase/auth';
 import { ScrollView } from 'react-native-gesture-handler';
 // Local Imports
-import { auth, db, firebaseConfig } from '~/firebaseConfig';
+import { auth, clientsRef, db, firebaseConfig } from '~/firebaseConfig';
 import StarRating from '~/components/StarRating';
 import {
   labels as labelsConst,
@@ -253,6 +266,7 @@ export default function save() {
         //   addDoc(userPostsRef, newPost);
         // })();
 
+        const postsRef = collection(db, 'posts');
         let downloadURL;
         try {
           downloadURL = await getDownloadURL((await task).ref);
@@ -261,26 +275,58 @@ export default function save() {
           (err: any) => console.error(`error in getting download URL: ${err}`);
         }
 
-        const postsRef = collection(db, 'posts');
-        addDoc(postsRef, {
-          auth: {
-            displayName: auth?.currentUser?.displayName ?? null,
-            uid: auth?.currentUser?.uid ?? null,
+        // doc ids of posts to remove
+
+        /* DB Strucutre:
+        
+          X clientID: string,
+          X comments: string,
+          X createdAt: string? (serverTimestamp),
+          X postedBy: string,
+          X rating: number,
+          X geolocation: {
+            lat: string,
+            lng: string
           },
-          createdAt: serverTimestamp(), // TODO: Isn't this handled automatically, serverside?
+          X lastUpdatedAt: string,
+          X formulaUsed: {
+            description: string,
+            type: string
+          },
+          media: {
+            images: string[],
+            videos: string[]
+          },
+          X salonSeenAt: string
+         */
+
+        addDoc(postsRef, {
+          // auth: {
+          //   displayName: auth?.currentUser?.displayName ?? null,
+          //   uid: auth?.currentUser?.uid ?? null,
+          // },
+          postedBy: auth?.currentUser?.uid ?? null,
+          clientID: (clientName && clientIDTemp) ?? null,
           comments: comments.length > 0 ? comments : null,
+          createdAt: serverTimestamp(), // TODO: Isn't this handled automatically, serverside?
+          lastUpdatedAt: serverTimestamp(),
           rating: selectedUserRating,
           isSeasonal: isSeasonal,
           productsUsed: productsDropdownValue,
           downloadURL: downloadURL ?? null,
+          salonSeenAt: salon,
           // Only include if location services are permitted?
           geolocation: {
             lat: lat,
             lng: lng,
           },
-          formula: {
-            type: formulaValue, // e.g. AVEDA, Redken, etc.
+          formulaUsed: {
             description: formulaDescription, // Actual user comments about the formulation
+            type: formulaValue?.join(' ') ?? null, // e.g. AVEDA, Redken, etc.
+          },
+          media: {
+            images: [downloadURL ?? null],
+            videos: [null],
           },
         })
           .then(res => {
@@ -402,6 +448,52 @@ export default function save() {
     { key: '7', value: 'Drinks' },
   ];
 
+  const [clientName, setClientName] = useState('');
+  const [clientSearchResults, setClientSearchResults] =
+    useState<DocumentData[]>();
+
+  const searchClientName = async (name: string) => {
+    let results: DocumentData[] = [];
+
+    const firstNameQuery = await getDocs(
+      query(clientsRef, where('firstName', '>=', name))
+    );
+    const lastNameQuery = await getDocs(
+      query(clientsRef, where('lastName', '<=', name))
+    );
+
+    const [firstNameResults, lastNameResults] = await Promise.all([
+      firstNameQuery,
+      lastNameQuery,
+    ]);
+    firstNameResults.forEach(doc => {
+      results.push({ ...doc.data(), clientID: doc.id });
+    });
+
+    lastNameResults.forEach(doc => {
+      results.push({ ...doc.data(), clientID: doc.id });
+    });
+
+    console.log(
+      `searching clients results (${results.length} found): ${JSON.stringify(
+        results,
+        null,
+        2
+      )}`
+    );
+
+    setClientSearchResults(results);
+    return results;
+  };
+
+  useEffect(() => {
+    searchClientName(clientName);
+  }, [clientName]);
+
+  const [clientIDTemp, setClientIDTemp] = useState<string>('');
+  const [clientAutofilled, setClientAutofilled] = useState(false); // Use for when selecting the client from the list that pops up
+
+  const [showFoundClients, setShowFoundClients] = useState(true);
   return (
     <ScrollView>
       <Stack.Screen
@@ -426,17 +518,16 @@ export default function save() {
           >
             {/* <Stack.Screen options={{ headerShown: false }} /> */}
             {/* {imgUri && <Image source={{ uri: imgUri, height: 300, width: 300 }} />} */}
-            <Swiper
+
+            {/* <Swiper
               // containerStyle={{ flex: 1 }}
               // swiper: { flex: 1, aspectRatio: 1, borderRadius: 30 },
+              style={{}}
               containerStyle={{ height: 300, width: '100%', borderRadius: 30 }}
-              onIndexChanged={(index: number) => {
-                try {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                } catch (error) {
-                  console.error(`Haptic error in onIndexChanged`);
-                }
-              }}
+              // onIndexChanged={() =>
+              //   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+              // }
+              // showsButtons
             >
               {imgUris
                 ? imgUris.map((uri, index) => (
@@ -447,9 +538,102 @@ export default function save() {
                     />
                   ))
                 : null}
-            </Swiper>
+            </Swiper> */}
+
+            <Carousel
+              mode='parallax'
+              loop={imgUris?.length > 1 ? true : false}
+              width={Dimensions.get('window').width * 0.9}
+              height={300}
+              // autoPlay={true}
+              data={imgUris}
+              pagingEnabled={true}
+              scrollAnimationDuration={1000}
+              onSnapToItem={index => console.log('current index:', index)}
+              renderItem={({ item }) => (
+                <Image
+                  source={{ uri: item }}
+                  style={{ height: '100%', width: '100%' }}
+                />
+              )}
+            />
 
             {/* <StarRating /> */}
+
+            <TextInput
+              style={styles.inputComponent}
+              mode='outlined'
+              left={
+                clientAutofilled && (
+                  <TextInput.Icon icon='account-check' color='green' />
+                )
+              }
+              right={
+                clientAutofilled && (
+                  <TextInput.Icon
+                    icon='close-circle'
+                    color={MD3Colors.neutral0}
+                    onPress={() => {
+                      setClientName('');
+                      setClientIDTemp('');
+                      setClientAutofilled(false);
+                    }}
+                  />
+                )
+              }
+              label='Client name' // later on, name OR phone number
+              keyboardType='default'
+              textColor={clientAutofilled ? 'green' : undefined}
+              onChangeText={text => {
+                setClientName(text);
+                setShowFoundClients(true);
+              }}
+              // onChangeText={text => searchClientName(text)}
+              value={clientName}
+              theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+            />
+            {/* Showing potential client matches */}
+            {clientSearchResults?.length &&
+              clientName &&
+              showFoundClients &&
+              clientSearchResults?.slice(0, 2).map((clientFound, index) => (
+                <List.Item
+                  key={index}
+                  onPress={() => {
+                    setClientName(
+                      `${clientFound.firstName} ${clientFound.lastName}`
+                    );
+                    setClientIDTemp(clientFound.clientID);
+                    setClientAutofilled(true);
+                    setShowFoundClients(false);
+                  }}
+                  theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
+                  style={{
+                    width: '100%',
+                    backgroundColor: MD3LightTheme.colors.onPrimary,
+                    marginVertical: 5,
+                    borderRadius: 10,
+                  }}
+                  title={`${clientFound.firstName} ${clientFound.lastName}`}
+                />
+              ))}
+            {/* <MultiSelect
+              items={[
+                {
+                  id: '92iijs7yta',
+                  name: 'Ondo',
+                },
+                {
+                  id: 'a0s0a8ssbsd',
+                  name: 'Ogun',
+                },
+                {},
+              ]}
+              uniqueKey='id'
+              onSelectedItemsChange={items =>
+                console.log(JSON.stringify(items, null, 2))
+              }
+            /> */}
 
             <List.Item
               theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}

@@ -6,12 +6,12 @@ import BottomSheet, {
 import * as Haptics from 'expo-haptics';
 import {
   useState,
-  useEffect,
   useCallback,
   useRef,
   useMemo,
   useContext,
   useReducer,
+  useEffect,
 } from 'react';
 import { MotiView } from 'moti';
 import {
@@ -64,6 +64,7 @@ import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '~/context/auth';
 import { UserContext } from '~/context/UserContext';
 import { useHaptics } from '~/hooks/useHaptics';
+import { FirebaseError } from 'firebase/app';
 
 const Feed = () => {
   const searchParams = useLocalSearchParams() as { snackbarMessage: string };
@@ -113,7 +114,7 @@ const Feed = () => {
   const [sortingBy, setSortingBy] = useState<
     string | number | Timestamp | null
   >(null);
-  const [errors, setErrors] = useState<unknown>();
+  const [errors, setErrors] = useState<FirebaseError | unknown>();
   const [refreshingData, setRefreshingData] = useState(false);
 
   const hapticFeedbackLight = useHaptics('light');
@@ -126,73 +127,77 @@ const Feed = () => {
     try {
       let postData: (FireBasePost | DocumentData)[] = [];
       let userData: { [key: string]: any }[] = [];
+      const dataSet: (FireBasePost | DocumentData)[] = [];
 
       // GET POSTS
-      const recentPosts = query(postsRef, orderBy('createdAt', 'desc'));
-      const postSnap = await getDocs(recentPosts);
-      postSnap.forEach(post => {
-        postData.push({ ...post.data(), docId: post.id }); // Push the modified object into the list array
-        // console.log(
-        //   `{...post.data(), docId: post.id}: ${JSON.stringify(
-        //     { ...post.data(), docId: post.id },
-        //     null,
-        //     2
-        //   )}`
-        // );
+      const recentPostsQuery = query(postsRef, orderBy('createdAt', 'desc'));
+      const recentPostsSnap = await getDocs(recentPostsQuery);
+      // recentPostsSnap?.forEach(post => {
+      //   postData.push({ ...post.data(), docId: post.id }); // Push the modified object into the list array
+      // });
+
+      postData = recentPostsSnap.docs.map(doc => {
+        return { ...doc.data(), docId: doc.id };
       });
 
       // Construction
-      const postsNewRef = query(postsRef);
-      const userRef = query(usersRef);
-      const postsSnapshot = await getDocs(postsNewRef);
-      const dataSet: (FireBasePost | DocumentData)[] = [];
+      const postsQuery = query(postsRef);
+      const userQuery = query(usersRef);
+      const postsSnapshot = await getDocs(postsQuery);
 
-      postsSnapshot.forEach(async postSnapshot => {
-        try {
-          const postedBySnapshot = await getDoc(
-            doc(db, 'users', postSnapshot?.data().postedBy)
-          );
-
-          // console.log(
-          //   `FULL RECORD IS: ${JSON.stringify(
-          //     { ...postSnapshot.data(), ...postedBySnapshot.data() },
-          //     null,
-          //     2
-          //   )}`
-          // );
-
-          const fullPostRecord = {
-            ...postSnapshot.data(),
-            ...postedBySnapshot.data(),
-            docId: postSnapshot.id,
-          };
-
-          dataSet.push(fullPostRecord);
-        } catch (error) {
-          console.error(error);
-        }
+      let getCoffee = postsSnapshot.docs.map(doc => {
+        return { ...doc.data(), docId: doc.id };
       });
+      console.log(`getCoffee: ${JSON.stringify(getCoffee, null, 2)}`);
+
+      const falsyOnes = getCoffee.filter(
+        post => !Object.keys(post).includes('clientID')
+      );
+      console.log(
+        `With no client ID ${falsyOnes.length}: ${JSON.stringify(
+          falsyOnes,
+          null,
+          2
+        )}`
+      );
+      // add this clientID: QcVBbwlqvOyH6r5TMr0R
+      //  on this doc: z0fHYrjxX5WNgMPry8sw
+
+      // postsSnapshot?.forEach(async postSnapshot => {
+      //   const postedBySnapshot = await getDoc(
+      //     doc(db, 'users', postSnapshot?.data().postedBy)
+      //   );
+      //   // console.log(
+      //   //   `postedBySnapshot: ${JSON.stringify(postedBySnapshot, null, 2)}`
+      //   // );
+
+      //   const fullPostRecord = {
+      //     ...postSnapshot.data(),
+      //     ...postedBySnapshot.data(),
+      //     docId: postSnapshot.id,
+      //   };
+      //   // console.log(
+      //   //   `fullPostRecord: ${JSON.stringify(fullPostRecord, null, 2)}`
+      //   // );
+
+      //   dataSet.push(fullPostRecord);
+      // });
+      dataSet.push(getCoffee);
+
       // res.json(dataSet);
 
       // Construction
-
       const users = query(usersRef);
       const usersSnap = await getDocs(users);
-      usersSnap.forEach(user => {
+      usersSnap?.forEach(user => {
         userData.push({ ...user.data(), userId: user.id });
       });
 
       postData.forEach(post => {
-        if (userData.includes({ userId: '62JdkwCUwpXoDNMBZjXwN1F2eKzI' })) {
-          console.log(`includes: ${post.userId}`);
-        }
-
         const userIdToFind = post.postedByDisplayName;
-        const doesUserExist = userData.some(
-          user => user.userId === userIdToFind
-        );
+        const userExists = userData.some(user => user.userId === userIdToFind);
 
-        if (doesUserExist) {
+        if (userExists) {
           const userRef = doc(db, 'users', post.postedByDisplayName);
           let result;
           getDoc(userRef).then(foo => {
@@ -206,20 +211,18 @@ const Feed = () => {
         }
       });
 
-      if (userData.includes({ userId: '62JdkwCUwpXoDNMBZjXwN1F2eKzI' })) {
-        console.log(`found something`);
-      }
-
       // The keys of tempVar are the index of that POST and its DAta
-      const tempVar = { ...postData, ...userData };
-      console.log(`tempVar[0]: ${JSON.stringify(tempVar[0], null, 2)}`);
+      // const tempVar = { ...postData, ...userData };
+      // console.log(`tempVar[0]: ${JSON.stringify(tempVar[0], null, 2)}`);
 
-      setPosts(dataSet);
-    } catch (error) {
-      console.error(`Error getting document: \x1b[33m${error}`);
-      console.log(`Coal mine canary!`);
+      setPosts(getCoffee);
+    } catch (error: FirebaseError | unknown) {
+      // console.error(`Error getting document: \x1b[33m${error}`);
+      // console.log(`Coal mine canary!`);
+      console.error(`other error in fetchPostsData`);
 
       setErrors(error);
+      setSnackbarVisible(true);
     }
   };
 
@@ -296,8 +299,8 @@ const Feed = () => {
 
       if (a && b && property) {
         try {
-          aValue = a[a.indexOf(property)]; // parse through a for the element whose value is `property`
-          bValue = b[b.indexOf(property)];
+          aValue = a[0]; // parse through a for the element whose value is `property`
+          bValue = b[0];
         } catch (error) {
           console.error(`sortByProperty done fucked up somewhere`);
         }
@@ -398,11 +401,11 @@ const Feed = () => {
       }
 
       // TODO: Might need some catches in here just for data type mismatches
-      if (filterName) {
-        result = posts?.filter(
-          item => Object.keys(item).indexOf(filterName) !== -1
-        );
-      }
+      // if (filterName) {
+      //   result = posts?.filter(
+      //     item => Object.keys(item).indexOf(filterName) !== -1
+      //   );
+      // }
 
       setPosts(result);
     } catch (error) {
@@ -494,6 +497,149 @@ const Feed = () => {
   useEffect(() => {
     searchParams?.snackbarMessage && setSnackbarVisible(true);
   }, [searchParams]);
+
+  const printErrors = (): string => {
+    if (searchParams?.snackbarMessage) {
+      return searchParams.snackbarMessage;
+    } else if (
+      !String(errors).includes('Missing or insufficient permissions')
+    ) {
+      return JSON.stringify(errors);
+    } else {
+      return JSON.stringify(errors);
+    }
+  };
+
+  useEffect(() => {
+    postListSorted &&
+      console.log(
+        `postListSorted[0]: ${JSON.stringify(postListSorted[0], null, 2)}`
+      );
+  }, []);
+
+  /* 
+  log from FEED
+  {
+    "clientID": "8QB7KH3XZQsXMgPP4NQ4",
+    "lastUpdatedAt": {
+      "seconds": 1686769310,
+      "nanoseconds": 483000000
+    },
+    "geolocation": {
+      "lng": "-81.7681",
+      "lat": "26.3572"
+    },
+    "comments": "I recently had a client with resistant gray hair, but I was able to lift it to the perfect cool-toned shade with ease. Using neutral and warm colors, I created a natural, dimensional look. To tame their frizzy hair, I used an anti-frizz product that left their hair looking hydrated and smooth.",
+    "createdAt": "2023-04-25T02:09:10.726Z",
+    "media": {
+      "images": [
+        "https://loremflickr.com/300/300/hairStylist?lock=40966",
+        "https://loremflickr.com/300/300/hairStylist?lock=95125",
+        "https://loremflickr.com/300/300/hairStylist?lock=43109",
+        "https://loremflickr.com/300/300/hairStylist?lock=23480"
+      ],
+      "videos": []
+    },
+    "rating": 1,
+    "postedBy": "HxoLuTKSOHwwmjEQN1y6Gi3y5b8J",
+    "formulaUsed": {
+      "description": "25g Light Brown + 25g Ash Blonde + 25g 10 Vol Developer",
+      "type": "goldwell"
+    },
+    "docId": "BXwGXsiuG5wWK9gkSQog"
+  },
+
+   LOG  postData in Post: {
+  "formulaUsed": {
+    "description": "30g Medium Brown + 10g Red + 40g 20 Vol Developer",
+    "type": "aveda"
+  },
+  "salonSeenAt": "Gigi",
+  "comments": "I had a client with very resistant gray hair, but I was able to achieve the perfect shade with ease. They wanted a cool-toned look, so I used a combination of neutral and warm colors to create a natural look. To add dimension, I used chunky highlights that looked amazing. To tame frizz, I used a hydrating product that left their hair looking sleek.",
+  "clientID": "2TjfBy6r0ND0HDQHcik5",
+  "geolocation": {
+    "lat": "26.7567",
+    "lng": "-81.7913"
+  },
+  "lastUpdatedAt": {
+    "seconds": 1686769310,
+    "nanoseconds": 235000000
+  },
+  "postedBy": "D0KINx0BdAmdYdsMWI1bRzCiGQCy",
+  "rating": 1,
+  "media": {
+    "images": [
+      "https://loremflickr.com/300/300/hairStylist?lock=7911&random=5"
+    ]
+  },
+  "createdAt": "2023-04-28T18:48:10.764Z",
+  "docId": "6xOlNfFkWF7cYyBhGu7u"
+}
+
+ LOG  postData in Post: {
+  "createdAt": "2023-04-12T02:07:19.222Z",
+  "clientID": "7wZF7fDWF9eWs0XHRaVZ",
+  "lastUpdatedAt": {
+    "seconds": 1686769310,
+    "nanoseconds": 453000000
+  },
+  "media": {
+    "videos": [],
+    "images": [
+      "https://loremflickr.com/300/300/hairStylist?lock=84360",
+      "https://loremflickr.com/300/300/hairStylist?lock=87780"
+    ]
+  },
+  "rating": 1,
+  "geolocation": {
+    "lng": "-81.7427",
+    "lat": "26.6229"
+  },
+  "postedBy": "l954qYwwbl3kD4RokCzk3IYnqu2p",
+  "formulaUsed": {
+    "type": "aveda",
+    "description": "50g Dark Brown + 20g Ash Brown + 20g 30 Vol Developer"
+  },
+  "comments": "Has a round face that needs a cut that will elongate and slim her features",
+  "docId": "BFpUdqR1wNv8UvXOdFOI"
+}
+
+NEWEST POST
+ LOG  postData in Post: {
+  "isSeasonal": false,
+  "formulaUsed": {
+    "type": null,
+    "description": ""
+  },
+  "rating": null,
+  "downloadURL": "https://firebasestorage.googleapis.com/v0/b/yelpforhairstylists.appspot.com/o/post%2FeEXdyCMr0pgwCb8qNHeD11NT2683%2F0.9v3154m0ise?alt=media&token=c9f02cbf-527c-4add-a8ae-e514d177caa1",
+  "postedBy": "eEXdyCMr0pgwCb8qNHeD11NT2683",
+  "productsUsed": null,
+  "geolocation": {
+    "lat": 26.3307433019128,
+    "lng": -81.75408994864647
+  },
+  "clientID": "aRWRMqZehIxcc4IZzDyU",
+  "media": {
+    "images": [
+      "https://firebasestorage.googleapis.com/v0/b/yelpforhairstylists.appspot.com/o/post%2FeEXdyCMr0pgwCb8qNHeD11NT2683%2F0.9v3154m0ise?alt=media&token=c9f02cbf-527c-4add-a8ae-e514d177caa1"
+    ],
+    "videos": [
+      null
+    ]
+  },
+  "salonSeenAt": "",
+  "lastUpdatedAt": {
+    "seconds": 1698771509,
+    "nanoseconds": 839000000
+  },
+  "createdAt": {
+    "seconds": 1698771509,
+    "nanoseconds": 839000000
+  },
+  "comments": null,
+  "docId": "zXntngjZkHol5jf3gmVd"
+  */
 
   return (
     <>
@@ -803,12 +949,15 @@ const Feed = () => {
         </>
       ) : (
         <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: 'transparent',
-          }}
+          style={[
+            {
+              flex: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'transparent',
+            },
+            styles.RTCViewFix,
+          ]}
         >
           <RippleButton
             style={{ padding: 50, borderRadius: 100 }}
@@ -829,7 +978,7 @@ const Feed = () => {
         //   },
         // }}
       >
-        {searchParams?.snackbarMessage}
+        {printErrors()}
       </Snackbar>
     </>
   );
@@ -899,5 +1048,16 @@ const styles = StyleSheet.create({
   card: {
     width: 190,
     margin: 2,
+  },
+  RTCViewFix: {
+    elevation: 0,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    backgroundColor: 'white',
   },
 });

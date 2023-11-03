@@ -282,6 +282,29 @@ export default function Post({
     // console.log(`onPressArgs: ${JSON.stringify(onPressArgs, null, 2)}`);
   }, []);
 
+  useEffect(() => {
+    const possibleIDs = [
+      '6xOlNfFkWF7cYyBhGu7u',
+      'BFpUdqR1wNv8UvXOdFOI',
+      'zXntngjZkHol5jf3gmVd', // new one
+    ];
+
+    possibleIDs.forEach(
+      id =>
+        postData?.docId === id &&
+        console.log(`postData in Post: ${JSON.stringify(postData, null, 2)}`)
+    );
+  }, []);
+
+  const returnCreatedAt = (date: string |Date | {"seconds": number; "nanoseconds": number}) => {
+    if (date instanceof Date) {
+      return 'date';
+      
+    } else if (typeof date === 'string') {
+      return 'string';
+    }
+  };
+
   return (
     <Card
       style={styles.card}
@@ -399,13 +422,21 @@ export default function Post({
                   style={{ color: 'white', fontSize: 20, fontWeight: 'bold' }}
                 >
                   <Skeleton colorMode='light'>
-                    {postData?.createdAt ? (
+                    {/* Difference in createdAt data past/new
+                    
+                    old
+                      "createdAt": "2023-04-12T02:07:19.222Z",
+
+                    new
+                    "createdAt": {
+                      "seconds": 1698771509,
+                      "nanoseconds": 839000000
+                    },
+                    */}
+                    {postData?.createdAt &&
+                      returnCreatedAt(postData?.createdAt)}
+                    {/* {postData?.createdAt ? (
                       <Text style={{ color: theme.colors.text, fontSize: 10 }}>
-                        {/* {postData?.createdAt &&
-                                `${getElapsedTime(postData?.createdAt as number)?.number} ${
-                                  getElapsedTime(postData?.createdAt as number)?.unit
-                                } ago`} */}
-                        {/* TODO: Offload to its own component and include the handling cases for like '1 weeks ago' */}
                         {postData?.createdAt &&
                           `${
                             getElapsedTime(
@@ -417,7 +448,7 @@ export default function Post({
                             )?.unit
                           } ago`}
                       </Text>
-                    ) : null}
+                    ) : null} */}
                   </Skeleton>
                 </Text>
               </View>
@@ -471,6 +502,7 @@ const styles = StyleSheet.create({
     width: 190,
     margin: 2,
     marginVertical: 10,
+    backgroundColor: 'white',
   },
   swiperContainer: {
     height: 300,
@@ -480,4 +512,15 @@ const styles = StyleSheet.create({
   // swiperImage: { width: '100%', height: '100%' },
   swiperImage: { width: 200, height: 200 },
   wrapper: { width: 200, height: 200 },
+  RTCViewFix: {
+    elevation: 0,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    backgroundColor: 'white',
+  },
 });

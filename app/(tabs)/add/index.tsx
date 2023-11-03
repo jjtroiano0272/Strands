@@ -142,6 +142,17 @@ export default function Add() {
     }
   };
 
+  let fooVideoURI;
+  const handleRecordVideo = async () => {
+    camera
+      ?.recordAsync({ maxDuration: 3 })
+      .then(arg => {
+        fooVideoURI = arg.uri;
+        console.log(`recorded video URI: ${fooVideoURI}`);
+      })
+      .catch(error => console.error(`Whoops in video: ${error}`));
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -203,23 +214,16 @@ export default function Add() {
             {selectedImages.map((uri, index) => (
               <View
                 key={index}
-                style={{
-                  flexDirection: 'row',
-                  width: 100, // Set the width of each card
-                  height: 100,
-                  marginRight: 16, // Adjust as needed for spacing
-                  backgroundColor: 'white', // Adjust card styling as needed
-                  borderRadius: 8, // Add borderRadius for card appearance
-                  // shadowColor: '#000',
-                  // shadowOffset: {
-                  //   width: 0,
-                  //   height: 2,
-                  // },
-                  // shadowOpacity: 0.25,
-                  // shadowRadius: 3.84,
-                  // elevation: 5,
-                  
-                }}
+                style={[
+                  {
+                    flexDirection: 'row',
+                    width: 100, // Set the width of each card
+                    height: 100,
+                    marginRight: 16, // Adjust as needed for spacing
+                    borderRadius: 8, // Add borderRadius for card appearance
+                  },
+                  styles.RTCViewFix,
+                ]}
               >
                 <Image
                   key={index}
@@ -250,6 +254,11 @@ export default function Add() {
             ))}
           </ScrollView>
         )}
+
+        {/* <Image
+          source={{ uri: fooVideoURI }}
+          style={{ width: '100%', height: '100%' }}
+        /> */}
 
         <View
           style={{
@@ -282,6 +291,7 @@ export default function Add() {
               icon={'camera'}
               iconColor={theme.colors.primary}
               onPress={handleTakePicture}
+              onLongPress={handleRecordVideo}
               size={42}
             />
             <IconButton
@@ -331,4 +341,15 @@ const styles = StyleSheet.create({
   },
   button: {},
   text: {},
+  RTCViewFix: {
+    elevation: 0,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    backgroundColor: 'white',
+  },
 });
