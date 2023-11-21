@@ -301,18 +301,32 @@ export default function save() {
           X salonSeenAt: string
          */
 
+        let newlyAddedClientID: string;
+        const docRef = await addDoc(clientsRef, {
+          createdAt: serverTimestamp(),
+          firstName: clientName.split(' ')[0],
+          lastName: clientName.split(' ')[1],
+          isSeasonal: isSeasonal,
+          gender: null,
+          phoneNumber: null,
+        });
+        // .then(doc => (newlyAddedClientID = doc.id))
+        // .catch(err => console.error(`Error in adding new client: ${err}`));
+
+        console.log(`docRef.id: ${JSON.stringify(docRef.id, null, 2)}`);
+
         addDoc(postsRef, {
           // auth: {
           //   displayName: auth?.currentUser?.displayName ?? null,
           //   uid: auth?.currentUser?.uid ?? null,
           // },
           postedBy: auth?.currentUser?.uid ?? null,
-          clientID: (clientName && clientIDTemp) ?? null,
+          clientID: existingClientID.length > 0 ? existingClientID : docRef?.id,
           comments: comments.length > 0 ? comments : null,
           createdAt: serverTimestamp(), // TODO: Isn't this handled automatically, serverside?
           lastUpdatedAt: serverTimestamp(),
           rating: selectedUserRating,
-          isSeasonal: isSeasonal,
+          // isSeasonal: isSeasonal,
           productsUsed: productsDropdownValue,
           downloadURL: downloadURL ?? null,
           salonSeenAt: salon,
@@ -403,6 +417,8 @@ export default function save() {
         // };
         // uploadFiles(blobArr);
       }
+
+      setPostSuccess(false);
     } catch (error) {
       setLoading(false);
       console.error(`Error in image upload: ${error}`);
@@ -488,14 +504,25 @@ export default function save() {
     return results;
   };
 
+  const clearAutofilledClient = () => {
+    setClientName('');
+    setExistingClientID('');
+    setClientAutofilled(false);
+  };
+
   useEffect(() => {
     searchClientName(clientName);
   }, [clientName]);
 
-  const [clientIDTemp, setClientIDTemp] = useState<string>('');
+  const [existingClientID, setExistingClientID] = useState<string>('');
   const [clientAutofilled, setClientAutofilled] = useState(false); // Use for when selecting the client from the list that pops up
 
   const [showFoundClients, setShowFoundClients] = useState(true);
+
+  useEffect(() => {
+    console.warn(`Do you see this when just navigating to tab?`);
+  }, [!postSuccess]);
+
   return (
     <ScrollView>
       <Stack.Screen
@@ -575,11 +602,7 @@ export default function save() {
                   <TextInput.Icon
                     icon='close-circle'
                     color={MD3Colors.neutral0}
-                    onPress={() => {
-                      setClientName('');
-                      setClientIDTemp('');
-                      setClientAutofilled(false);
-                    }}
+                    onPress={clearAutofilledClient}
                   />
                 )
               }
@@ -605,7 +628,7 @@ export default function save() {
                     setClientName(
                       `${clientFound.firstName} ${clientFound.lastName}`
                     );
-                    setClientIDTemp(clientFound.clientID);
+                    setExistingClientID(clientFound.clientID);
                     setClientAutofilled(true);
                     setShowFoundClients(false);
                   }}

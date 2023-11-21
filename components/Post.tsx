@@ -292,11 +292,11 @@ export default function Post({
       'zXntngjZkHol5jf3gmVd', // new one
     ];
 
-    possibleIDs.forEach(
-      id =>
-        postData?.docId === id &&
-        console.log(`postData in Post: ${JSON.stringify(postData, null, 2)}`)
-    );
+    // possibleIDs.forEach(
+    //   id =>
+    //     postData?.docId === id &&
+    //     console.log(`postData in Post: ${JSON.stringify(postData, null, 2)}`)
+    // );
   }, []);
 
   type Timestamp = { seconds: number; nanoseconds: number };
@@ -327,6 +327,8 @@ export default function Post({
       );
     }
   };
+
+  // console.log(`postData: ${JSON.stringify(postData, null, 2)}`);
 
   return (
     <Card

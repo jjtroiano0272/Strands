@@ -1,3 +1,4 @@
+import log from 'loglevel';
 import { Skeleton } from 'moti/skeleton';
 import BottomSheet, {
   BottomSheetModal,
@@ -28,12 +29,14 @@ import { FireBasePost } from '../../../@types/types';
 import Post from '../../../components/Post';
 import {
   DocumentData,
+  FieldValue,
   Timestamp,
   doc,
   getDoc,
   getDocs,
   orderBy,
   query,
+  updateDoc,
 } from 'firebase/firestore';
 // import { fetchUser } from '../../redux/actions';
 import { PASS, USER, db, postsRef, usersRef } from '~/firebaseConfig';
@@ -67,6 +70,10 @@ import { useHaptics } from '~/hooks/useHaptics';
 import { FirebaseError } from 'firebase/app';
 
 const Feed = () => {
+  const myAuth = useAuth();
+  const firebaseAuth = getAuth();
+  const userCtx = useContext(UserContext);
+
   const searchParams = useLocalSearchParams() as {
     snackbarMessage: string;
     seePostID?: string;
@@ -77,6 +84,9 @@ const Feed = () => {
   const dimensions = useWindowDimensions();
   const top = useSharedValue(dimensions.height / 1.5);
   const router = useRouter();
+  const [dark, toggle] = useReducer(s => !s, true);
+  // Per the tutorial
+  const [order, setOrder] = useState<'ASC' | 'DESC'>('ASC');
 
   const [postsSavedByUser, setPostsSavedByUser] = useState<string[]>();
   const [posts, setPosts] = useState<FireBasePost[]>();
@@ -91,6 +101,9 @@ const Feed = () => {
   const [selectedFilters, setSelectedFilters] = useState<string[] | null>(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
+  const [selectedFilterFoo, setSelectedFilterFoo] = useState<string>('');
+  const [sortByField, setSortByField] = useState<string>();
   // let bottomSheetModalRef: any;
 
   const [pressed, setPressed] = useState<boolean | null>(null);
@@ -130,72 +143,55 @@ const Feed = () => {
     try {
       let postData: (FireBasePost | DocumentData)[] = [];
       let userData: { [key: string]: any }[] = [];
-      const dataSet: (FireBasePost | DocumentData)[] = [];
+      // const dataSet: (FireBasePost | DocumentData)[] = [];
 
       // GET POSTS
-      const recentPostsQuery = query(postsRef, orderBy('createdAt', 'desc'));
-      const recentPostsSnap = await getDocs(recentPostsQuery);
       // recentPostsSnap?.forEach(post => {
       //   postData.push({ ...post.data(), docId: post.id }); // Push the modified object into the list array
       // });
+      const recentPostsQuery = query(postsRef, orderBy('createdAt', 'desc'));
+      const recentPostsSnap = await getDocs(recentPostsQuery);
+      postData = recentPostsSnap?.docs?.map(doc => {
+        // console.log(`inside postData Loop`);
 
-      postData = recentPostsSnap.docs.map(doc => {
+        // console.log(
+        //   `createdAt: ${JSON.stringify(
+        //     { ...doc.data().createdAt, docId: doc.id },
+        //     null,
+        //     2
+        //   )}`
+        // );
+
         return { ...doc.data(), docId: doc.id };
       });
 
-      // Construction
-      const postsQuery = query(postsRef);
-      const userQuery = query(usersRef);
-      const postsSnapshot = await getDocs(postsQuery);
-
-      let getCoffee = postsSnapshot.docs.map(doc => {
-        return { ...doc.data(), docId: doc.id };
-      });
-      console.log(`getCoffee: ${JSON.stringify(getCoffee, null, 2)}`);
-
-      const falsyOnes = getCoffee.filter(
-        post => !Object.keys(post).includes('clientID')
-      );
-      console.log(
-        `With no client ID ${falsyOnes.length}: ${JSON.stringify(
-          falsyOnes,
-          null,
-          2
-        )}`
-      );
-      // add this clientID: QcVBbwlqvOyH6r5TMr0R
-      //  on this doc: z0fHYrjxX5WNgMPry8sw
-
-      // postsSnapshot?.forEach(async postSnapshot => {
-      //   const postedBySnapshot = await getDoc(
-      //     doc(db, 'users', postSnapshot?.data().postedBy)
+      // GET Posts
+      // const postsQuery = query(postsRef);
+      // const postsSnapshot = await getDocs(recentPostsQuery);
+      // let postsDocs = postsSnapshot?.docs?.map(doc => {
+      //   console.log(
+      //     `{ ...doc.data(), docId: doc.id }: ${JSON.stringify(
+      //       { ...doc.data(), docId: doc.id },
+      //       null,
+      //       2
+      //     )}`
       //   );
-      //   // console.log(
-      //   //   `postedBySnapshot: ${JSON.stringify(postedBySnapshot, null, 2)}`
-      //   // );
-
-      //   const fullPostRecord = {
-      //     ...postSnapshot.data(),
-      //     ...postedBySnapshot.data(),
-      //     docId: postSnapshot.id,
-      //   };
-      //   // console.log(
-      //   //   `fullPostRecord: ${JSON.stringify(fullPostRecord, null, 2)}`
-      //   // );
-
-      //   dataSet.push(fullPostRecord);
+      //   return { ...doc.data(), docId: doc.id };
       // });
-      dataSet.push(getCoffee);
+      // dataSet.push(postData);
+      // 6ReiiEmL9B39kzCUdnzY
+      // Lk1qdYiKLHFYtVPqIagF
 
       // res.json(dataSet);
 
-      // Construction
+      // GET Users
       const users = query(usersRef);
       const usersSnap = await getDocs(users);
       usersSnap?.forEach(user => {
         userData.push({ ...user.data(), userId: user.id });
       });
 
+      // I think this block is mostly useless
       postData.forEach(post => {
         const userIdToFind = post.postedByDisplayName;
         const userExists = userData.some(user => user.userId === userIdToFind);
@@ -214,15 +210,12 @@ const Feed = () => {
         }
       });
 
-      // The keys of tempVar are the index of that POST and its DAta
-      // const tempVar = { ...postData, ...userData };
-      // console.log(`tempVar[0]: ${JSON.stringify(tempVar[0], null, 2)}`);
-
-      setPosts(getCoffee);
+      // Previously: setPosts(postsDocs);
+      setPosts(postData);
     } catch (error: FirebaseError | unknown) {
       // console.error(`Error getting document: \x1b[33m${error}`);
       // console.log(`Coal mine canary!`);
-      console.error(`other error in fetchPostsData`);
+      console.error(`other error in fetch Data`);
 
       setErrors(error);
       setSnackbarVisible(true);
@@ -379,7 +372,6 @@ const Feed = () => {
     // setPosts(result);
   };
 
-  const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
   const handlePresentModalPress = () => {
     bottomSheetModalRef?.current?.present();
   };
@@ -428,16 +420,17 @@ const Feed = () => {
       )
     : posts;
 
-  useEffect(() => {
-    fetchPostsData();
-    // fetchUserData();
-  }, []);
-
-  const [count, setCount] = React.useState(0);
-
-  const myAuth = useAuth();
-  const firebaseAuth = getAuth();
-  const userCtx = useContext(UserContext);
+  const printErrors = (): string => {
+    if (searchParams?.snackbarMessage) {
+      return searchParams.snackbarMessage;
+    } else if (
+      !String(errors).includes('Missing or insufficient permissions')
+    ) {
+      return JSON.stringify(errors);
+    } else {
+      return JSON.stringify(errors);
+    }
+  };
 
   const handleDebugLogin = () => {
     console.log('debug logging in');
@@ -455,15 +448,6 @@ const Feed = () => {
       });
   };
 
-  const [dark, toggle] = useReducer(s => !s, true);
-
-  const colorMode = dark ? 'dark' : 'light';
-
-  const Spacer = ({ height = 16 }) => <View style={{ height }} />;
-
-  // Per the tutorial
-  const [selectedFilterFoo, setSelectedFilterFoo] = useState<string>('');
-  const [order, setOrder] = useState<'ASC' | 'DESC'>('ASC');
   const toggleOrder = () => {
     const newOrder = order === 'ASC' ? 'DESC' : 'ASC';
     setOrder(newOrder);
@@ -476,173 +460,85 @@ const Feed = () => {
       .includes(selectedFilterFoo?.toLowerCase());
   });
 
-  const [sortByField, setSortByField] = useState<string>();
   const postListSorted = postListFiltered?.sort((a, b) => {
     if (order === 'ASC') {
-      return a?.title?.localeCompare(b.title);
+      // console.log(`a: ${JSON.stringify(a, null, 2)}`);
+      // console.log(`b: ${JSON.stringify(b, null, 2)}`);
+
+      return a?.createdAt;
     }
-    return b?.title?.localeCompare(a.title);
+    return b?.createdAt;
   });
   // const postListSorted = postListFiltered;
 
   useEffect(() => {
-    console.log(
-      `selectedFilterFoo: ${JSON.stringify(selectedFilterFoo, null, 2)}`
-    );
+    fetchPostsData();
+    // fetchUserData();
+  }, [refreshing]);
+
+  useEffect(() => {
+    // console.log(
+    //   `selectedFilterFoo: ${JSON.stringify(selectedFilterFoo, null, 2)}`
+    // );
   }, [selectedFilterFoo]);
 
   useEffect(() => {
-    console.log(
-      `sorting by: ${JSON.stringify(sortByField, null, 2)}, ${order}`
-    );
+    // console.log(
+    //   `sorting by: ${JSON.stringify(sortByField, null, 2)}, ${order}`
+    // );
   }, [sortByField]);
 
   useEffect(() => {
     searchParams?.snackbarMessage && setSnackbarVisible(true);
   }, [searchParams]);
 
-  const printErrors = (): string => {
-    if (searchParams?.snackbarMessage) {
-      return searchParams.snackbarMessage;
-    } else if (
-      !String(errors).includes('Missing or insufficient permissions')
-    ) {
-      return JSON.stringify(errors);
-    } else {
-      return JSON.stringify(errors);
-    }
-  };
-
   useEffect(() => {
-    postListSorted &&
-      console.log(
-        `postListSorted[0]: ${JSON.stringify(postListSorted[0], null, 2)}`
-      );
+    // postListSorted &&
+    //   console.log(
+    //     `postListSorted[0]: ${JSON.stringify(postListSorted[0], null, 2)}`
+    //   );
   }, []);
 
-  /* 
-  log from FEED
-  {
-    "clientID": "8QB7KH3XZQsXMgPP4NQ4",
-    "lastUpdatedAt": {
-      "seconds": 1686769310,
-      "nanoseconds": 483000000
-    },
-    "geolocation": {
-      "lng": "-81.7681",
-      "lat": "26.3572"
-    },
-    "comments": "I recently had a client with resistant gray hair, but I was able to lift it to the perfect cool-toned shade with ease. Using neutral and warm colors, I created a natural, dimensional look. To tame their frizzy hair, I used an anti-frizz product that left their hair looking hydrated and smooth.",
-    "createdAt": "2023-04-25T02:09:10.726Z",
-    "media": {
-      "images": [
-        "https://loremflickr.com/300/300/hairStylist?lock=40966",
-        "https://loremflickr.com/300/300/hairStylist?lock=95125",
-        "https://loremflickr.com/300/300/hairStylist?lock=43109",
-        "https://loremflickr.com/300/300/hairStylist?lock=23480"
-      ],
-      "videos": []
-    },
-    "rating": 1,
-    "postedBy": "HxoLuTKSOHwwmjEQN1y6Gi3y5b8J",
-    "formulaUsed": {
-      "description": "25g Light Brown + 25g Ash Blonde + 25g 10 Vol Developer",
-      "type": "goldwell"
-    },
-    "docId": "BXwGXsiuG5wWK9gkSQog"
-  },
+  useEffect(() => {
+    console.log(`all posts: `);
 
-   LOG  postData in Post: {
-  "formulaUsed": {
-    "description": "30g Medium Brown + 10g Red + 40g 20 Vol Developer",
-    "type": "aveda"
-  },
-  "salonSeenAt": "Gigi",
-  "comments": "I had a client with very resistant gray hair, but I was able to achieve the perfect shade with ease. They wanted a cool-toned look, so I used a combination of neutral and warm colors to create a natural look. To add dimension, I used chunky highlights that looked amazing. To tame frizz, I used a hydrating product that left their hair looking sleek.",
-  "clientID": "2TjfBy6r0ND0HDQHcik5",
-  "geolocation": {
-    "lat": "26.7567",
-    "lng": "-81.7913"
-  },
-  "lastUpdatedAt": {
-    "seconds": 1686769310,
-    "nanoseconds": 235000000
-  },
-  "postedBy": "D0KINx0BdAmdYdsMWI1bRzCiGQCy",
-  "rating": 1,
-  "media": {
-    "images": [
-      "https://loremflickr.com/300/300/hairStylist?lock=7911&random=5"
-    ]
-  },
-  "createdAt": "2023-04-28T18:48:10.764Z",
-  "docId": "6xOlNfFkWF7cYyBhGu7u"
-}
+    posts?.forEach(element => console.log(JSON.stringify(element)));
+  }, [posts]);
 
- LOG  postData in Post: {
-  "createdAt": "2023-04-12T02:07:19.222Z",
-  "clientID": "7wZF7fDWF9eWs0XHRaVZ",
-  "lastUpdatedAt": {
-    "seconds": 1686769310,
-    "nanoseconds": 453000000
-  },
-  "media": {
-    "videos": [],
-    "images": [
-      "https://loremflickr.com/300/300/hairStylist?lock=84360",
-      "https://loremflickr.com/300/300/hairStylist?lock=87780"
-    ]
-  },
-  "rating": 1,
-  "geolocation": {
-    "lng": "-81.7427",
-    "lat": "26.6229"
-  },
-  "postedBy": "l954qYwwbl3kD4RokCzk3IYnqu2p",
-  "formulaUsed": {
-    "type": "aveda",
-    "description": "50g Dark Brown + 20g Ash Brown + 20g 30 Vol Developer"
-  },
-  "comments": "Has a round face that needs a cut that will elongate and slim her features",
-  "docId": "BFpUdqR1wNv8UvXOdFOI"
-}
+  function convertToServerTimestamp(dateString: string): FieldValue {
+    const date = new Date(dateString);
+    return Timestamp.fromDate(date);
+  }
+  const tempFunction = async () => {
+    let postsToUpdate: DocumentData[] = [];
+    const q = query(postsRef);
+    const snap = await getDocs(q);
+    snap?.docs?.map(doc => {
+      const dateString = doc?.data()?.createdAt;
+      const dateTimestamp = new Date(dateString).getTime();
+      const referenceTimestamp = new Date('2023-07-20T09:31:59.461Z').getTime();
 
-NEWEST POST
- LOG  postData in Post: {
-  "isSeasonal": false,
-  "formulaUsed": {
-    "type": null,
-    "description": ""
-  },
-  "rating": null,
-  "downloadURL": "https://firebasestorage.googleapis.com/v0/b/yelpforhairstylists.appspot.com/o/post%2FeEXdyCMr0pgwCb8qNHeD11NT2683%2F0.9v3154m0ise?alt=media&token=c9f02cbf-527c-4add-a8ae-e514d177caa1",
-  "postedBy": "eEXdyCMr0pgwCb8qNHeD11NT2683",
-  "productsUsed": null,
-  "geolocation": {
-    "lat": 26.3307433019128,
-    "lng": -81.75408994864647
-  },
-  "clientID": "aRWRMqZehIxcc4IZzDyU",
-  "media": {
-    "images": [
-      "https://firebasestorage.googleapis.com/v0/b/yelpforhairstylists.appspot.com/o/post%2FeEXdyCMr0pgwCb8qNHeD11NT2683%2F0.9v3154m0ise?alt=media&token=c9f02cbf-527c-4add-a8ae-e514d177caa1"
-    ],
-    "videos": [
-      null
-    ]
-  },
-  "salonSeenAt": "",
-  "lastUpdatedAt": {
-    "seconds": 1698771509,
-    "nanoseconds": 839000000
-  },
-  "createdAt": {
-    "seconds": 1698771509,
-    "nanoseconds": 839000000
-  },
-  "comments": null,
-  "docId": "zXntngjZkHol5jf3gmVd"
-  */
+      if (dateTimestamp < referenceTimestamp) {
+        console.log(
+          `new one: ${JSON.stringify(
+            convertToServerTimestamp(dateString),
+            null,
+            2
+          )}`
+        );
+        // MONDAY 16:00 LEFT OFF SETTING UP FUNCTION TO CHANGE ALL PREVIOUS STRING DATES TO TIMESTAMP
+        updateDoc(doc.ref, {
+          createdAt: convertToServerTimestamp(dateString),
+        });
+      } else {
+      }
+    });
+
+    console.log(`postsToDelete: ${JSON.stringify(postsToUpdate[0], null, 2)}`);
+
+    // Once found, delete these
+  };
+  tempFunction();
 
   return (
     <>
