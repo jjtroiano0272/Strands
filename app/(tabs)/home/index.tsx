@@ -212,6 +212,8 @@ const Feed = () => {
 
       // Previously: setPosts(postsDocs);
       setPosts(postData);
+
+      // postData.map(post => console.log(post.createdAt.toDate()));
     } catch (error: FirebaseError | unknown) {
       // console.error(`Error getting document: \x1b[33m${error}`);
       // console.log(`Coal mine canary!`);
@@ -460,16 +462,16 @@ const Feed = () => {
       .includes(selectedFilterFoo?.toLowerCase());
   });
 
-  const postListSorted = postListFiltered?.sort((a, b) => {
-    if (order === 'ASC') {
-      // console.log(`a: ${JSON.stringify(a, null, 2)}`);
-      // console.log(`b: ${JSON.stringify(b, null, 2)}`);
+  // const postListSorted = postListFiltered?.sort((a, b) => {
+  //   if (order === 'ASC') {
+  //     // console.log(`a: ${JSON.stringify(a, null, 2)}`);
+  //     // console.log(`b: ${JSON.stringify(b, null, 2)}`); 
 
-      return a?.createdAt;
-    }
-    return b?.createdAt;
-  });
-  // const postListSorted = postListFiltered;
+  //     return a?.createdAt;
+  //   }
+  //   return b?.createdAt;
+  // });
+  const postListSorted = postListFiltered;
 
   useEffect(() => {
     fetchPostsData();
@@ -504,41 +506,6 @@ const Feed = () => {
 
     posts?.forEach(element => console.log(JSON.stringify(element)));
   }, [posts]);
-
-  function convertToServerTimestamp(dateString: string): FieldValue {
-    const date = new Date(dateString);
-    return Timestamp.fromDate(date);
-  }
-  const tempFunction = async () => {
-    let postsToUpdate: DocumentData[] = [];
-    const q = query(postsRef);
-    const snap = await getDocs(q);
-    snap?.docs?.map(doc => {
-      const dateString = doc?.data()?.createdAt;
-      const dateTimestamp = new Date(dateString).getTime();
-      const referenceTimestamp = new Date('2023-07-20T09:31:59.461Z').getTime();
-
-      if (dateTimestamp < referenceTimestamp) {
-        console.log(
-          `new one: ${JSON.stringify(
-            convertToServerTimestamp(dateString),
-            null,
-            2
-          )}`
-        );
-        // MONDAY 16:00 LEFT OFF SETTING UP FUNCTION TO CHANGE ALL PREVIOUS STRING DATES TO TIMESTAMP
-        updateDoc(doc.ref, {
-          createdAt: convertToServerTimestamp(dateString),
-        });
-      } else {
-      }
-    });
-
-    console.log(`postsToDelete: ${JSON.stringify(postsToUpdate[0], null, 2)}`);
-
-    // Once found, delete these
-  };
-  tempFunction();
 
   return (
     <>
