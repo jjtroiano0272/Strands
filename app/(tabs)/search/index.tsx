@@ -424,6 +424,7 @@ const Search = () => {
             >
               {availableFields.map(field => (
                 <Chip
+                  key={field.firebaseField}
                   icon='information'
                   selected={
                     field.firebaseField === selectedSearchField ? true : false

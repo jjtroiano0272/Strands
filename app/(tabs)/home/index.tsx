@@ -87,6 +87,7 @@ const Feed = () => {
   const [dark, toggle] = useReducer(s => !s, true);
   // Per the tutorial
   const [order, setOrder] = useState<'ASC' | 'DESC'>('ASC');
+  const [dataIsSorted, setDataIsSorted] = useState(false);
 
   const [postsSavedByUser, setPostsSavedByUser] = useState<string[]>();
   const [posts, setPosts] = useState<FireBasePost[]>();
@@ -462,16 +463,53 @@ const Feed = () => {
       .includes(selectedFilterFoo?.toLowerCase());
   });
 
-  // const postListSorted = postListFiltered?.sort((a, b) => {
-  //   if (order === 'ASC') {
-  //     // console.log(`a: ${JSON.stringify(a, null, 2)}`);
-  //     // console.log(`b: ${JSON.stringify(b, null, 2)}`); 
+  const sortDataBy = (data: FireBasePost[], sortBy: string) => {
+    const result = data?.sort((a, b) => {
+      if (order === 'ASC') {
+        return a?.sortBy;
+      }
+      return b?.sortBy;
+    });
 
-  //     return a?.createdAt;
-  //   }
-  //   return b?.createdAt;
-  // });
-  const postListSorted = postListFiltered;
+    console.log(
+      `result.slice(0,5): ${JSON.stringify(result.slice(0, 5), null, 2)}`
+    );
+    return result;
+  };
+
+  // sortByField initalizes to undefined
+  let postListSorted;
+  switch (sortByField) {
+    case 'createdAt':
+      console.warn(`Sorting by createdAt`);
+
+      break;
+    case 'isSeasonal':
+      console.warn(`Sorting by seasonal`);
+      postListSorted = sortDataBy(
+        postListFiltered as FireBasePost[],
+        'isSeasonal'
+      );
+      break;
+    case 'productsUsed':
+      console.warn(`Sorting by productsUsed`);
+      break;
+    case 'clientName':
+      console.warn(`Sorting by clientName`);
+      postListSorted = sortDataBy(
+        postListFiltered as FireBasePost[],
+        'clientName'
+      );
+      break;
+    case 'rating':
+      console.warn(`Sorting by rating`);
+      break;
+
+    default:
+      postListSorted = postListFiltered;
+      break;
+  }
+  // const postListSorted = postListFiltered;
 
   useEffect(() => {
     fetchPostsData();
@@ -502,10 +540,13 @@ const Feed = () => {
   }, []);
 
   useEffect(() => {
-    console.log(`all posts: `);
-
-    posts?.forEach(element => console.log(JSON.stringify(element)));
+    // console.log(`all posts: `);
+    // posts?.forEach(element => console.log(JSON.stringify(element)));
   }, [posts]);
+
+  useEffect(() => {
+    console.log(`sortByField: ${sortByField}`);
+  }, [sortByField]);
 
   return (
     <>

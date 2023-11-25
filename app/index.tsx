@@ -333,7 +333,8 @@ export default function LoginPage() {
 
     //   {/* <AnimatedBackground /> */}
     // </Pressable>
-    <Redirect href='(tabs)/home' />
+    // <Redirect href='(tabs)/home' />
+    <Redirect href='(unauth)' />
   );
 }
 
