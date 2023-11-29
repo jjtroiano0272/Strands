@@ -1,22 +1,12 @@
-import { StyleSheet, Text, View } from 'react-native';
-import React, { useState } from 'react';
+import React from 'react';
 import { Redirect, Tabs, useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { getAuth } from 'firebase/auth';
-import { useHaptics } from '~/hooks/useHaptics';
-import { active } from 'd3';
 
 export default () => {
   const iconSize = 24;
   const router = useRouter();
   const currentUserID = getAuth().currentUser?.uid;
-  // const { session, isLoading } = useSession();
-  const [session, isLoading] = useState(true);
-
-  if (!session) {
-    return <Redirect href='/login' />;
-  }
 
   return (
     <Tabs
@@ -30,19 +20,13 @@ export default () => {
         options={{
           headerShown: false,
           tabBarIcon: ({ color }) => (
-            <FontAwesome
-              name='home'
-              size={iconSize}
-              color={color}
-              // onPress={() =>
-              //   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-              // }
-            />
+            <FontAwesome name='home' size={iconSize} color={color} />
           ),
 
           tabBarLabel: 'Home',
         }}
       />
+      <Redirect href='/sign-in' />;
       <Tabs.Screen
         name='search'
         options={{
@@ -82,5 +66,3 @@ export default () => {
     </Tabs>
   );
 };
-
-const styles = StyleSheet.create({});

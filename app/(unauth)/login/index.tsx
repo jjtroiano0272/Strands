@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  Text,
 } from 'react-native';
 import React, { useContext, useEffect, useState } from 'react';
 import {
@@ -156,8 +157,9 @@ export default function Login() {
 
   return (
     <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>
-      <Stack.Screen options={{ headerShown: false }} />
+      <Stack.Screen options={{ headerShown: true }} />
 
+      <Text>UNAUTH/LOGIN</Text>
       <TextInput
         style={styles.input}
         theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}

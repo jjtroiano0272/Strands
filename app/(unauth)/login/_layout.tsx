@@ -7,7 +7,7 @@ const LoginLayout = () => {
     <Stack>
       <Stack.Screen
         name='index'
-        options={{ headerTitle: 'Login', headerShown: false }}
+        options={{ headerTitle: '(unauth)/login', headerShown: false }}
       />
     </Stack>
   );

@@ -6,10 +6,10 @@ const UnauthorizedLayout = () => {
   return (
     <Stack>
       <Stack.Screen
-        name='login'
-        options={{ headerTitle: 'login', headerShown: false }}
+        name='register'
+        options={{ headerTitle: 'unauth root login', headerShown: true }}
       />
-      <Stack.Screen name='register' options={{ headerTitle: 'register' }} />
+      {/* <Stack.Screen name='register' options={{ headerTitle: 'register' }} /> */}
     </Stack>
   );
 };
