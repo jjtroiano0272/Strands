@@ -5,15 +5,10 @@ import {
   ThemeProvider,
 } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Redirect, Slot, SplashScreen, Stack, useRouter } from 'expo-router';
+import { Slot, SplashScreen, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Dimensions, useColorScheme } from 'react-native';
 // Import the functions you need from the SDKs you need
-import { AntDesign } from '@expo/vector-icons';
-import { Provider as AuthProvider } from '../context/auth';
-import { TouchableOpacity } from 'react-native-gesture-handler';
-import { Button, IconButton } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { SessionProvider } from '~/context/expoDocsCtx';
 // import thunk from 'redux-thunk';
 
@@ -30,7 +25,7 @@ export {
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: 'index',
+  initialRouteName: 'sign-in',
 };
 
 export default function RootLayout() {
@@ -70,6 +65,7 @@ function RootLayoutNav() {
 
   // const route = useRoute();
   // const showFilterButton = route.name === 'feed'; // Set to true only on the 'feed' route
+  // const { session, isLoading } = useSession();
 
   return (
     // TODO Combine these two into one Provider

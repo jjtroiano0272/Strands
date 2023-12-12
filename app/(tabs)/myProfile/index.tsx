@@ -1,3 +1,4 @@
+import { UserContext } from '~/context/UserContext';
 import { Camera, CameraCapturedPicture, CameraType } from 'expo-camera';
 import { MediaLibraryPermissionResponse } from 'expo-image-picker';
 // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -7,7 +8,7 @@ import { Gyroscope, Magnetometer } from 'expo-sensors';
 import { Accelerometer } from 'expo-sensors';
 import { Stack } from 'expo-router';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 
 // import { Haptics } from '~/constants/constants';
 import * as Haptics from 'expo-haptics';
@@ -21,6 +22,7 @@ import {
   Alert,
   ScrollView,
   useWindowDimensions,
+  SafeAreaView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -42,6 +44,7 @@ import { getAuth } from 'firebase/auth';
 import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
 import {
   Avatar,
+  Button,
   IconButton,
   MD3DarkTheme,
   MD3LightTheme,
@@ -55,25 +58,47 @@ import {
 } from 'react-native-reanimated';
 import { UserProfile } from '~/@types/types';
 import Divider from '~/components/Divider';
-import { SOCIAL_MEDIA_ICONS } from '~/constants/constants';
+import { SOCIAL_MEDIA_ICON_SIZE } from '~/constants/constants';
+import { Skeleton } from 'moti/skeleton';
+import { MotiView } from 'moti';
+import { useAuth } from '~/context/auth';
+import { useSession } from '~/context/expoDocsCtx';
 
 const MyProfilePage = () => {
   const router = useRouter();
   const theme = useTheme();
   const auth = getAuth();
-  const uid = auth.currentUser?.uid;
+  const userCtx = useContext(UserContext);
+  const currentUserID = auth.currentUser?.uid;
   const [data, setData] = useState<{
     user?: UserProfile;
     posts?: DocumentData[];
   }>();
   const [userPosts, setUserPosts] = useState<DocumentData[]>();
+  const myAuth = useAuth();
 
   const fetchUserData = async () => {
-    if (!uid) return;
+    if (!currentUserID) return;
+
+    // pIsRHW945EW2ZJuSxxSFsqY7Hki1 UID received
+    console.log(`auth: ${JSON.stringify(auth, null, 2)}`);
+    console.log(
+      `auth?.currentUser: ${JSON.stringify(auth?.currentUser, null, 2)}`
+    );
 
     try {
-      const userRef = doc(db, 'users', uid as string);
+      const userRef = doc(db, 'users', currentUserID);
       const userSnap = await getDoc(userRef);
+      // Dec 3, 14:40: userSnap.data() was undefined when logging
+      // Maybe my UID isn't actually registered in the DB rn...
+      console.log(`currentUserID: ${JSON.stringify(currentUserID, null, 2)}`);
+      console.log(`userSnap: ${JSON.stringify(userSnap, null, 2)}`);
+      if (userSnap.exists()) {
+        console.log('Document data:', userSnap.data());
+      } else {
+        // userSnap.data() will be undefined in this case
+        console.log('No such document!');
+      }
 
       // if (userSnap.exists()) {
       //   setData({ ...data, user: userSnap.data() as UserProfile });
@@ -84,16 +109,17 @@ const MyProfilePage = () => {
 
       // get user's posts
       const postsRef = collection(db, 'posts');
-      const q = query(
+      const postsQuery = query(
         postsRef,
         where('auth.uid', '==', auth?.currentUser?.uid)
         // orderBy('createdAt')
       );
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await getDocs(postsQuery);
       const postsData: DocumentData[] = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       }));
+      console.log(`postsData: ${JSON.stringify(postsData, null, 2)}`);
 
       // Compound query for recent activity
       // const recentActivityRef = collection(db, 'posts');
@@ -133,7 +159,7 @@ const MyProfilePage = () => {
   };
 
   // NotjustDev Parallax
-  const { width, height } = useWindowDimensions();
+  const { width: deviceWidth, height: deviceHeight } = useWindowDimensions();
   const IMAGE_OFFSET = 100;
   const PI = Math.PI;
   const HALF_PI = PI / 2;
@@ -246,8 +272,8 @@ const MyProfilePage = () => {
       setImageUrl(uri);
       console.log(`new downloadURL: ${JSON.stringify(downloadURL)}`);
 
-      if (uid) {
-        await updateDoc(doc(db, 'users', uid), {
+      if (currentUserID) {
+        await updateDoc(doc(db, 'users', currentUserID), {
           profileImage: downloadURL,
         }).then(res =>
           setUploadStatus({ ...uploadStatus, profileImage: 'success' })
@@ -362,6 +388,25 @@ const MyProfilePage = () => {
     }
   };
 
+  const renderProfileImage = () => {
+    if (uploadStatus?.profileImage === 'success') {
+      return imageUrl as string;
+    } else if (uploadStatus?.profileImage === undefined) {
+      // Return some skeleton element otherwise...this might require all other returns to turn into the uri-containing object to work.
+      return 'https://unsplash.it/300';
+    } else {
+      return data?.user?.profileImage;
+    }
+  };
+
+  const sessionCtx = useSession();
+  const handleLogout = () => {
+    console.warn('logging user out...');
+    // myAuth?.signOut();
+    // userCtx?.setIsLoggedIn(false);
+    sessionCtx?.signOut();
+  };
+
   useEffect(() => {
     const gyroscopeSubscription = Gyroscope.addListener(gyroscopeData => {
       setGyroscopeData(gyroscopeData);
@@ -385,111 +430,201 @@ const MyProfilePage = () => {
 
   useEffect(() => {
     console.log(`\x1b[32muser data: ${JSON.stringify(data, null, 2)}`);
+    console.log(`auth: ${JSON.stringify(auth, null, 2)}`);
+
+    console.log(
+      `data.user.profileImage: ${JSON.stringify(
+        data?.user?.profileImage,
+        null,
+        2
+      )}`
+    );
+
+    console.log(`deviceHeight: ${JSON.stringify(deviceHeight, null, 2)}`);
+
+    /* 
+    auth: {
+      "currentUser": {
+        "uid": "pIsRHW945EW2ZJuSxxSFsqY7Hki1",
+        "email": "jtroianofau@gmail.com",
+        "emailVerified": false,
+        "isAnonymous": false,
+        "providerData": [
+          {
+            "providerId": "password",
+            "uid": "jtroianofau@gmail.com",
+            "displayName": null,
+            "email": "jtroianofau@gmail.com",
+            "phoneNumber": null,
+            "photoURL": null
+          }
+        ],
+        "stsTokenManager": {
+          "refreshToken": "AMf-vBwTLvlJt93dYBpYbtU_9Zf6OQfsBjqTLbEReTaJsWIWVc56e3gTHHg00xPuUlsG0V-IeNMIYaCuMNiII9T1EthW4oEJBm_NX4IlS6WxBYywctGNQwBGAE7aKqBqbSMQDL51Mom2HQzNIkaBTDWWtc4NaI1z-doCPd3PJ9CiZythokfgKrz7sivGmgg2c8jwOLbKCdQX2vu8lxrxnXqJjTJZrFaE61kW3nLgdEV4yME5HoW8at0",
+          "accessToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjNhM2JkODk4ZGE1MGE4OWViOWUxY2YwYjdhN2VmZTM1OTNkNDEwNjgiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20veWVscGZvcmhhaXJzdHlsaXN0cyIsImF1ZCI6InllbHBmb3JoYWlyc3R5bGlzdHMiLCJhdXRoX3RpbWUiOjE3MDE2Mjk4NTQsInVzZXJfaWQiOiJwSXNSSFc5NDVFVzJaSnVTeHhTRnNxWTdIa2kxIiwic3ViIjoicElzUkhXOTQ1RVcyWkp1U3h4U0ZzcVk3SGtpMSIsImlhdCI6MTcwMTYyOTg1NCwiZXhwIjoxNzAxNjMzNDU0LCJlbWFpbCI6Imp0cm9pYW5vZmF1QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJqdHJvaWFub2ZhdUBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.H9FcMfhlskA1qz9Na9a-xzbYJJD_eHpb0B1yAVlvqyB7Szc1dHDTQNFgLd-ahoJg1d4_y9duksaZ5O15OnDjdLAOl_AB71hJ8GlPpJ86M4paLfBh4Y3CbGSxL99Zcmahel5a8f1_Gtp-dT-PsCpJ5TH577DyBKN0m9lBUdrZ-gJq6US827mNrrmqo0V1gWlU0YMRzQMfyXlUdUIOOrS2IZtblgy96qj96NXeCzfWXbeC5msRwZYEMFaaUV5egWg2Kl93JCeC3rctQZN_CthZjrpp2c2NUQzJfi_b7Zq11D5SSG2_WbjefAHEeQizzsiPV9RXb07Mn8yV5DtGIfGjow",
+          "expirationTime": 1701633454440
+        },
+        "createdAt": "1688661924388",
+        "lastLoginAt": "1701629854386",
+        ...
+      }
+    }
+    */
   }, []);
 
   return (
-    <>
+    <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Profile image and edit button */}
-
-        <View
-          style={{
-            flexDirection: 'row',
-            // justifyContent: 'space-between',
-            // justifyContent: 'flex-end',
-            // backgroundColor: 'red',
-            // paddingHorizontal: 10,
-          }}
-        >
-          {/* Column 1 */}
-          <View style={{ flex: 0.5, alignItems: 'center' }}></View>
-
-          {/* Column 2 */}
+        <View style={{ height: deviceHeight - styles.container.padding }}>
+          {/* Profile image and edit button */}
           <View
             style={{
-              flex: 2,
-              width: 200,
-              height: 200,
-              borderRadius: 100,
-              overflow: 'hidden',
-              alignItems: 'center',
+              flexDirection: 'row',
+              // justifyContent: 'space-between',
+              // justifyContent: 'flex-end',
+              // backgroundColor: 'red',
+              // paddingHorizontal: 10,
             }}
           >
-            <TouchableOpacity
-              onPress={() => {
-                if (editable) {
-                  handlePickImage();
-                  try {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-                  } catch (error) {
-                    console.error(`Haptic error, myProfile/index:409`);
-                  }
-                }
-              }}
+            {/* Column 1 */}
+            <View style={{ flex: 0.5, alignItems: 'center' }}></View>
+            {/* Column 2 */}
+            <View
               style={{
+                flex: 2,
                 width: 200,
                 height: 200,
                 borderRadius: 100,
-                borderColor: !editable ? undefined : '#ccc',
-                borderWidth: !editable ? undefined : 5,
                 overflow: 'hidden',
+                alignItems: 'center',
               }}
             >
-              <Image
-                source={{
-                  uri:
-                    uploadStatus?.profileImage === 'success'
-                      ? (imageUrl as string)
-                      : data?.user?.profileImage,
+              <TouchableOpacity
+                onPress={() => {
+                  if (editable) {
+                    handlePickImage();
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                    } catch (error) {
+                      console.error(`Haptic error, myProfile/index:409`);
+                    }
+                  }
                 }}
-                style={[
-                  {
-                    flex: 1,
-                    height: undefined,
-                    width: undefined,
-                    transform: [
-                      {
-                        translateX: gyroscopeData.x * 1,
-                      },
-                      {
-                        translateY: gyroscopeData.y * 1,
-                      },
-                    ],
-                  },
-                ]}
-                resizeMode='contain'
+                style={{
+                  width: 200,
+                  height: 200,
+                  borderRadius: 100,
+                  borderColor: !editable ? undefined : '#ccc',
+                  borderWidth: !editable ? undefined : 5,
+                  overflow: 'hidden',
+                }}
+              >
+                <MotiView
+                  transition={{
+                    type: 'timing',
+                  }}
+                  style={{ flex: 1, justifyContent: 'center', padding: 16 }}
+                  // animate={{ backgroundColor: dark ? '#000000' : '#ffffff' }}
+                  animate={{ backgroundColor: '#000000' }}
+                >
+                  <Skeleton height={200} width={200} radius='round'>
+                    {true ? (
+                      <Image
+                        source={{
+                          uri: renderProfileImage(),
+                        }}
+                        style={[
+                          {
+                            flex: 1,
+                            height: undefined,
+                            width: undefined,
+                            transform: [
+                              {
+                                translateX: gyroscopeData.x * 1,
+                              },
+                              {
+                                translateY: gyroscopeData.y * 1,
+                              },
+                            ],
+                          },
+                        ]}
+                        resizeMode='contain'
+                      />
+                    ) : null}
+                  </Skeleton>
+                </MotiView>
+              </TouchableOpacity>
+            </View>
+            <View
+              style={{
+                flex: 0.5,
+                alignItems: 'flex-end',
+                top: -15,
+              }}
+            >
+              <IconButton
+                icon={!editable ? 'pencil-outline' : 'pencil'}
+                onPress={handlePressEdit}
+                onLongPress={handleLongPressEdit}
+                iconColor={theme.colors.onBackground}
               />
-            </TouchableOpacity>
+            </View>
           </View>
-
-          <View
-            style={{
-              flex: 0.5,
-              alignItems: 'flex-end',
-              top: -15,
-            }}
-          >
-            <IconButton
-              icon={!editable ? 'pencil-outline' : 'pencil'}
-              onPress={handlePressEdit}
-              onLongPress={handleLongPressEdit}
-              iconColor={theme.colors.onBackground}
+          {/* User's subtitle of name */}
+          <View style={styles.infoContainer}>
+            {/* <Text style={[styles.text, { fontWeight: '200', fontSize: 36 }]}>
+              {data?.user?.displayName}
+            </Text> */}
+            <TextInput
+              style={[
+                styles.text,
+                {
+                  fontWeight: '200',
+                  fontSize: 36,
+                  backgroundColor: 'transparent',
+                },
+              ]}
+              mode='outlined'
+              outlineColor={!editable ? 'transparent' : '#ccc'}
+              underlineColor={!editable ? 'transparent' : '#ccc'}
+              editable={editable}
+              value={data?.user?.displayName}
+              onChangeText={text =>
+                setData({
+                  ...data,
+                  user: {
+                    ...data?.user,
+                    displayName: text,
+                  } as UserProfile,
+                })
+              }
             />
           </View>
-        </View>
-
-        {/* User's subtitle of name */}
-        <View style={styles.infoContainer}>
-          {/* <Text style={[styles.text, { fontWeight: '200', fontSize: 36 }]}>
-            {data?.user?.displayName}
-          </Text> */}
-
+          <Divider />
+          {/* User bio */}
+          {/* <TextInput
+            style={[
+              styles.bioText,
+              { fontWeight: '200', fontSize: 16, backgroundColor: 'transparent' },
+            ]}
+            mode='outlined'
+            outlineColor={!editable ? 'transparent' : '#ccc'}
+            underlineColor={!editable ? 'transparent' : '#ccc'}
+            editable={editable}
+            value={profileDataBeforeSaving?.bio}
+            onChangeText={text =>
+              setProfileDataBeforeSaving({
+                ...profileDataBeforeSaving,
+                bio: text,
+              })
+            }
+          /> */}
           <TextInput
             style={[
-              styles.text,
+              styles.bioText,
               {
                 fontWeight: '200',
-                fontSize: 36,
+                fontSize: 16,
                 backgroundColor: 'transparent',
               },
             ]}
@@ -497,178 +632,144 @@ const MyProfilePage = () => {
             outlineColor={!editable ? 'transparent' : '#ccc'}
             underlineColor={!editable ? 'transparent' : '#ccc'}
             editable={editable}
-            value={data?.user?.displayName}
+            value={data?.user?.bio}
             onChangeText={text =>
               setData({
                 ...data,
                 user: {
                   ...data?.user,
-                  displayName: text,
+                  bio: text,
                 } as UserProfile,
               })
             }
           />
-        </View>
-        <Divider />
-
-        {/* User bio */}
-        {/* <TextInput
-          style={[
-            styles.bioText,
-            { fontWeight: '200', fontSize: 16, backgroundColor: 'transparent' },
-          ]}
-          mode='outlined'
-          outlineColor={!editable ? 'transparent' : '#ccc'}
-          underlineColor={!editable ? 'transparent' : '#ccc'}
-          editable={editable}
-          value={profileDataBeforeSaving?.bio}
-          onChangeText={text =>
-            setProfileDataBeforeSaving({
-              ...profileDataBeforeSaving,
-              bio: text,
-            })
-          }
-        /> */}
-        <TextInput
-          style={[
-            styles.bioText,
-            { fontWeight: '200', fontSize: 16, backgroundColor: 'transparent' },
-          ]}
-          mode='outlined'
-          outlineColor={!editable ? 'transparent' : '#ccc'}
-          underlineColor={!editable ? 'transparent' : '#ccc'}
-          editable={editable}
-          value={data?.user?.bio}
-          onChangeText={text =>
-            setData({
-              ...data,
-              user: {
-                ...data?.user,
-                bio: text,
-              } as UserProfile,
-            })
-          }
-        />
-
-        {/* Number of user's followers, posts, etc. */}
-        <View style={styles.statsContainer}>
-          <TouchableOpacity
-            style={styles.statsBox}
-            onPress={() =>
-              router.push({
-                pathname: `/postsByCurrentUser/${uid}`,
-                params: { uid },
-              })
-            }
-          >
-            <Text style={[styles.text, { fontSize: 24 }]}>
-              {data?.posts?.length}
-            </Text>
-            <Text style={[styles.text, styles.subText]}>Posts</Text>
-          </TouchableOpacity>
-          <View
-            style={[
-              styles.statsBox,
-              {
-                borderColor: '#DFD8C8',
-                borderLeftWidth: 1,
-                borderRightWidth: 1,
-              },
-            ]}
-          >
-            <Text style={[styles.text, { fontSize: 24 }]}>
-              {data?.user?.followers?.length ?? '-'}
-            </Text>
-            <Text style={[styles.text, styles.subText]}>Followers</Text>
+          {/* Number of user's followers, posts, etc. */}
+          <View style={styles.statsContainer}>
+            <TouchableOpacity
+              style={styles.statsBox}
+              onPress={() =>
+                router.push({
+                  pathname: `/postsByCurrentUser/${currentUserID}`,
+                  params: { uid: currentUserID },
+                })
+              }
+            >
+              <Text style={[styles.text, { fontSize: 24 }]}>
+                {data?.posts?.length}
+              </Text>
+              <Text style={[styles.text, styles.subText]}>Posts</Text>
+            </TouchableOpacity>
+            <View
+              style={[
+                styles.statsBox,
+                {
+                  borderColor: '#DFD8C8',
+                  borderLeftWidth: 1,
+                  borderRightWidth: 1,
+                },
+              ]}
+            >
+              <Text style={[styles.text, { fontSize: 24 }]}>
+                {data?.user?.followers?.length ?? '-'}
+              </Text>
+              <Text style={[styles.text, styles.subText]}>Followers</Text>
+            </View>
+            <View style={styles.statsBox}>
+              <Text style={[styles.text, { fontSize: 24 }]}>
+                {data?.user?.following?.length ?? '-'}
+              </Text>
+              <Text style={[styles.text, styles.subText]}>Following</Text>
+            </View>
           </View>
-          <View style={styles.statsBox}>
-            <Text style={[styles.text, { fontSize: 24 }]}>
-              {data?.user?.following?.length ?? '-'}
+          {/* User's media carousel */}
+          <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+            {/* {userData?.posts &&
+              userData?.posts.map((post, index) => (
+                <View style={styles.mediaImageContainer} key={index}>
+                  <Image
+                    source={{ uri: post }}
+                    style={styles.image}
+                    resizeMode='cover'
+                  />
+                </View>
+              ))} */}
+          </ScrollView>
+          {/* <View style={styles.mediaCount}>
+            <Text
+              style={[
+                styles.text,
+                { fontSize: 24, color: '#DFD8C8', fontWeight: '300' },
+              ]}
+            >
+              70
             </Text>
-            <Text style={[styles.text, styles.subText]}>Following</Text>
+            <Text
+              style={[
+                styles.text,
+                {
+                  fontSize: 12,
+                  color: '#DFD8C8',
+                  textTransform: 'uppercase',
+                },
+              ]}
+            >
+              Media
+            </Text>
+          </View> */}
+          <View style={{ alignItems: 'center' }}>
+            <MaterialIcons
+              name='keyboard-arrow-down'
+              style={{ fontSize: 30 }}
+            />
           </View>
-        </View>
-        {/* User's media carousel */}
-        <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-          {/* {userData?.posts &&
-            userData?.posts.map((post, index) => (
-              <View style={styles.mediaImageContainer} key={index}>
-                <Image
-                  source={{ uri: post }}
-                  style={styles.image}
-                  resizeMode='cover'
-                />
+
+          <Text style={[styles.subText, styles.recent]}>Recent Activity</Text>
+          <View style={{ alignItems: 'center' }}>
+            <View style={styles.recentItem}>
+              <View style={styles.activityIndicator}></View>
+              <View style={{ width: 250 }}>
+                <Text
+                  style={[
+                    styles.text,
+                    {
+                      color: data?.user?.following?.length ? '#41444B' : 'red',
+                      fontWeight: '300',
+                    },
+                  ]}
+                >
+                  Started following{' '}
+                  <Text style={{ fontWeight: '400' }}>Jake Challeahe</Text> and{' '}
+                  <Text style={{ fontWeight: '400' }}>Luis Poteer</Text>
+                </Text>
               </View>
-            ))} */}
-        </ScrollView>
-        {/* <View style={styles.mediaCount}>
-          <Text
-            style={[
-              styles.text,
-              { fontSize: 24, color: '#DFD8C8', fontWeight: '300' },
-            ]}
-          >
-            70
-          </Text>
-          <Text
-            style={[
-              styles.text,
-              {
-                fontSize: 12,
-                color: '#DFD8C8',
-                textTransform: 'uppercase',
-              },
-            ]}
-          >
-            Media
-          </Text>
-        </View> */}
-        <Text style={[styles.subText, styles.recent]}>Recent Activity</Text>
-        <View style={{ alignItems: 'center' }}>
-          <View style={styles.recentItem}>
-            <View style={styles.activityIndicator}></View>
-            <View style={{ width: 250 }}>
-              <Text
-                style={[
-                  styles.text,
-                  {
-                    color: data?.user?.following?.length ? '#41444B' : 'red',
-                    fontWeight: '300',
-                  },
-                ]}
-              >
-                Started following{' '}
-                <Text style={{ fontWeight: '400' }}>Jake Challeahe</Text> and{' '}
-                <Text style={{ fontWeight: '400' }}>Luis Poteer</Text>
-              </Text>
+            </View>
+            <View style={styles.recentItem}>
+              <View style={styles.activityIndicator} />
+              <View style={{ width: 250 }}>
+                <Text
+                  style={[
+                    styles.text,
+                    {
+                      color: data?.user?.following ? '#41444B' : 'red',
+                      fontWeight: '300',
+                    },
+                  ]}
+                >
+                  Started following{' '}
+                  <Text style={{ fontWeight: '400' }}>Luke Harper</Text>
+                </Text>
+              </View>
             </View>
           </View>
-          <View style={styles.recentItem}>
-            <View style={styles.activityIndicator} />
-            <View style={{ width: 250 }}>
-              <Text
-                style={[
-                  styles.text,
-                  {
-                    color: data?.user?.following ? '#41444B' : 'red',
-                    fontWeight: '300',
-                  },
-                ]}
-              >
-                Started following{' '}
-                <Text style={{ fontWeight: '400' }}>Luke Harper</Text>
-              </Text>
-            </View>
-          </View>
-          <MaterialIcons name='keyboard-arrow-down' style={{ fontSize: 30 }} />
         </View>
 
+        {/* EXTRA CONENT BELOW */}
         <View style={{ flexDirection: 'row' }}>
           <IconButton
             theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
             icon='instagram'
             onPress={handleClickSocialMediaLink}
-            size={SOCIAL_MEDIA_ICONS}
+            size={SOCIAL_MEDIA_ICON_SIZE}
           />
           {editable && (
             <IconButton
@@ -677,12 +778,23 @@ const MyProfilePage = () => {
               onPress={() =>
                 console.log('Prompt or modal to add a social media account')
               }
-              size={SOCIAL_MEDIA_ICONS}
+              size={SOCIAL_MEDIA_ICON_SIZE}
             />
           )}
         </View>
+        <Button
+          style={{ margin: 10, marginTop: 30, width: 300 }}
+          mode='contained'
+          contentStyle={{ padding: 10 }}
+          buttonColor='red'
+          // onPress={handleLogin}
+          // disabled={!isValid}
+          onPress={handleLogout}
+        >
+          Logout
+        </Button>
       </ScrollView>
-    </>
+    </SafeAreaView>
   );
 };
 
@@ -690,10 +802,11 @@ export default MyProfilePage;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 20,
+    padding: 20,
+    // backgroundColor: 'aqua',
   },
   textHeader: { fontSize: 42, color: 'blue' },
   profileImage: {

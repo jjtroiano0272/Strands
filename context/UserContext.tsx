@@ -8,7 +8,7 @@ export const UserProvider = ({ children }: { children: any }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // console.log(`User logged ${isLoggedIn ? 'in!' : 'out!'}`);
+    console.log(`\x1b[32mUser logged ${isLoggedIn ? 'in!' : 'out!'}`);
   }, [isLoggedIn]);
 
   return (

@@ -1,3 +1,5 @@
+import { useSession } from '~/context/expoDocsCtx';
+import * as Haptics from 'expo-haptics';
 import * as yup from 'yup';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -40,6 +42,7 @@ import { useAuth } from '../context/auth';
 import { SAMLAuthProvider, GoogleAuthProvider } from 'firebase/auth';
 // import { BubbleBackground } from '../../components/AnimatedBackground';
 import Particles from 'react-particles';
+import { useHaptics } from '~/hooks/useHaptics';
 // import { AnimatedBackground } from '../../../components/AnimatedBackground';
 // import { getSeedData } from '../../../utils/getSeedData';
 // import ParticleAnimation from 'react-particle-animation';
@@ -55,17 +58,36 @@ export default function Login() {
   const theme = useTheme();
   const router = useRouter();
   const userCtx = useContext(UserContext);
-  // Previously defined as:
-  //    const [errors, setErrors] = useState<string | undefined | null>();
-  const [originalFormErrors, setOriginalFormErrors] = useState<
-    string | undefined | null
-  >();
-
+  const sessionCtx = useSession();
+  const [isFormValid, setIsFormValid] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
   const onToggleSnackBar = () => setSnackbarVisible(!snackbarVisible);
   const onDismissSnackBar = () => setSnackbarVisible(false);
   const samlProvider = new SAMLAuthProvider('saml.example-provider');
   const googleProvider = new GoogleAuthProvider();
+  // Previously defined as:
+  //    const [errors, setErrors] = useState<string | undefined | null>();
+  const [originalFormErrors, setOriginalFormErrors] = useState<
+    string | undefined | null
+  >();
+  const schema = yup.object().shape({
+    email: yup.string().required('Email is required').email('Invalid email'),
+    password: yup
+      .string()
+      .required('Password is required')
+      .min(8, 'Password must contain at least 8 characters'),
+  });
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
   // TODO Only display errors for a few seconds, then fade out, but keep the red line underneath
   const validateEmail = () => {
@@ -81,50 +103,49 @@ export default function Login() {
     }
   };
 
-  const handleLogin = () => {
-    // TODO
-    /**
-     * Probably use some structure that passes the button type or something to this and then
-     *    if (google) => signInWithRedirect,
-     *    if email => singInWithEmail
-     *    ...
-     * */
-    // signInWithRedirect(firebaseAuth, samlProvider);
-    // Login Logic
-    signInWithEmailAndPassword(firebaseAuth, email!, password!)
-      .then(res => {
-        console.log(`\x1b[34mlogin res: ${JSON.stringify(res, null, 2)}`);
-        myAuth?.signIn();
+  // const handleLogin = () => {
+  //   // TODO
+  //   /**
+  //    * Probably use some structure that passes the button type or something to this and then
+  //    *    if (google) => signInWithRedirect,
+  //    *    if email => singInWithEmail
+  //    *    ...
+  //    * */
+  //   // signInWithRedirect(firebaseAuth, samlProvider);
+  //   // Login Logic
+  //   signInWithEmailAndPassword(firebaseAuth, email!, password!)
+  //     .then(res => {
+  //       console.log(`\x1b[34mlogin res: ${JSON.stringify(res, null, 2)}`);
+  //       myAuth?.signIn();
+  //       userCtx?.setIsLoggedIn(true);
+  //       // Alert.alert(`You're in, bbbbbb!`);
+  //     })
+  //     // Err code:  ERROR  Sign in error! {
+  //     //    "code":"auth/user-not-found",
+  //     //    "customData":{},
+  //     //    "name":"FirebaseError"
+  //     // }
+  //     .catch(err => {
+  //       console.log(`Sign in error! ${err}`);
 
-        userCtx?.setIsLoggedIn(true);
-        // Alert.alert(`You're in, bbbbbb!`);
-      })
-      // Err code:  ERROR  Sign in error! {
-      //    "code":"auth/user-not-found",
-      //    "customData":{},
-      //    "name":"FirebaseError"
-      // }
-      .catch(err => {
-        console.log(`Sign in error! ${err}`);
-
-        if (err.code === 'auth/user-not-found') {
-          setSnackbarVisible(true);
-          setOriginalFormErrors('No user exists with that name!');
-        } else if (err.code === 'auth/invalid-email') {
-          setOriginalFormErrors('Invalid email!');
-          setSnackbarVisible(true);
-        } else if (err.code === 'auth/invalid-password') {
-          setOriginalFormErrors('Invalid password entered!!');
-          setSnackbarVisible(true);
-        } else if (err.code === 'auth/missing-email') {
-          // Client-side should handle this just in the UI
-          return;
-        } else {
-          setOriginalFormErrors('Unspecified error!');
-          setSnackbarVisible(true);
-        }
-      });
-  };
+  //       if (err.code === 'auth/user-not-found') {
+  //         setSnackbarVisible(true);
+  //         setOriginalFormErrors('No user exists with that name!');
+  //       } else if (err.code === 'auth/invalid-email') {
+  //         setOriginalFormErrors('Invalid email!');
+  //         setSnackbarVisible(true);
+  //       } else if (err.code === 'auth/invalid-password') {
+  //         setOriginalFormErrors('Invalid password entered!!');
+  //         setSnackbarVisible(true);
+  //       } else if (err.code === 'auth/missing-email') {
+  //         // Client-side should handle this just in the UI
+  //         return;
+  //       } else {
+  //         setOriginalFormErrors('Unspecified error!');
+  //         setSnackbarVisible(true);
+  //       }
+  //     });
+  // };
 
   const handleSSOLogin = (provider: string) => {
     const firebaseAuth = getAuth();
@@ -159,31 +180,21 @@ export default function Login() {
     }
   };
 
-  useEffect(() => {
-    snackbarVisible && Keyboard.dismiss();
-  }, [snackbarVisible]);
+  // This function is only reachable iff there are no errors in form
+  const handlePressLogin = () => {
+    // Trigger haptic feedback for errors or incomplete form
+    if (Object.keys(errors).length > 0) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } else {
+      // If no errors, proceed with form submission
+      handleSubmit(onSubmit)();
+      setIsFormValid(true);
+    }
+  };
 
-  const schema = yup.object().shape({
-    email: yup.string().required('Email is required').email('Invalid email'),
-    password: yup
-      .string()
-      .required('Password is required')
-      .min(8, 'Password must contain at least 8 characters'),
-  });
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
-    resolver: yupResolver(schema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
-
-  const onPressSend = (formData: { email: string; password: string }) => {
-    console.log(`formData: ${JSON.stringify(formData, null, 2)}`);
+  const onSubmit = (formData: { email: string; password: string }) => {
+    // console.log(`formData: ${JSON.stringify(formData, null, 2)}`);
+    // Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
     // Perform actions with the validated form data
     // What's after this is only accessible once form data is valid
@@ -199,10 +210,10 @@ export default function Login() {
     // Login Logic
     signInWithEmailAndPassword(firebaseAuth, formData.email, formData.password)
       .then(res => {
-        console.log(`\x1b[34mlogin res: ${JSON.stringify(res, null, 2)}`);
-        myAuth?.signIn();
-
-        userCtx?.setIsLoggedIn(true);
+        console.log(`\x1b[34mlogin res: \n${JSON.stringify(res, null, 2)}`);
+        // myAuth?.signIn();
+        // userCtx?.setIsLoggedIn(true);
+        sessionCtx?.signIn();
         // Alert.alert(`You're in, bbbbbb!`);
 
         router.replace('home');
@@ -235,12 +246,23 @@ export default function Login() {
   };
 
   useEffect(() => {
+    console.log(`control: ${JSON.stringify(control, null, 2)}`);
+    console.log(`handleSubmit: ${JSON.stringify(handleSubmit, null, 2)}`);
+    console.log(`errors: ${JSON.stringify(errors, null, 2)}`);
     console.log(
-      `errors: ${JSON.stringify(errors, null, 2)}; ${!!(
-        errors.email || errors.password
-      )}`
+      `errors.length: ${JSON.stringify(Object.keys(errors).length, null, 2)}`
     );
-  }, [errors]);
+
+    if (errors.email || errors.password) {
+      setIsFormValid(false);
+    } else {
+      setIsFormValid(true);
+    }
+  }, [control, handleSubmit, errors]);
+
+  useEffect(() => {
+    snackbarVisible && Keyboard.dismiss();
+  }, [snackbarVisible]);
 
   return (
     <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>
@@ -289,7 +311,10 @@ export default function Login() {
         )}
         name='email'
       />
-      {errors?.email && <Text>{errors?.email?.message}</Text>}
+      <HelperText type='error' visible={!!errors?.email}>
+        {errors?.email?.message}
+      </HelperText>
+
       <Controller
         control={control}
         rules={{
@@ -308,13 +333,16 @@ export default function Login() {
         )}
         name='password'
       />
-      {errors.password && <Text>{errors.password.message}</Text>}
+      <HelperText type='error' visible={!!errors?.password}>
+        {errors?.password?.message}
+      </HelperText>
       <Button
         style={{ margin: 10, marginTop: 30, width: 300 }}
         mode='contained'
         contentStyle={{ padding: 10 }}
         // onPress={handleLogin}
-        onPress={handleSubmit(onPressSend)}
+        onPress={handlePressLogin}
+        disabled={!isValid}
       >
         Login
       </Button>

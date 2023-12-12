@@ -21,6 +21,7 @@ import {
   useWindowDimensions,
   Image,
   Pressable,
+  Alert,
 } from 'react-native';
 import { Text, View } from '../../../components/Themed';
 import { useTheme } from '@react-navigation/native';
@@ -601,10 +602,10 @@ const Feed = () => {
               />
               <RippleButton
                 icon='debug-step-into'
-                onPress={handleDebugLogin}
+                onPress={() => Alert.alert('Nothing hooked up here!')}
                 mode='outlined'
                 size={12}
-                iconColor='red'
+                // iconColor='red' 
               />
             </View>
           ),

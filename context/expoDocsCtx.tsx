@@ -1,5 +1,7 @@
-import React from 'react';
+/* Referenced from https://docs.expo.dev/router/reference/authentication/ */
+import React, { useEffect } from 'react';
 import { useStorageState } from '../hooks/useStorageState';
+import { Slot } from 'expo-router';
 
 const AuthContext = React.createContext<{
   signIn: () => void;
@@ -22,6 +24,9 @@ export function useSession() {
 
 export function SessionProvider(props: React.PropsWithChildren) {
   const [[isLoading, session], setSession] = useStorageState('session');
+  useEffect(() => {
+    console.log(`\x1b[31mSigned ${session ? 'in' : ' out'}: ${session}`);
+  }, [session]);
 
   return (
     <AuthContext.Provider
@@ -29,6 +34,8 @@ export function SessionProvider(props: React.PropsWithChildren) {
         signIn: () => {
           // Perform sign-in logic here
           setSession('xxx');
+
+          console.log(`Inside signIn function`);
         },
         signOut: () => {
           setSession(null);

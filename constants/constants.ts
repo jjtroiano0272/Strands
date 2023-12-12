@@ -58,7 +58,7 @@ export const sortLabelsObj: { icon: string; varName: string; displayName: string
   },
 ];
 
-export const SOCIAL_MEDIA_ICONS = 24;
+export const SOCIAL_MEDIA_ICON_SIZE = 24;
 
 export const Haptics = {
   Error: () => ExpoHaptics.notificationAsync(ExpoHaptics.NotificationFeedbackType.Error),
