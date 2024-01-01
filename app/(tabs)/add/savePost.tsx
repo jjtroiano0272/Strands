@@ -72,7 +72,12 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { firebase } from '@react-native-firebase/auth';
 import { ScrollView } from 'react-native-gesture-handler';
 // Local Imports
-import { auth, clientsRef, db, firebaseConfig } from '~/firebaseConfig';
+import {
+  FIREBASE_AUTH,
+  clientsRef,
+  db,
+  firebaseConfig,
+} from '~/firebaseConfig';
 import StarRating from '~/components/StarRating';
 import {
   labels as labelsConst,

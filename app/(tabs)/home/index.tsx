@@ -545,8 +545,10 @@ const Feed = () => {
     // posts?.forEach(element => console.log(JSON.stringify(element)));
   }, [posts]);
 
+  const chalk = require('chalk'); //Add this
+  const ctx = new chalk.Instance({ level: 3 });
   useEffect(() => {
-    console.log(`sortByField: ${sortByField}`);
+    console.log(`sortByField: ${sortByField ?? ctx.red(sortByField)}`);
   }, [sortByField]);
 
   return (
@@ -605,7 +607,7 @@ const Feed = () => {
                 onPress={() => Alert.alert('Nothing hooked up here!')}
                 mode='outlined'
                 size={12}
-                // iconColor='red' 
+                // iconColor='red'
               />
             </View>
           ),

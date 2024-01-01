@@ -1,4 +1,5 @@
-import { useSession } from '~/context/expoDocsCtx';
+import { color, log, red, green, cyan, cyanBright } from 'console-log-colors';
+import { getValueFor, useSession } from '~/context/expoDocsCtx';
 import * as Haptics from 'expo-haptics';
 import * as yup from 'yup';
 import { Controller, useForm } from 'react-hook-form';
@@ -32,9 +33,16 @@ import {
   signInWithPopup,
   OAuthCredential,
   UserCredential,
+  onAuthStateChanged,
+  signOut,
+  User,
 } from 'firebase/auth';
 import { DarkTheme, useTheme } from '@react-navigation/native';
-import { firebaseConfig } from '~/firebaseConfig';
+import {
+  FIREBASE_AUTH,
+  firebaseConfig,
+  persistentAuth,
+} from '~/firebaseConfig';
 import { UserContext } from '../context/UserContext';
 import { Auth as SignInWithPopup } from '../components/auth/Auth';
 import { Link, Stack, useRouter } from 'expo-router';
@@ -46,8 +54,14 @@ import { useHaptics } from '~/hooks/useHaptics';
 // import { AnimatedBackground } from '../../../components/AnimatedBackground';
 // import { getSeedData } from '../../../utils/getSeedData';
 // import ParticleAnimation from 'react-particle-animation';
+// import chalk from 'chalk';
+import { ccolors } from '~/constants/conosleColors';
 
 export default function Login() {
+  const chalk = require('chalk'); //Add this
+  const chalkCtx = new chalk.Instance({ level: 3 });
+  // console.log(ctx.red('red text'));
+
   const firebaseAuth = getAuth();
   const myAuth = useAuth();
   const [email, setEmail] = useState<string | null>(null);
@@ -102,50 +116,6 @@ export default function Login() {
       setPasswordError('Password must be at least 8 characters long');
     }
   };
-
-  // const handleLogin = () => {
-  //   // TODO
-  //   /**
-  //    * Probably use some structure that passes the button type or something to this and then
-  //    *    if (google) => signInWithRedirect,
-  //    *    if email => singInWithEmail
-  //    *    ...
-  //    * */
-  //   // signInWithRedirect(firebaseAuth, samlProvider);
-  //   // Login Logic
-  //   signInWithEmailAndPassword(firebaseAuth, email!, password!)
-  //     .then(res => {
-  //       console.log(`\x1b[34mlogin res: ${JSON.stringify(res, null, 2)}`);
-  //       myAuth?.signIn();
-  //       userCtx?.setIsLoggedIn(true);
-  //       // Alert.alert(`You're in, bbbbbb!`);
-  //     })
-  //     // Err code:  ERROR  Sign in error! {
-  //     //    "code":"auth/user-not-found",
-  //     //    "customData":{},
-  //     //    "name":"FirebaseError"
-  //     // }
-  //     .catch(err => {
-  //       console.log(`Sign in error! ${err}`);
-
-  //       if (err.code === 'auth/user-not-found') {
-  //         setSnackbarVisible(true);
-  //         setOriginalFormErrors('No user exists with that name!');
-  //       } else if (err.code === 'auth/invalid-email') {
-  //         setOriginalFormErrors('Invalid email!');
-  //         setSnackbarVisible(true);
-  //       } else if (err.code === 'auth/invalid-password') {
-  //         setOriginalFormErrors('Invalid password entered!!');
-  //         setSnackbarVisible(true);
-  //       } else if (err.code === 'auth/missing-email') {
-  //         // Client-side should handle this just in the UI
-  //         return;
-  //       } else {
-  //         setOriginalFormErrors('Unspecified error!');
-  //         setSnackbarVisible(true);
-  //       }
-  //     });
-  // };
 
   const handleSSOLogin = (provider: string) => {
     const firebaseAuth = getAuth();
@@ -209,13 +179,16 @@ export default function Login() {
     // signInWithRedirect(firebaseAuth, samlProvider);
     // Login Logic
     signInWithEmailAndPassword(firebaseAuth, formData.email, formData.password)
-      .then(res => {
-        console.log(`\x1b[34mlogin res: \n${JSON.stringify(res, null, 2)}`);
-        // myAuth?.signIn();
-        // userCtx?.setIsLoggedIn(true);
-        sessionCtx?.signIn();
-        // Alert.alert(`You're in, bbbbbb!`);
+      .then((userCredentials: any) => {
+        console.log(
+          'User logged in successfully:',
+          JSON.stringify(userCredentials, null, 2)
+        );
 
+        sessionCtx?.signIn(userCredentials);
+
+        console.log(`Replacing route`);
+        // Do later
         router.replace('home');
       })
       // Err code:  ERROR  Sign in error! {
@@ -246,7 +219,7 @@ export default function Login() {
   };
 
   useEffect(() => {
-    console.log(`control: ${JSON.stringify(control, null, 2)}`);
+    // console.log(`control: ${JSON.stringify(control, null, 2)}`);
     console.log(`handleSubmit: ${JSON.stringify(handleSubmit, null, 2)}`);
     console.log(`errors: ${JSON.stringify(errors, null, 2)}`);
     console.log(
@@ -263,6 +236,48 @@ export default function Login() {
   useEffect(() => {
     snackbarVisible && Keyboard.dismiss();
   }, [snackbarVisible]);
+
+  const [user, setUser] = useState<User | null>(null);
+  // SIMON GRIMM VERSION
+  // useEffect(() => {
+  //   onAuthStateChanged(FIREBASE_AUTH, user => {
+  //     console.log(`authstateChangeduser: ${JSON.stringify(user, null, 2)}`);
+  //   });
+  // }, []);
+
+  useEffect(() => {
+    onAuthStateChanged(persistentAuth, user => {
+      if (user) {
+        console.log(
+          `user @index.useEffect.onAuthStateChanged: ${chalkCtx.green(
+            JSON.stringify(user, null, 2)
+          )}`
+        );
+        // sessionCtx?.signIn(user);
+      } else {
+        console.log(`user: ${chalkCtx.red('signed out')}`);
+
+        // navigation.navigate("login")
+      }
+    });
+  }, [user]);
+
+  // Check for existing user on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      await getValueFor('session') 
+        .then(res =>
+          console.log(`res@index.fetchData(): ${JSON.stringify(res, null, 2)}`)
+        )
+        .catch(err => console.error(`error in calling getValueFor ${err}`));
+
+      // if (currentSession) {
+      //   // sessionCtx?.signIn(currentSession);
+      // }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>

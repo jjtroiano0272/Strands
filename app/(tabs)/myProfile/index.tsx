@@ -91,8 +91,8 @@ const MyProfilePage = () => {
       const userSnap = await getDoc(userRef);
       // Dec 3, 14:40: userSnap.data() was undefined when logging
       // Maybe my UID isn't actually registered in the DB rn...
-      console.log(`currentUserID: ${JSON.stringify(currentUserID, null, 2)}`);
-      console.log(`userSnap: ${JSON.stringify(userSnap, null, 2)}`);
+      // console.log(`currentUserID: ${JSON.stringify(currentUserID, null, 2)}`);
+      // console.log(`userSnap: ${JSON.stringify(userSnap, null, 2)}`);
       if (userSnap.exists()) {
         console.log('Document data:', userSnap.data());
       } else {
@@ -401,7 +401,7 @@ const MyProfilePage = () => {
 
   const sessionCtx = useSession();
   const handleLogout = () => {
-    console.warn('logging user out...');
+    console.log('logging user out...');
     // myAuth?.signOut();
     // userCtx?.setIsLoggedIn(false);
     sessionCtx?.signOut();

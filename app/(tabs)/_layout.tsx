@@ -1,21 +1,16 @@
-import { StyleSheet, Text, View } from 'react-native';
-import React, { useContext, useState } from 'react';
-import { Redirect, Tabs, useRouter } from 'expo-router';
-import { FontAwesome } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import React, { useContext, useEffect } from 'react';
+import { Redirect, useRouter, Stack, Tabs } from 'expo-router';
 import { getAuth } from 'firebase/auth';
-import { useHaptics } from '~/hooks/useHaptics';
-import { active } from 'd3';
 import { UserContext } from '~/context/UserContext';
 import { useSession } from '~/context/expoDocsCtx';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
-export default () => {
+export default function AppLayout() {
   const iconSize = 24;
   const router = useRouter();
   const currentUserID = getAuth().currentUser?.uid;
-  const sessionCtx = useSession();
-
   const userCtx = useContext(UserContext);
+  const sessionCtx = useSession();
 
   /* 05DEC: Left off working on Logout button functionality--clicking logout
   should set usercontext to logged out, and auth object of firebase should be
@@ -25,11 +20,15 @@ export default () => {
   //   return <Redirect href='/' />;
   // }
 
-  if (!sessionCtx?.session) {
-    return <Redirect href='/sign-in' />;
-  }
+  useEffect(() => {
+    console.log('sessionCtx: ', JSON.stringify(sessionCtx, null, 2));
+  }, [sessionCtx]);
 
-  return (
+  // if (!sessionCtx?.session) {
+  //   return <Redirect href='/' />;
+  // }
+
+  return sessionCtx?.session ? (
     <Tabs
       screenOptions={{
         tabBarShowLabel: true,
@@ -102,7 +101,7 @@ export default () => {
       {/* <Tabs.Screen name='save' options={{ href: null }} /> */}
       {/* <Tabs.Screen name='search' options={{ href: null }} /> */}
     </Tabs>
+  ) : (
+    <Redirect href='/' />
   );
-};
-
-const styles = StyleSheet.create({});
+}

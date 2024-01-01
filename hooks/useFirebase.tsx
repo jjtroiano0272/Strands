@@ -7,7 +7,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import { auth, db } from '~/firebaseConfig';
+import { FIREBASE_AUTH, db } from '~/firebaseConfig';
 import { getAuth } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { UserProfile } from '~/@types/types';
@@ -42,7 +42,7 @@ export default function useFirebase(
       const postsRef = collection(db, 'posts');
       const q = query(
         postsRef,
-        where('auth.uid', '==', auth?.currentUser?.uid)
+        where('auth.uid', '==', FIREBASE_AUTH?.currentUser?.uid)
       );
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach(doc => {
