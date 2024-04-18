@@ -47,7 +47,11 @@ export async function deleteKey(key: string) {
 export async function getValueFor(key: string) {
   await SecureStore.getItemAsync(key)
     .then(res => {
-      console.log(`🔐 Here's your value for key ${key} 🔐 \n${res}`);
+      if (res) {
+        console.log(`\x1b[30m🔐 Here's your value for key ${key} 🔐`);
+        console.log(JSON.stringify(JSON.parse(res), null, 2));
+      }
+
       return res;
     })
     .catch(err =>

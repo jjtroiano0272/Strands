@@ -5,30 +5,14 @@ import { UserContext } from '~/context/UserContext';
 import { useSession } from '~/context/expoDocsCtx';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
-export default function AppLayout() {
+export default function AuthStack() {
   const iconSize = 24;
   const router = useRouter();
   const currentUserID = getAuth().currentUser?.uid;
   const userCtx = useContext(UserContext);
-  const sessionCtx = useSession();
+  // const sessionCtx = useSession();
 
-  /* 05DEC: Left off working on Logout button functionality--clicking logout
-  should set usercontext to logged out, and auth object of firebase should be
-  affected. Can these be merged into one thing? We have two thing essentially
-  handling the same purpose */
-  // if (!userCtx?.isLoggedIn) {
-  //   return <Redirect href='/' />;
-  // }
-
-  useEffect(() => {
-    console.log('sessionCtx: ', JSON.stringify(sessionCtx, null, 2));
-  }, [sessionCtx]);
-
-  // if (!sessionCtx?.session) {
-  //   return <Redirect href='/' />;
-  // }
-
-  return sessionCtx?.session ? (
+  return (
     <Tabs
       screenOptions={{
         tabBarShowLabel: true,
@@ -101,7 +85,5 @@ export default function AppLayout() {
       {/* <Tabs.Screen name='save' options={{ href: null }} /> */}
       {/* <Tabs.Screen name='search' options={{ href: null }} /> */}
     </Tabs>
-  ) : (
-    <Redirect href='/' />
   );
 }

@@ -1,3 +1,6 @@
+// import { AnimatedCircularProgress } from 'react-native-circular-progress';
+// import AnimatedCircularProgress from '~/components/AnimatedCircularProgress';
+import CircularProgress from 'react-native-circular-progress-indicator';
 import { UserContext } from '~/context/UserContext';
 import { Camera, CameraCapturedPicture, CameraType } from 'expo-camera';
 import { MediaLibraryPermissionResponse } from 'expo-image-picker';
@@ -9,6 +12,7 @@ import { Accelerometer } from 'expo-sensors';
 import { Stack } from 'expo-router';
 
 import React, { useContext, useEffect, useRef, useState } from 'react';
+import TapGesture from '~/components/TapGesture';
 
 // import { Haptics } from '~/constants/constants';
 import * as Haptics from 'expo-haptics';
@@ -23,6 +27,7 @@ import {
   ScrollView,
   useWindowDimensions,
   SafeAreaView,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -51,18 +56,26 @@ import {
   TextInput,
   useTheme,
 } from 'react-native-paper';
-import {
+import Animated, {
   SensorType,
+  interpolateColor,
   useAnimatedSensor,
   useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
 import { UserProfile } from '~/@types/types';
 import Divider from '~/components/Divider';
 import { SOCIAL_MEDIA_ICON_SIZE } from '~/constants/constants';
 import { Skeleton } from 'moti/skeleton';
 import { MotiView } from 'moti';
-import { useAuth } from '~/context/auth';
+import { useAuth } from '~/context/AuthContext';
 import { useSession } from '~/context/expoDocsCtx';
+import { Pressable } from 'react-native';
+import { MyButton as FillButton } from '~/components/MyButtonWithDecreaseTimer';
+// import ButtonWithColorChange from '~/components/ButtonWithColorChange';
+import ProgressButton from '~/components/ProgressButton';
+import AnimatedCircle from '~/components/IconButtonWithFeedback';
 
 const MyProfilePage = () => {
   const router = useRouter();
@@ -75,7 +88,7 @@ const MyProfilePage = () => {
     posts?: DocumentData[];
   }>();
   const [userPosts, setUserPosts] = useState<DocumentData[]>();
-  const myAuth = useAuth();
+  const { onLogout: handleLogout } = useAuth();
 
   const fetchUserData = async () => {
     if (!currentUserID) return;
@@ -190,50 +203,48 @@ const MyProfilePage = () => {
     profileImage: 'success' | 'error' | 'loading';
   }>();
 
-  //
-  //
+  // **********************************
   // IMAGE PICKING
-  //
-  //
-  const [hasCameraPermission, setHasCameraPermission] = useState<any | null>(
-    Camera.useCameraPermissions()
-  );
-  const [hasGalleryPermission, setHasGalleryPermission] = useState<any | null>(
-    ImagePicker.useMediaLibraryPermissions()
-  );
-  const [selectedImages, setSelectedImages] = useState<string[]>();
-  Camera.requestCameraPermissionsAsync().catch(err =>
-    console.error(`Camera permissions error ${err}`)
-  );
-  ImagePicker.requestMediaLibraryPermissionsAsync().catch(err =>
-    console.error(`Image Picker permissions error ${err}`)
-  );
-  useEffect(() => {
-    (async () => {
-      try {
-        const cameraStatus = await Camera.requestCameraPermissionsAsync();
-        setHasCameraPermission(cameraStatus.status === 'granted');
+  // **********************************
+  // const [hasCameraPermission, setHasCameraPermission] = useState<any | null>(
+  //   Camera.useCameraPermissions()
+  // );
+  // const [hasGalleryPermission, setHasGalleryPermission] = useState<any | null>(
+  //   ImagePicker.useMediaLibraryPermissions()
+  // );
+  // const [selectedImages, setSelectedImages] = useState<string[]>();
+  // Camera.requestCameraPermissionsAsync().catch(err =>
+  //   console.error(`Camera permissions error ${err}`)
+  // );
+  // ImagePicker.requestMediaLibraryPermissionsAsync().catch(err =>
+  //   console.error(`Image Picker permissions error ${err}`)
+  // );
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       const cameraStatus = await Camera.requestCameraPermissionsAsync();
+  //       setHasCameraPermission(cameraStatus.status === 'granted');
 
-        const galleryStatus: MediaLibraryPermissionResponse =
-          await ImagePicker.requestMediaLibraryPermissionsAsync();
-        setHasGalleryPermission(galleryStatus.status === 'granted');
+  //       // const galleryStatus: MediaLibraryPermissionResponse =
+  //       //   await ImagePicker.requestMediaLibraryPermissionsAsync();
+  //       // setHasGalleryPermission(galleryStatus.status === 'granted');
 
-        if (!galleryStatus.granted) {
-          Alert.alert('We need permissions in order for this to work!');
-        }
-      } catch (err) {
-        console.error(`Error setting permissions: ${err}`);
-      }
-    })();
-  }, []);
+  //       // if (!galleryStatus.granted) {
+  //       //   Alert.alert('We need permissions in order for this to work!');
+  //       // }
+  //     } catch (err) {
+  //       console.error(`Error setting permissions: ${err}`);
+  //     }
+  //   })();
+  // }, []);
   const [cameraType, setCameraType] = useState(CameraType.back);
-  const [permission, requestPermission] = Camera.useCameraPermissions();
-  Camera.requestCameraPermissionsAsync().catch(err =>
-    console.error(`Camera permissions error ${err}`)
-  );
-  ImagePicker.requestMediaLibraryPermissionsAsync().catch(err =>
-    console.error(`Image Picker permissions error ${err}`)
-  );
+  // const [permission, requestPermission] = Camera.useCameraPermissions();
+  // Camera.requestCameraPermissionsAsync().catch(err =>
+  //   console.error(`Camera permissions error ${err}`)
+  // );
+  // ImagePicker.requestMediaLibraryPermissionsAsync().catch(err =>
+  //   console.error(`Image Picker permissions error ${err}`)
+  // );
   function toggleCameraType() {
     setCameraType(current =>
       current === CameraType.back ? CameraType.front : CameraType.back
@@ -248,7 +259,7 @@ const MyProfilePage = () => {
   const storageRef = ref(storage, dbDestinationPath);
   const [imageUrl, setImageUrl] = useState<string | URL | undefined>();
   let uri: string;
-  const handlePickImage = async () => {
+  const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
@@ -399,33 +410,28 @@ const MyProfilePage = () => {
     }
   };
 
-  const sessionCtx = useSession();
-  const handleLogout = () => {
-    console.log('logging user out...');
-    // myAuth?.signOut();
-    // userCtx?.setIsLoggedIn(false);
-    sessionCtx?.signOut();
-  };
+  // ❌ Causes issues. Might want to eventually use it.
+  // useEffect(() => {
+  //   const gyroscopeSubscription = Gyroscope.addListener(gyroscopeData => {
+  //     setGyroscopeData(gyroscopeData);
+  //   });
+
+  //   const accelerometerSubscription = Accelerometer.addListener(
+  //     accelerometerData => {
+  //       setAccelerometerData(accelerometerData);
+  //     }
+  //   );
+
+  //   return () => {
+  //     gyroscopeSubscription.remove();
+  //     accelerometerSubscription.remove();
+  //   };
+  // }, []);
 
   useEffect(() => {
-    const gyroscopeSubscription = Gyroscope.addListener(gyroscopeData => {
-      setGyroscopeData(gyroscopeData);
-    });
+    console.log('on mount in profile');
 
-    const accelerometerSubscription = Accelerometer.addListener(
-      accelerometerData => {
-        setAccelerometerData(accelerometerData);
-      }
-    );
-
-    return () => {
-      gyroscopeSubscription.remove();
-      accelerometerSubscription.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    fetchUserData();
+    // fetchUserData();
   }, []);
 
   useEffect(() => {
@@ -472,6 +478,8 @@ const MyProfilePage = () => {
     */
   }, []);
 
+  const [progress, setProgress] = useState(0);
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -489,6 +497,7 @@ const MyProfilePage = () => {
             {/* Column 1 */}
             <View style={{ flex: 0.5, alignItems: 'center' }}></View>
             {/* Column 2 */}
+
             <View
               style={{
                 flex: 2,
@@ -502,7 +511,7 @@ const MyProfilePage = () => {
               <TouchableOpacity
                 onPress={() => {
                   if (editable) {
-                    handlePickImage();
+                    pickImage();
                     try {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
                     } catch (error) {
@@ -538,14 +547,14 @@ const MyProfilePage = () => {
                             flex: 1,
                             height: undefined,
                             width: undefined,
-                            transform: [
-                              {
-                                translateX: gyroscopeData.x * 1,
-                              },
-                              {
-                                translateY: gyroscopeData.y * 1,
-                              },
-                            ],
+                            // transform: [
+                            //   {
+                            //     translateX: gyroscopeData.x * 1,
+                            //   },
+                            //   {
+                            //     translateY: gyroscopeData.y * 1,
+                            //   },
+                            // ],
                           },
                         ]}
                         resizeMode='contain'
@@ -555,6 +564,7 @@ const MyProfilePage = () => {
                 </MotiView>
               </TouchableOpacity>
             </View>
+
             <View
               style={{
                 flex: 0.5,
@@ -562,14 +572,47 @@ const MyProfilePage = () => {
                 top: -15,
               }}
             >
-              <IconButton
-                icon={!editable ? 'pencil-outline' : 'pencil'}
-                onPress={handlePressEdit}
-                onLongPress={handleLongPressEdit}
+              {/* Migrating */}
+              {/* <IconButton
+                // icon={!editable ? 'pencil-outline' : 'pencil'}
+                // onPress={handlePressEdit}
+                // onLongPress={handleLongPressEdit}
                 iconColor={theme.colors.onBackground}
-              />
+                onPressIn={handleLongPress}
+                onPressOut={handlePressOut}
+                icon={!isPressed ? 'pencil-outline' : 'pencil'}
+              /> */}
+
+              {/* <AnimatedCircularProgress
+                size={42}
+                width={5}
+                fill={100} // var
+                tintColor='#00e0ff'
+                onAnimationComplete={() => console.log('onAnimationComplete')}
+                backgroundColor='#3d5875'
+                children={() => (
+                  <IconButton
+                    icon={!editable ? 'pencil-outline' : 'pencil'}
+                    onPress={handlePressEdit}
+                    onLongPress={handleLongPressEdit}
+                    iconColor={theme.colors.onBackground}
+                  />
+                )}
+              /> */}
+              {/* <AnimatedCircularProgress progress={} /> */}
+              {/* <Button
+                children='Start'
+                onPress={() => {
+                  setProgress(100);
+                }}
+              /> */}
+              {/* <ButtonWithColorChange /> */}
             </View>
           </View>
+          <AnimatedCircle />
+
+          {/* <FillButton onComplete={() => Alert.alert('Filled!')} /> */}
+
           {/* User's subtitle of name */}
           <View style={styles.infoContainer}>
             {/* <Text style={[styles.text, { fontWeight: '200', fontSize: 36 }]}>
@@ -647,12 +690,12 @@ const MyProfilePage = () => {
           <View style={styles.statsContainer}>
             <TouchableOpacity
               style={styles.statsBox}
-              onPress={() =>
-                router.push({
-                  pathname: `/postsByCurrentUser/${currentUserID}`,
-                  params: { uid: currentUserID },
-                })
-              }
+              // onPress={() =>
+              //   router.push({
+              //     pathname: `/postsByCurrentUser/${currentUserID}`,
+              //     params: { uid: currentUserID },
+              //   })
+              // }
             >
               <Text style={[styles.text, { fontSize: 24 }]}>
                 {data?.posts?.length}
@@ -681,6 +724,7 @@ const MyProfilePage = () => {
               <Text style={[styles.text, styles.subText]}>Following</Text>
             </View>
           </View>
+
           {/* User's media carousel */}
           <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
             {/* {userData?.posts &&
@@ -768,16 +812,16 @@ const MyProfilePage = () => {
           <IconButton
             theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
             icon='instagram'
-            onPress={handleClickSocialMediaLink}
+            // onPress={handleClickSocialMediaLink}
             size={SOCIAL_MEDIA_ICON_SIZE}
           />
           {editable && (
             <IconButton
               theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
               icon='plus-circle-outline'
-              onPress={() =>
-                console.log('Prompt or modal to add a social media account')
-              }
+              // onPress={() =>
+              //   console.log('Prompt or modal to add a social media account')
+              // }
               size={SOCIAL_MEDIA_ICON_SIZE}
             />
           )}
@@ -787,9 +831,9 @@ const MyProfilePage = () => {
           mode='contained'
           contentStyle={{ padding: 10 }}
           buttonColor='red'
-          // onPress={handleLogin}
           // disabled={!isValid}
-          onPress={handleLogout}
+          // onPress={handleLogout}
+          onPress={() => Alert.alert('Logout function needed')}
         >
           Logout
         </Button>

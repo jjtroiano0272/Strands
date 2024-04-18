@@ -1,20 +1,10 @@
-import { color, log, red, green, cyan, cyanBright } from 'console-log-colors';
 import { getValueFor, useSession } from '~/context/expoDocsCtx';
 import * as Haptics from 'expo-haptics';
 import * as yup from 'yup';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import FontAwesome from '@expo/vector-icons/FontAwesome5';
-import {
-  Alert,
-  Keyboard,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-} from 'react-native';
+import { Keyboard, Pressable, StyleSheet } from 'react-native';
 import React, { useContext, useEffect, useState } from 'react';
 import {
   Button,
@@ -27,35 +17,24 @@ import {
 import { View } from 'react-native';
 import {
   getAuth,
-  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithRedirect,
   signInWithPopup,
-  OAuthCredential,
   UserCredential,
   onAuthStateChanged,
-  signOut,
   User,
 } from 'firebase/auth';
-import { DarkTheme, useTheme } from '@react-navigation/native';
-import {
-  FIREBASE_AUTH,
-  firebaseConfig,
-  persistentAuth,
-} from '~/firebaseConfig';
-import { UserContext } from '../context/UserContext';
-import { Auth as SignInWithPopup } from '../components/auth/Auth';
-import { Link, Stack, useRouter } from 'expo-router';
-import { useAuth } from '../context/auth';
+import { useTheme } from '@react-navigation/native';
+import { persistentAuth } from '~/firebaseConfig';
+import { UserContext } from '../../context/UserContext';
+import { Stack, useRouter } from 'expo-router';
+// import { useAuth } from '../context/auth';
+import { useAuth } from '~/context/AuthContext';
 import { SAMLAuthProvider, GoogleAuthProvider } from 'firebase/auth';
 // import { BubbleBackground } from '../../components/AnimatedBackground';
-import Particles from 'react-particles';
-import { useHaptics } from '~/hooks/useHaptics';
 // import { AnimatedBackground } from '../../../components/AnimatedBackground';
 // import { getSeedData } from '../../../utils/getSeedData';
 // import ParticleAnimation from 'react-particle-animation';
 // import chalk from 'chalk';
-import { ccolors } from '~/constants/conosleColors';
 
 export default function Login() {
   const chalk = require('chalk'); //Add this
@@ -63,7 +42,7 @@ export default function Login() {
   // console.log(ctx.red('red text'));
 
   const firebaseAuth = getAuth();
-  const myAuth = useAuth();
+  // const myAuth = useAuth();
   const [email, setEmail] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [password, setPassword] = useState<string | null>(null);
@@ -72,7 +51,6 @@ export default function Login() {
   const theme = useTheme();
   const router = useRouter();
   const userCtx = useContext(UserContext);
-  const sessionCtx = useSession();
   const [isFormValid, setIsFormValid] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
   const onToggleSnackBar = () => setSnackbarVisible(!snackbarVisible);
@@ -94,6 +72,7 @@ export default function Login() {
   const {
     control,
     handleSubmit,
+    getValues,
     formState: { errors, isValid },
   } = useForm({
     resolver: yupResolver(schema),
@@ -103,20 +82,16 @@ export default function Login() {
     },
   });
 
+  /* 
+  _@react-native-async-storage/async-storage@1.21.0
+  @react-native-picker/picker@2.6.1 expo-camera@14.0.1 expo-clipboard@5.0.1
+  expo-file-system@16.0.4 expo-font@11.10.2 expo-image-picker@14.7.1 expo-linear-gradient@12.7.0 expo-linking@6.2.2
+  expo-location@16.5.2 expo-router@3.4.3 expo-secure-store@12.8.1 expo-sensors@12.9.0 expo-splash-screen@0.26.3 expo-status-bar@1.11.1 expo-system-ui@2.9.3 expo-web-browser@12.8.1 lottie-react-native@6.5.1
+
+  react-native@0.73.2 react-native-gesture-handler@2.14.0 react-native-maps@1.8.0 react-native-reanimated@3.6.0 react-native-safe-area-context@4.8.2 react-native-screens@3.29.0 react-native-svg@14.1.0 react-native-web@0.19.6 @types/react@18.2.45 jest-expo@50.0.1 typescript@5.3.0
+*/
+
   // TODO Only display errors for a few seconds, then fade out, but keep the red line underneath
-  const validateEmail = () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email!)) {
-      setEmailError('Invalid email format');
-    }
-  };
-
-  const validatePassword = () => {
-    if (password && password.length < 8 && password.length > 0) {
-      setPasswordError('Password must be at least 8 characters long');
-    }
-  };
-
   const handleSSOLogin = (provider: string) => {
     const firebaseAuth = getAuth();
 
@@ -150,18 +125,6 @@ export default function Login() {
     }
   };
 
-  // This function is only reachable iff there are no errors in form
-  const handlePressLogin = () => {
-    // Trigger haptic feedback for errors or incomplete form
-    if (Object.keys(errors).length > 0) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } else {
-      // If no errors, proceed with form submission
-      handleSubmit(onSubmit)();
-      setIsFormValid(true);
-    }
-  };
-
   const onSubmit = (formData: { email: string; password: string }) => {
     // console.log(`formData: ${JSON.stringify(formData, null, 2)}`);
     // Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -185,11 +148,11 @@ export default function Login() {
           JSON.stringify(userCredentials, null, 2)
         );
 
-        sessionCtx?.signIn(userCredentials);
+        // sessionCtx?.signIn(userCredentials);
 
-        console.log(`Replacing route`);
-        // Do later
-        router.replace('home');
+        // console.log(`Replacing route`);
+        // // Do later
+        // router.replace('home');
       })
       // Err code:  ERROR  Sign in error! {
       //    "code":"auth/user-not-found",
@@ -216,6 +179,34 @@ export default function Login() {
           setSnackbarVisible(true);
         }
       });
+  };
+
+  // This function is only reachable iff there are no errors in form
+  const { onLogin } = useAuth();
+  const handlePressLogin = async () => {
+    const formErrors = Object.keys(errors).length > 0;
+
+    // Trigger haptic feedback for errors or incomplete form
+    if (formErrors) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } else {
+      // If no errors, proceed with form submission
+      const formData = getValues(); // Assuming getValues is a function from react-hook-form
+      setIsFormValid(true);
+
+      // Perform actions with the validated form data
+      // What's after this is only accessible once form data is valid
+
+      // TODO This should actually happen in the AuthContext
+
+      if (onLogin) {
+        const newToken = await onLogin(formData.email, formData.password).then(
+          (x: any) => {
+            console.log(`logged in with token ${JSON.stringify(x, null, 2)}`);
+          }
+        );
+      }
+    }
   };
 
   useEffect(() => {
@@ -263,51 +254,25 @@ export default function Login() {
   }, [user]);
 
   // Check for existing user on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      await getValueFor('session') 
-        .then(res =>
-          console.log(`res@index.fetchData(): ${JSON.stringify(res, null, 2)}`)
-        )
-        .catch(err => console.error(`error in calling getValueFor ${err}`));
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     await getValueFor('session')
+  //       .then(res =>
+  //         console.log(`res@index.fetchData(): ${JSON.stringify(res, null, 2)}`)
+  //       )
+  //       .catch(err => console.error(`error in calling getValueFor ${err}`));
 
-      // if (currentSession) {
-      //   // sessionCtx?.signIn(currentSession);
-      // }
-    };
+  //     // if (currentSession) {
+  //     //   // sessionCtx?.signIn(currentSession);
+  //     // }
+  //   };
 
-    fetchData();
-  }, []);
+  //   fetchData();
+  // }, []);
 
   return (
     <Pressable style={styles.container} onPress={() => Keyboard.dismiss()}>
       <Stack.Screen options={{ headerShown: false }} />
-      {/* <TextInput
-        style={styles.input}
-        theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-        placeholder='email'
-        keyboardType='email-address'
-        onChangeText={email => setEmail(email)}
-        error={!!emailError}
-        onBlur={validateEmail}
-        autoFocus={true}
-      />
-      <HelperText type='error' visible={hasEmailError()}>
-        Email address is invalid!
-      </HelperText>
-      <TextInput
-        style={styles.input}
-        theme={!theme.dark ? MD3LightTheme : MD3DarkTheme}
-        placeholder='password'
-        keyboardType='visible-password'
-        onChangeText={password => setPassword(password)}
-        error={!!passwordError}
-        onBlur={validatePassword}
-        secureTextEntry={true}
-      />
-      <HelperText type='error' visible={hasPasswordError()}>
-        Password error
-      </HelperText> */}
 
       <Controller
         control={control}

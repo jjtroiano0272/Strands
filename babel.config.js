@@ -18,9 +18,10 @@ module.exports = function (api) {
           },
         },
       ],
-      require.resolve('expo-router/babel'),
-      '@babel/plugin-proposal-export-namespace-from',
-      'react-native-reanimated/plugin',
+      // require.resolve('expo-router/babel'),
+      // '@babel/plugin-proposal-export-namespace-from',
+      'react-native-reanimated/plugin', // MUST BE LISTED LAST
     ],
   };
 };
+

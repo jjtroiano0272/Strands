@@ -6,5 +6,6 @@ module.exports = {
     'prefer-const': 'error',
     'no-await-in-loop': 'error',
     'no-return-await': 'error',
+    'no-floating-promises': true,
   },
 };

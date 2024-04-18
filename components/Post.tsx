@@ -308,7 +308,8 @@ export default function Post({
 
       if (elapsedTime instanceof Object) {
         return (
-          <Text style={{ color: theme.colors.text, fontSize: 10 }}>
+          // <Text style={{ color: theme.colors.text, fontSize: 10 }}>
+          <Text style={{ color: '#ccc', fontSize: 10 }}>
             {`${elapsedTime?.number} ${elapsedTime?.unit} ago`}
           </Text>
         );
@@ -340,13 +341,14 @@ export default function Post({
       <Skeleton.Group show={!loading}>
         <Card.Title
           title={
-            <Skeleton colorMode='light'>
-              {clientData?.firstName ? (
-                <Text style={{ fontSize: 24 }}>{clientData?.firstName}</Text>
-              ) : null}
-            </Skeleton>
+            // <Skeleton colorMode={theme.dark ? 'light' : 'dark'}>
+            //   {clientData?.firstName ? (
+            //     <Text style={{ fontSize: 24 }}>{clientData?.firstName}</Text>
+            //   ) : null}
+            // </Skeleton>
+            clientData?.firstName
           }
-          titleStyle={{ color: theme.colors.text }}
+          // titleStyle={{ color: 'red' }}
           titleVariant='titleLarge'
           subtitle={
             <>
@@ -527,7 +529,7 @@ const styles = StyleSheet.create({
     width: 190,
     margin: 2,
     marginVertical: 10,
-    backgroundColor: 'white',
+    // backgroundColor: 'white',
   },
   swiperContainer: {
     height: 300,

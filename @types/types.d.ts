@@ -32,6 +32,8 @@ export type UserContextType = {
   setIsLoggedIn: (arg: boolean) => void;
 };
 
+
+
 export type FireBasePost = {
   formulaUsed?: {
     description?: string,
